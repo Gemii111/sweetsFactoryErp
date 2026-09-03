@@ -1,0 +1,238 @@
+@model FactoryX.Application.DTOs.CreatePackagingBOMRequest
+@{
+    ViewData["Title"] = "إضافة مواصفة تعبئة وتغليف جديدة";
+    var packagingMaterials = ViewBag.PackagingMaterials as IEnumerable<FactoryX.Application.DTOs.MaterialDto> ?? Enumerable.Empty<FactoryX.Application.DTOs.MaterialDto>();
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-plus-circle text-primary me-2"></i>إنشاء مواصفة تعبئة وتغليف جديدة (Packaging BOM)</h2>
+            <p class="text-muted mb-0">تحديد معايير وتكوين عبوة المنتج التام وقائمة مواد التعبئة المستهلكة</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-1"></i> العودة للقائمة
+        </a>
+    </div>
+
+    <form asp-action="Create" method="post" id="bomForm">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="alert alert-danger shadow-sm mb-4" style="display: @(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+
+        <div class="row g-4">
+            <!-- Basic Information Card -->
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2"></i>البيانات الأساسية للمواصفة</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Code" class="form-label fw-bold">كود المواصفة (فريد): <span class="text-danger">*</span></label>
+                            <input asp-for="Code" class="form-control font-monospace" placeholder="مثال: SES-500-PKG" required />
+                            <span asp-validation-for="Code" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-bold">اسم مواصفة التعبئة: <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control" placeholder="مثال: عبوة سمسمية فاخرة 500 جم" required />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ProductId" class="form-label fw-bold">المنتج التام المستهدف: <span class="text-danger">*</span></label>
+                            <select asp-for="ProductId" asp-items="ViewBag.Products" class="form-select" required>
+                                <option value="">-- اختر المنتج التام --</option>
+                            </select>
+                            <span asp-validation-for="ProductId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="PackSize" class="form-label fw-bold">حجم العبوة: <span class="text-danger">*</span></label>
+                                <input asp-for="PackSize" class="form-control" type="number" step="0.01" min="0.01" required />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="PackUnit" class="form-label fw-bold">وحدة العبوة:</label>
+                                <input asp-for="PackUnit" class="form-control" value="Box" placeholder="Box, Pack, Pcs" />
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="PackSizeKg" class="form-label fw-bold">الوزن بالكجم: <span class="text-danger">*</span></label>
+                                <input asp-for="PackSizeKg" class="form-control" type="number" step="0.001" min="0.001" placeholder="مثال 0.500" required />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-bold">وصف وتفاصيل التعبئة:</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="ملاحظات وتوجيهات عملية التعبئة والتغليف..."></textarea>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                            <label asp-for="IsActive" class="form-check-label fw-bold">مواصفة نشطة ومتاحة للاستخدام</label>
+                        </div>
+
+                        <!-- Live Cost Box -->
+                        <div class="alert alert-info border-info mt-4 mb-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="fw-bold d-block">إجمالي تكلفة مواد التعبئة للعبوة:</span>
+                                    <small class="text-muted">محسوبة تلقائياً من قائمة المواد المضافة أدناه</small>
+                                </div>
+                                <h3 class="fw-bold text-success mb-0" id="totalCostDisplay">0.00 ر.س</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Packaging Materials Builder Card -->
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fas fa-cubes-stacked me-2"></i>قائمة مواد التعبئة والتغليف للعبوة الواحدة</h5>
+                        <button type="button" class="btn btn-sm btn-success" id="btnAddItem">
+                            <i class="fas fa-plus me-1"></i> إضافة مادة تعبئة
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="itemsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 5%;">#</th>
+                                        <th style="width: 45%;">مادة التعبئة والتغليف (Box/Bag/Label)</th>
+                                        <th style="width: 20%;">الكمية للعبوة</th>
+                                        <th style="width: 15%;">الوحدة</th>
+                                        <th style="width: 15%;" class="text-center">إجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemsTableBody">
+                                    <!-- Dynamic Rows Added by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="p-3 bg-light border-top text-end">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm">
+                                <i class="fas fa-save me-1"></i> حفظ مواصفة التعبئة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Material Template Option Data -->
+<select id="materialTemplateSelect" style="display: none;">
+    <option value="">-- اختر مادة التعبئة --</option>
+    @foreach (var mat in packagingMaterials)
+    {
+        var cost = mat.CurrentCost > 0 ? mat.CurrentCost : mat.StandardCost;
+        <option value="@mat.Id" data-cost="@cost" data-unit="@mat.Unit">
+            @mat.Name (@mat.Code) - تكلفة: @cost.ToString("C2")
+        </option>
+    }
+</select>
+
+@section Scripts {
+    <script>
+        let rowIndex = 0;
+        const selectHtml = document.getElementById('materialTemplateSelect').innerHTML;
+
+        function addItemRow(matId = '', qty = '1', unit = 'Pcs', seq = '') {
+            const tableBody = document.getElementById('itemsTableBody');
+            const currentIndex = rowIndex++;
+            const currentSeq = seq || (tableBody.children.length + 1);
+
+            const tr = document.createElement('tr');
+            tr.id = `row_${currentIndex}`;
+            tr.innerHTML = `
+                <td class="text-muted fw-bold">${currentSeq}
+                    <input type="hidden" name="Items[${currentIndex}].Sequence" value="${currentSeq}" />
+                </td>
+                <td>
+                    <select name="Items[${currentIndex}].MaterialId" class="form-select form-select-sm mat-select" required onchange="updateLiveCost(this, ${currentIndex})">
+                        ${selectHtml}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" name="Items[${currentIndex}].QuantityRequired" class="form-control form-control-sm qty-input" value="${qty}" min="0.0001" step="0.0001" required oninput="calculateTotalLiveCost()" />
+                </td>
+                <td>
+                    <input type="text" name="Items[${currentIndex}].Unit" class="form-control form-control-sm unit-input" id="unit_${currentIndex}" value="${unit}" readonly />
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeRow(${currentIndex})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+
+            tableBody.appendChild(tr);
+
+            if (matId) {
+                const select = tr.querySelector('.mat-select');
+                select.value = matId;
+                updateLiveCost(select, currentIndex);
+            }
+
+            calculateTotalLiveCost();
+        }
+
+        function removeRow(idx) {
+            const row = document.getElementById(`row_${idx}`);
+            if (row) {
+                row.remove();
+                calculateTotalLiveCost();
+            }
+        }
+
+        function updateLiveCost(selectElem, idx) {
+            const selectedOpt = selectElem.options[selectElem.selectedIndex];
+            const unitInput = document.getElementById(`unit_${idx}`);
+            if (selectedOpt && selectedOpt.dataset.unit) {
+                unitInput.value = selectedOpt.dataset.unit;
+            }
+            calculateTotalLiveCost();
+        }
+
+        function calculateTotalLiveCost() {
+            let total = 0;
+            const rows = document.querySelectorAll('#itemsTableBody tr');
+            rows.forEach(r => {
+                const select = r.querySelector('.mat-select');
+                const qtyInput = r.querySelector('.qty-input');
+                if (select && qtyInput && select.selectedIndex > 0) {
+                    const opt = select.options[select.selectedIndex];
+                    const cost = parseFloat(opt.dataset.cost) || 0;
+                    const qty = parseFloat(qtyInput.value) || 0;
+                    total += (cost * qty);
+                }
+            });
+
+            document.getElementById('totalCostDisplay').innerText = total.toFixed(2) + ' ر.س';
+        }
+
+        document.getElementById('btnAddItem').addEventListener('click', function() {
+            addItemRow();
+        });
+
+        // Initialize with standard 4 items if materials exist
+        window.addEventListener('DOMContentLoaded', () => {
+            const selectElem = document.getElementById('materialTemplateSelect');
+            if (selectElem.options.length > 1) {
+                // Add up to 4 items initially
+                for (let i = 1; i < Math.min(selectElem.options.length, 5); i++) {
+                    const val = selectElem.options[i].value;
+                    const unit = selectElem.options[i].dataset.unit || 'Pcs';
+                    addItemRow(val, '1', unit, i);
+                }
+            } else {
+                addItemRow('', '1', 'Pcs', 1);
+            }
+        });
+    </script>
+}

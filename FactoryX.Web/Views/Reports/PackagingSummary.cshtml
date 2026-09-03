@@ -1,0 +1,85 @@
+@model FactoryX.Application.DTOs.PackagingSummaryReportDto
+@{
+    ViewData["Title"] = "تقرير ملخص التعبئة والتغليف";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-box2 text-info me-2"></i>تقرير ملخص التعبئة والتغليف (Packaging Summary)</h2>
+        <p class="text-muted mb-0">متابعة أوامر التعبئة والتغليف، الكميات المنفذة، وتكلفة مواد التعبئة المستهلكة</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">إجمالي أوامر التعبئة</small>
+            <h4 class="fw-bold text-dark font-monospace mb-0">@Model.TotalPackagingOrders <small class="fs-6">أمر</small></h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-success-subtle p-3">
+            <small class="text-success fw-bold">الأوامر المكتملة</small>
+            <h4 class="fw-bold text-success font-monospace mb-0">@Model.CompletedPackagingOrders</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">الكمية المعبأة الجاهزة</small>
+            <h4 class="fw-bold text-primary font-monospace mb-0">@Model.TotalCompletedQuantity.ToString("N2") <small class="fs-6">عبوة / KG</small></h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-warning-subtle p-3">
+            <small class="text-dark fw-bold">تكلفة مواد التعبئة المستهلكة</small>
+            <h4 class="fw-bold text-dark font-monospace mb-0">@Model.TotalPackagingCost.ToString("N2") EGP</h4>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-bold">تفاصيل استهلاك مواد التعبئة في الأوامر</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">رقم أمر التعبئة</th>
+                        <th>المنتج</th>
+                        <th>مادة التعبئة / التغليف</th>
+                        <th class="text-end">المعياري المطلوب</th>
+                        <th class="text-end">الفعلي المستهلك</th>
+                        <th class="text-end pe-3">الانحراف (+ / -)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Consumptions.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">لا توجد حركات استهلاك تعبئة مسجلة</td>
+                        </tr>
+                    }
+                    @foreach (var c in Model.Consumptions)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">@c.PackagingOrderNumber</td>
+                            <td class="fw-semibold">@c.ProductName</td>
+                            <td class="text-primary fw-semibold">@c.PackagingMaterialName</td>
+                            <td class="text-end font-monospace">@c.PlannedQuantity.ToString("N2") @c.Unit</td>
+                            <td class="text-end font-monospace text-success fw-bold">@c.ActualQuantity.ToString("N2") @c.Unit</td>
+                            <td class="text-end font-monospace pe-3 @(c.Variance > 0 ? "text-danger" : "text-success")">
+                                @(c.Variance > 0 ? "+" : "")@c.Variance.ToString("N2")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

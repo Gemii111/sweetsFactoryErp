@@ -1,0 +1,317 @@
+@model FactoryX.Application.DTOs.CreateInvoiceRequest
+@{
+    ViewData["Title"] = "إصدار فاتورة مبيعات جديدة";
+    var invoiceableOrders = ViewBag.InvoiceableOrders as IEnumerable<FactoryX.Application.DTOs.InvoiceableOrderDto> ?? Enumerable.Empty<FactoryX.Application.DTOs.InvoiceableOrderDto>();
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-file-invoice-dollar text-primary me-2"></i>إصدار فاتورة مبيعات جديدة</h2>
+            <p class="text-muted mb-0">فوترة الكميات المسلمة فعلياً من أوامر البيع المعتمدة</p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-1"></i> العودة لقائمة الفواتير
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <form asp-action="Create" method="post" id="invoiceForm">
+        @Html.AntiForgeryToken()
+
+        <div class="row g-4">
+            <!-- Order & Customer Selection Card -->
+            <div class="col-lg-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-link me-2"></i>بيانات الأمر والعميل وتفاصيل الفاتورة</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">أمر البيع المتاح للفوترة <span class="text-danger">*</span></label>
+                                <select id="salesOrderSelect" asp-for="SalesOrderId" class="form-select" required>
+                                    <option value="">-- اختر أمر البيع المراد فوترته --</option>
+                                    @foreach (var ord in invoiceableOrders)
+                                    {
+                                        <option value="@ord.SalesOrderId" data-customer-id="@ord.CustomerId" data-customer-name="@ord.CustomerName" data-customer-code="@ord.CustomerCode">
+                                            @ord.SalesOrderNumber — @ord.CustomerName (@ord.WarehouseName)
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">العميل</label>
+                                <input type="hidden" id="customerIdHidden" asp-for="CustomerId" />
+                                <input type="text" id="customerDisplayName" class="form-control bg-light" readonly placeholder="سيتم تحديده تلقائياً من أمر البيع" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">تاريخ الفاتورة <span class="text-danger">*</span></label>
+                                <input type="date" asp-for="InvoiceDate" class="form-control" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" required />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">تاريخ الاستحقاق</label>
+                                <input type="date" asp-for="DueDate" class="form-control" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">العملة</label>
+                                <input type="text" asp-for="Currency" class="form-control" value="EGP" readonly />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">نسبة ضريبة القيمة المضافة %</label>
+                                <input type="number" step="0.01" id="globalTaxRate" asp-for="TaxRate" class="form-control" value="14.00" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">ملاحظات الفاتورة</label>
+                                <input type="text" asp-for="Notes" class="form-control" placeholder="أي شروط أو ملاحظات إضافية..." />
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <div class="form-check form-switch fs-6 mb-2">
+                                    <input class="form-check-input" type="checkbox" role="switch" asp-for="IssueImmediately" id="issueImmediately" checked>
+                                    <label class="form-check-label fw-bold" for="issueImmediately">اعتماد وإصدار الفاتورة فوراً (Issued)</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice Items Table Card -->
+            <div class="col-lg-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0 text-success"><i class="fas fa-boxes me-2"></i>بنود الفاتورة والكميات المسلمة للفوترة</h5>
+                        <span class="badge bg-light text-muted border" id="itemCountBadge">0 بنود</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="itemsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 25%;">المنتج</th>
+                                    <th style="width: 12%;">الكمية المسلمة</th>
+                                    <th style="width: 12%;">تمت فوترته سابقاً</th>
+                                    <th style="width: 13%;">الكمية المفوترة <span class="text-danger">*</span></th>
+                                    <th style="width: 12%;">سعر الوحدة</th>
+                                    <th style="width: 10%;">الخصم</th>
+                                    <th style="width: 8%;">الضريبة %</th>
+                                    <th style="width: 13%;">الإجمالي</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsBody">
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">
+                                        <i class="fas fa-info-circle me-1"></i> يرجى اختيار أمر البيع أعلاه لتحميل البنود المسلمة القابلة للفوترة.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card-footer bg-light p-4">
+                        <div class="row justify-content-end">
+                            <div class="col-md-5">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-muted">المجموع الفرعي (SubTotal):</span>
+                                            <span class="fw-bold font-monospace" id="subTotalDisplay">0.00 EGP</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-muted">إجمالي الخصومات:</span>
+                                            <span class="fw-bold text-danger font-monospace" id="discountTotalDisplay">0.00 EGP</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span class="text-muted">ضريبة القيمة المضافة:</span>
+                                            <span class="fw-bold text-info font-monospace" id="taxTotalDisplay">0.00 EGP</span>
+                                        </div>
+                                        <hr />
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="fw-bold fs-5">صافي الفاتورة الإجمالي:</span>
+                                            <span class="fw-bold fs-4 text-primary font-monospace" id="grandTotalDisplay">0.00 EGP</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="col-12 text-end mb-4">
+                <button type="submit" class="btn btn-primary btn-lg shadow px-5" id="submitBtn" disabled>
+                    <i class="fas fa-check-circle me-1"></i> حفظ وإصدار الفاتورة
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const orderSelect = document.getElementById('salesOrderSelect');
+            const customerDisplayName = document.getElementById('customerDisplayName');
+            const customerIdHidden = document.getElementById('customerIdHidden');
+            const itemsBody = document.getElementById('itemsBody');
+            const submitBtn = document.getElementById('submitBtn');
+            const globalTaxRate = document.getElementById('globalTaxRate');
+
+            orderSelect.addEventListener('change', function () {
+                const orderId = this.value;
+                if (!orderId) {
+                    customerDisplayName.value = '';
+                    customerIdHidden.value = '';
+                    itemsBody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted"><i class="fas fa-info-circle me-1"></i> يرجى اختيار أمر البيع أعلاه.</td></tr>';
+                    submitBtn.disabled = true;
+                    recalculateTotals();
+                    return;
+                }
+
+                const selectedOption = this.options[this.selectedIndex];
+                customerIdHidden.value = selectedOption.getAttribute('data-customer-id');
+                customerDisplayName.value = selectedOption.getAttribute('data-customer-name') + ' (' + selectedOption.getAttribute('data-customer-code') + ')';
+
+                // Fetch order details via AJAX
+                fetch(`/Invoices/GetInvoiceableOrderDetails?orderId=${orderId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.order && data.order.items.length > 0) {
+                            renderItems(data.order.items);
+                            submitBtn.disabled = false;
+                        } else {
+                            itemsBody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-warning"><i class="fas fa-exclamation-circle me-1"></i> لا توجد بنود مسلمة متاحة للفوترة في هذا الأمر.</td></tr>';
+                            submitBtn.disabled = true;
+                        }
+                        recalculateTotals();
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        itemsBody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-danger">حدث خطأ أثناء تحميل بيانات البنود.</td></tr>';
+                        submitBtn.disabled = true;
+                    });
+            });
+
+            function renderItems(items) {
+                itemsBody.innerHTML = '';
+                const taxRate = parseFloat(globalTaxRate.value) || 14.00;
+
+                items.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <input type="hidden" name="Items[${index}].ProductId" value="${item.productId}" />
+                            <input type="hidden" name="Items[${index}].SalesOrderItemId" value="${item.salesOrderItemId}" />
+                            <input type="hidden" name="Items[${index}].SalesFulfillmentItemId" value="${item.salesFulfillmentItemId || ''}" />
+                            <input type="hidden" name="Items[${index}].Unit" value="${item.unit}" />
+                            <div class="fw-bold">${item.productName}</div>
+                            <small class="text-muted font-monospace">${item.productCode} (${item.unit})</small>
+                        </td>
+                        <td class="font-monospace">${item.fulfilledQuantity.toFixed(2)} ${item.unit}</td>
+                        <td class="font-monospace text-muted">${item.alreadyInvoicedQuantity.toFixed(2)} ${item.unit}</td>
+                        <td>
+                            <input type="number" step="0.01" min="0" max="${item.invoiceableQuantity}"
+                                   name="Items[${index}].Quantity"
+                                   class="form-control item-qty font-monospace fw-bold"
+                                   value="${item.invoiceableQuantity.toFixed(2)}"
+                                   data-index="${index}" required />
+                            <small class="text-muted">الحد الأقصى: ${item.invoiceableQuantity.toFixed(2)}</small>
+                        </td>
+                        <td>
+                            <input type="number" step="0.01" min="0"
+                                   name="Items[${index}].UnitPrice"
+                                   class="form-control item-price font-monospace"
+                                   value="${item.unitPrice.toFixed(2)}"
+                                   data-index="${index}" readonly />
+                        </td>
+                        <td>
+                            <input type="number" step="0.01" min="0"
+                                   name="Items[${index}].DiscountAmount"
+                                   class="form-control item-discount font-monospace"
+                                   value="0.00"
+                                   data-index="${index}" />
+                        </td>
+                        <td>
+                            <input type="number" step="0.01" min="0"
+                                   name="Items[${index}].TaxRate"
+                                   class="form-control item-tax-rate font-monospace"
+                                   value="${taxRate}"
+                                   data-index="${index}" />
+                        </td>
+                        <td class="fw-bold font-monospace text-primary item-line-total" id="lineTotal_${index}">
+                            0.00 EGP
+                        </td>
+                    `;
+                    itemsBody.appendChild(row);
+                });
+
+                document.getElementById('itemCountBadge').textContent = `${items.length} بنود`;
+
+                // Attach event listeners to input fields
+                document.querySelectorAll('.item-qty, .item-discount, .item-tax-rate').forEach(input => {
+                    input.addEventListener('input', recalculateTotals);
+                });
+
+                recalculateTotals();
+            }
+
+            globalTaxRate.addEventListener('input', function () {
+                const newRate = parseFloat(this.value) || 0;
+                document.querySelectorAll('.item-tax-rate').forEach(input => {
+                    input.value = newRate;
+                });
+                recalculateTotals();
+            });
+
+            function recalculateTotals() {
+                let subTotal = 0;
+                let discountTotal = 0;
+                let taxTotal = 0;
+
+                const qtyInputs = document.querySelectorAll('.item-qty');
+                qtyInputs.forEach(input => {
+                    const idx = input.getAttribute('data-index');
+                    const qty = parseFloat(input.value) || 0;
+                    const price = parseFloat(document.querySelector(`input[name="Items[${idx}].UnitPrice"]`).value) || 0;
+                    const discount = parseFloat(document.querySelector(`input[name="Items[${idx}].DiscountAmount"]`).value) || 0;
+                    const taxRate = parseFloat(document.querySelector(`input[name="Items[${idx}].TaxRate"]`).value) || 0;
+
+                    const gross = qty * price;
+                    const taxable = Math.max(0, gross - discount);
+                    const tax = taxable * (taxRate / 100);
+                    const lineTotal = taxable + tax;
+
+                    subTotal += gross;
+                    discountTotal += discount;
+                    taxTotal += tax;
+
+                    const lineDisplay = document.getElementById(`lineTotal_${idx}`);
+                    if (lineDisplay) {
+                        lineDisplay.textContent = lineTotal.toFixed(2) + ' EGP';
+                    }
+                });
+
+                const grandTotal = Math.max(0, subTotal - discountTotal + taxTotal);
+
+                document.getElementById('subTotalDisplay').textContent = subTotal.toFixed(2) + ' EGP';
+                document.getElementById('discountTotalDisplay').textContent = discountTotal.toFixed(2) + ' EGP';
+                document.getElementById('taxTotalDisplay').textContent = taxTotal.toFixed(2) + ' EGP';
+                document.getElementById('grandTotalDisplay').textContent = grandTotal.toFixed(2) + ' EGP';
+            }
+
+            // Trigger if already selected
+            if (orderSelect.value) {
+                orderSelect.dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
+}

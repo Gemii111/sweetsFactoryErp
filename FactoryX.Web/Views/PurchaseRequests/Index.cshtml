@@ -1,0 +1,164 @@
+@model IEnumerable<FactoryX.Application.DTOs.PurchaseRequestDto>
+@{
+    ViewData["Title"] = "طلبات الشراء (Purchase Requests)";
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-clipboard-list text-primary me-2"></i>طلبات الشراء (Purchase Requests)</h2>
+            <p class="text-muted mb-0">إصدار ومتابعة طلبات شراء المواد الخام ومواد التعبئة واعتمادها قبل إصدار أوامر الشراء</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus me-1"></i> إنشاء طلب شراء جديد
+            </a>
+            <a asp-controller="PurchaseOrders" asp-action="Index" class="btn btn-outline-secondary shadow-sm">
+                <i class="fas fa-file-invoice-dollar me-1"></i> أوامر الشراء
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">حالة الطلب:</label>
+                    <select name="status" class="form-select">
+                        <option value="">-- جميع الحالات --</option>
+                        <option value="1" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 1)">مسودة (Draft)</option>
+                        <option value="2" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 2)">مقدم للاعتماد (Submitted)</option>
+                        <option value="3" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 3)">معتمد (Approved)</option>
+                        <option value="4" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 4)">مرفوض (Rejected)</option>
+                        <option value="5" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 5)">ملغي (Cancelled)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">بحث بالرقم أو الملاحظات:</label>
+                    <input type="text" name="searchTerm" class="form-control" placeholder="رقم الطلب PR-..." value="@ViewBag.SearchTerm" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold small text-muted">من تاريخ:</label>
+                    <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold small text-muted">إلى تاريخ:</label>
+                    <input type="date" name="toDate" class="form-control" value="@ViewBag.ToDate" />
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i> تصفية</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3">رقم الطلب</th>
+                            <th>تاريخ الطلب</th>
+                            <th>تاريخ الاحتياج</th>
+                            <th>الأولوية</th>
+                            <th>عدد البنود</th>
+                            <th>التكلفة التقديرية</th>
+                            <th>مقدم الطلب</th>
+                            <th>الحالة</th>
+                            <th class="text-end pe-3">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center py-5 text-muted">
+                                    <i class="fas fa-clipboard-list fa-3x mb-3 text-secondary d-block"></i>
+                                    لا توجد طلبات شراء مسجلة
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="ps-3 fw-bold">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="text-decoration-none font-monospace">
+                                            @item.RequestNumber
+                                        </a>
+                                    </td>
+                                    <td>@item.RequestDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@(item.RequiredDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                    <td>
+                                        @switch (item.Priority)
+                                        {
+                                            case "Urgent":
+                                                <span class="badge bg-danger">عاجل جداً</span>
+                                                break;
+                                            case "High":
+                                                <span class="badge bg-warning text-dark">مرتفع</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary">عادي</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td><span class="badge bg-info text-dark">@(item.Items?.Count ?? 0) بنود</span></td>
+                                    <td class="fw-bold font-monospace">@item.TotalEstimatedCost.ToString("N2") ج.م</td>
+                                    <td>@(item.RequestedByName ?? "المسؤول")</td>
+                                    <td>
+                                        @switch (item.Status)
+                                        {
+                                            case FactoryX.Domain.Entities.PurchaseRequestStatus.Draft:
+                                                <span class="badge bg-secondary">مسودة</span>
+                                                break;
+                                            case FactoryX.Domain.Entities.PurchaseRequestStatus.Submitted:
+                                                <span class="badge bg-primary">مقدم للاعتماد</span>
+                                                break;
+                                            case FactoryX.Domain.Entities.PurchaseRequestStatus.Approved:
+                                                <span class="badge bg-success">معتمد</span>
+                                                break;
+                                            case FactoryX.Domain.Entities.PurchaseRequestStatus.Rejected:
+                                                <span class="badge bg-danger">مرفوض</span>
+                                                break;
+                                            case FactoryX.Domain.Entities.PurchaseRequestStatus.Cancelled:
+                                                <span class="badge bg-dark">ملغي</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i> التفاصيل
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

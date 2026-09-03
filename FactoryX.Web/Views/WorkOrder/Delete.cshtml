@@ -1,0 +1,32 @@
+@model FactoryX.Application.DTOs.WorkOrderDto
+@{
+    ViewData["Title"] = "حذف أمر التشغيل";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-body p-4">
+                    <h3 class="fw-bold mb-4 text-center text-danger"><i class="bi bi-trash me-2"></i>تأكيد حذف أمر التشغيل</h3>
+                    <div class="alert alert-warning mb-4 rounded-3"><i class="bi bi-exclamation-triangle-fill me-1"></i> هل أنت متأكد من رغبتك في حذف أمر التشغيل رقم #@Model.Id نهائياً؟</div>
+                    <dl class="row mb-4">
+                        <dt class="col-5 text-muted">رقم الأمر</dt>
+                        <dd class="col-7 fw-bold">#@Model.Id</dd>
+                        <dt class="col-5 text-muted">الكمية</dt>
+                        <dd class="col-7 fw-bold text-success">@Model.Quantity</dd>
+                        <dt class="col-5 text-muted">الحالة</dt>
+                        <dd class="col-7"><span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1">@Model.Status</span></dd>
+                    </dl>
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill"><i class="bi bi-arrow-right"></i> إلغاء</a>
+                            <button type="submit" class="btn btn-danger px-4 rounded-pill shadow-sm"><i class="bi bi-trash"></i> تأكيد الحذف</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

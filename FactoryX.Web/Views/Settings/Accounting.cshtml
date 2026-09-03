@@ -1,0 +1,116 @@
+@model IEnumerable<FactoryX.Application.DTOs.AccountingSettingDto>
+@{
+    ViewData["Title"] = "ربط وتوجيه الحسابات المحاسبية";
+    var accounts = ViewBag.Accounts as List<FactoryX.Domain.Entities.Account> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-journal-bookmark text-success me-2"></i>ربط وتوجيه الحسابات المحاسبية (GL Mappings)</h2>
+        <p class="text-muted mb-0">تحديد الحسابات الفرعية بالدليل المحاسبي للتوليد الآلي للقيود المحاسبية</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>العودة للوحة الإعدادات
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">الدور المالي / العملية</th>
+                        <th>رمز الحساب</th>
+                        <th>اسم الحساب المالي المرتبط</th>
+                        <th>الوصف</th>
+                        <th class="text-end pe-3">تعديل الربط</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var map in Model)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-bold text-primary">@map.RoleName</td>
+                            <td><span class="badge bg-light text-dark border font-monospace">@map.AccountCode</span></td>
+                            <td class="fw-bold">@map.AccountNameAr (@map.AccountName)</td>
+                            <td class="text-muted small">@map.Description</td>
+                            <td class="text-end pe-3">
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick='openMapModal(@map.Id, @((int)map.Role), "@map.RoleName", @map.AccountId)'>
+                                    <i class="bi bi-link-45deg me-1"></i>تغيير الحساب
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for GL Mapping -->
+<div class="modal fade" id="mapModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="SaveAccountingMapping" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="mapModalLabel">تعديل ربط الحساب المالي</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="mapRole" name="Role" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">الدور المالي</label>
+                        <input type="text" class="form-control" id="mapRoleTitle" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اختر الحساب من دليل الحسابات</label>
+                        <select class="form-select" id="mapAccountId" name="AccountId" required>
+                            <option value="">-- اختر الحساب المالي --</option>
+                            @foreach (var acc in accounts)
+                            {
+                                <option value="@acc.Id">[@acc.AccountCode] @acc.AccountNameAr - @acc.AccountName (@acc.AccountType)</option>
+                            }
+
+                        </select>
+                        <small class="text-muted">يجب اختيار حساب تحليلي غير تجميعي متوافق مع نوع العملية</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success">حفظ الربط المالي</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openMapModal(id, roleValue, roleName, accountId) {
+        document.getElementById('mapRole').value = roleValue;
+        document.getElementById('mapRoleTitle').value = roleName;
+        document.getElementById('mapAccountId').value = accountId;
+
+        var modal = new bootstrap.Modal(document.getElementById('mapModal'));
+        modal.show();
+    }
+</script>

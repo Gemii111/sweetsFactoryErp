@@ -1,0 +1,14 @@
+<div>
+    &copy; @DateTime.Now.Year - FactoryX MES &mdash; <span id="footer-theme">Light Mode</span>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const html = document.documentElement;
+        const footerTheme = document.getElementById('footer-theme');
+        if (html.getAttribute('data-bs-theme') === 'dark') {
+            footerTheme.textContent = 'Dark Mode';
+        } else {
+            footerTheme.textContent = 'Light Mode';
+        }
+    });
+</script>

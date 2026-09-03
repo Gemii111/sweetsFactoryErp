@@ -1,0 +1,163 @@
+@model FactoryX.Application.DTOs.UpdateWasteRequest
+@using FactoryX.Domain.Entities
+
+@{
+    ViewData["Title"] = "تعديل مسودة الهالك";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm me-3">
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <div>
+                    <h2 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-pencil-square me-2"></i> تعديل مسودة الهالك
+                    </h2>
+                    <small class="text-muted">يمكن تعديل البيانات قبل تقديم السجل للاعتماد النهائي</small>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-4">
+                    <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="WasteType" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 rounded-3" role="alert"></div>
+
+                        @if (Model.WasteType == WasteType.RawMaterialWaste)
+                        {
+                            <div class="alert alert-warning-subtle text-warning-emphasis border border-warning-subtle mb-3">
+                                <i class="bi bi-box-seam me-2"></i> نوع الهالك: <strong>هالك مواد خام</strong>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="MaterialId" class="form-label fw-bold">المادة الخام <span class="text-danger">*</span></label>
+                                <select asp-for="MaterialId" asp-items="ViewBag.Materials" class="form-select">
+                                    <option value="">-- اختر المادة الخام --</option>
+                                </select>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label asp-for="WarehouseId" class="form-label fw-bold">المستودع <span class="text-danger">*</span></label>
+                                    <select asp-for="WarehouseId" asp-items="ViewBag.Warehouses" class="form-select">
+                                        <option value="">-- اختر المستودع --</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="RawMaterialBatchNumber" class="form-label fw-bold">رقم دفعة الخام (Lot)</label>
+                                    <input asp-for="RawMaterialBatchNumber" class="form-control font-monospace" />
+                                </div>
+                            </div>
+                        }
+                        else if (Model.WasteType == WasteType.ProductionProcessWaste)
+                        {
+                            <div class="alert alert-danger-subtle text-danger-emphasis border border-danger-subtle mb-3">
+                                <i class="bi bi-fire me-2"></i> نوع الهالك: <strong>هالك مراحل التشغيل</strong>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="ProductionBatchId" class="form-label fw-bold">دفعة الإنتاج <span class="text-danger">*</span></label>
+                                <select asp-for="ProductionBatchId" asp-items="ViewBag.ProductionBatches" class="form-select">
+                                    <option value="">-- اختر دفعة الإنتاج --</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="MaterialId" class="form-label fw-bold">المادة الخام</label>
+                                <select asp-for="MaterialId" asp-items="ViewBag.Materials" class="form-select">
+                                    <option value="">-- اختر المادة الخام --</option>
+                                </select>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info-subtle text-info-emphasis border border-info-subtle mb-3">
+                                <i class="bi bi-x-octagon me-2"></i> نوع الهالك: <strong>مرفوضات إنتاج تام</strong>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="ProductionBatchId" class="form-label fw-bold">دفعة الإنتاج <span class="text-danger">*</span></label>
+                                <select asp-for="ProductionBatchId" asp-items="ViewBag.ProductionBatches" class="form-select">
+                                    <option value="">-- اختر دفعة الإنتاج --</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="ProductId" class="form-label fw-bold">المنتج التام <span class="text-danger">*</span></label>
+                                <select asp-for="ProductId" asp-items="ViewBag.Products" class="form-select">
+                                    <option value="">-- اختر المنتج التام --</option>
+                                </select>
+                            </div>
+                        }
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Quantity" class="form-label fw-bold">الكمية <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input asp-for="Quantity" type="number" step="0.0001" class="form-control fw-bold text-primary" id="quantityInput" />
+                                    <input asp-for="Unit" class="form-control" style="max-width: 90px;" />
+                                </div>
+                                <span asp-validation-for="Quantity" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="UnitCost" class="form-label fw-bold">تكلفة الوحدة (ج.م)</label>
+                                <input asp-for="UnitCost" type="number" step="0.01" class="form-control" id="unitCostInput" />
+                                <span asp-validation-for="UnitCost" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="WasteReasonId" class="form-label fw-bold">سبب الهالك <span class="text-danger">*</span></label>
+                                <select asp-for="WasteReasonId" asp-items="ViewBag.WasteReasons" class="form-select">
+                                    <option value="">-- اختر سبب الهالك --</option>
+                                </select>
+                                <span asp-validation-for="WasteReasonId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="WasteDate" class="form-label fw-bold">تاريخ الهالك <span class="text-danger">*</span></label>
+                                <input asp-for="WasteDate" type="date" class="form-control" value="@Model.WasteDate.ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="WasteDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ReasonDescription" class="form-label fw-bold">البيان التفصيلي</label>
+                            <input asp-for="ReasonDescription" class="form-control" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Notes" class="form-label fw-bold">ملاحظات إضافية</label>
+                            <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="p-3 bg-light rounded-3 mb-4 border">
+                            <div class="form-check">
+                                <input asp-for="SubmitDirectly" class="form-check-input" type="checkbox" id="submitDirectlyCheck" />
+                                <label class="form-check-label fw-bold" for="submitDirectlyCheck">
+                                    تقديم السجل للاعتماد مباشرة (Pending Approval) عند الحفظ
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-light px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                <i class="bi bi-save me-1"></i> حفظ التعديلات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

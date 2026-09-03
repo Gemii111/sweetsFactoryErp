@@ -1,0 +1,245 @@
+@model IEnumerable<FactoryX.Application.DTOs.ProductionBatchDto>
+@{
+    ViewData["Title"] = "دفعات الإنتاج والتشغيل";
+    var filter = ViewBag.Filter as FactoryX.Application.DTOs.ProductionBatchFilterRequest;
+    var summary = ViewBag.Summary as FactoryX.Application.DTOs.ProductionBatchSummaryDto;
+    var products = ViewBag.Products as IEnumerable<FactoryX.Application.DTOs.Responses.ProductResponses.GetProductResponse>;
+    var workOrders = ViewBag.WorkOrders as IEnumerable<FactoryX.Application.DTOs.ProductionOrderDto>;
+}
+
+<div class="container-fluid py-4" dir="rtl">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-gear-wide-connected text-primary me-2"></i> دفعات الإنتاج والتشغيل الفعلي</h2>
+            <p class="text-muted mb-0">إدارة دفعات التصنيع، وصرف الخامات التلقائي من المخزون، وتسجيل الناتج الفعلي</p>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn btn-primary px-4 shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i> إنشاء تشغيلة / دفعة جديدة
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI Summary Cards -->
+    @if (summary != null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-sm-6">
+                <div class="card border-0 shadow-sm rounded-3 border-start border-primary border-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small">إجمالي الدفعات</span>
+                                <h3 class="fw-bold my-1 text-primary">@summary.TotalBatches</h3>
+                                <small class="text-muted">مخطط: @summary.TotalPlannedQuantity.ToString("N0") كجم</small>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                                <i class="bi bi-layers fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-sm-6">
+                <div class="card border-0 shadow-sm rounded-3 border-start border-warning border-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small">قيد التشغيل والتوقف</span>
+                                <h3 class="fw-bold my-1 text-warning">@(summary.InProgressBatches + summary.PausedBatches)</h3>
+                                <small class="text-warning">قيد العمل: @summary.InProgressBatches | متوقف: @summary.PausedBatches</small>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning">
+                                <i class="bi bi-play-circle fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-sm-6">
+                <div class="card border-0 shadow-sm rounded-3 border-start border-success border-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small">الدفعات المكتملة</span>
+                                <h3 class="fw-bold my-1 text-success">@summary.CompletedBatches</h3>
+                                <small class="text-success">الناتج الفعلي: @summary.TotalActualOutputQuantity.ToString("N0") كجم</small>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success">
+                                <i class="bi bi-check2-circle fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-sm-6">
+                <div class="card border-0 shadow-sm rounded-3 border-start border-info border-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <span class="text-muted small">الدفعات المخططة</span>
+                                <h3 class="fw-bold my-1 text-info">@summary.PlannedBatches</h3>
+                                <small class="text-muted">ملغي: @summary.CancelledBatches</small>
+                            </div>
+                            <div class="bg-info bg-opacity-10 p-3 rounded-circle text-info">
+                                <i class="bi bi-calendar-check fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filter Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">بحث برقم الدفعة أو أمر الإنتاج أو المنتج</label>
+                    <input type="text" name="search" class="form-control" placeholder="ابحث هنا..." value="@filter?.Search" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">المنتج التام</label>
+                    <select name="productId" class="form-select">
+                        <option value="">-- كل المنتجات --</option>
+                        @if (products != null)
+                        {
+                            foreach (var p in products)
+                            {
+                                <option value="@p.Id" selected="@(filter?.ProductId == p.Id)">@p.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">أمر الإنتاج</label>
+                    <select name="workOrderId" class="form-select">
+                        <option value="">-- كل الأوامر --</option>
+                        @if (workOrders != null)
+                        {
+                            foreach (var wo in workOrders)
+                            {
+                                <option value="@wo.Id" selected="@(filter?.WorkOrderId == wo.Id)">@wo.OrderNumber</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">حالة الدفعة</label>
+                    <select name="status" class="form-select">
+                        <option value="">-- كل الحالات --</option>
+                        <option value="1" selected="@(filter?.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Planned)">مخطط (Planned)</option>
+                        <option value="2" selected="@(filter?.Status == FactoryX.Domain.Entities.ProductionBatchStatus.InProgress)">قيد التشغيل (In Progress)</option>
+                        <option value="3" selected="@(filter?.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Paused)">متوقف مؤقتاً (Paused)</option>
+                        <option value="4" selected="@(filter?.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Completed)">مكتمل (Completed)</option>
+                        <option value="5" selected="@(filter?.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Cancelled)">ملغي (Cancelled)</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-funnel me-1"></i> تصفية
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-counterclockwise"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Batches Table Card -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-transparent py-3 border-0">
+            <h5 class="fw-bold mb-0"><i class="bi bi-list-task text-primary me-2"></i> قائمة دفعات الإنتاج والتشغيل</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم الدفعة</th>
+                        <th>أمر الإنتاج</th>
+                        <th>المنتج التام</th>
+                        <th>تاريخ الإنتاج</th>
+                        <th>الكمية المخططة</th>
+                        <th>الإنتاج الفعلي</th>
+                        <th>الماكينة / المشغل</th>
+                        <th>الحالة</th>
+                        <th class="text-center">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="fw-bold text-decoration-none text-primary">
+                                        <i class="bi bi-tag-fill me-1 small"></i> @item.BatchNumber
+                                    </a>
+                                </td>
+                                <td>
+                                    <a asp-controller="ProductionOrders" asp-action="Details" asp-route-id="@item.WorkOrderId" class="badge bg-light text-dark border text-decoration-none">
+                                        @item.WorkOrderNumber
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">@item.ProductName</div>
+                                    @if (!string.IsNullOrEmpty(item.ProductArabicName))
+                                    {
+                                        <small class="text-muted">@item.ProductArabicName</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span>@item.ProductionDate.ToString("yyyy-MM-dd")</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-primary">@item.PlannedQuantity.ToString("N2") @item.OutputUnit</span>
+                                </td>
+                                <td>
+                                    @if (item.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Completed)
+                                    {
+                                        <span class="fw-bold text-success">@item.ActualOutputQuantity.ToString("N2") @item.OutputUnit</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">--</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="small"><i class="bi bi-hdd-rack me-1"></i> @(item.MachineName ?? "غير محدد")</div>
+                                    <div class="small text-muted"><i class="bi bi-person me-1"></i> @(item.OperatorName ?? "غير محدد")</div>
+                                </td>
+                                <td>
+                                    <span class="badge @item.StatusBadgeClass px-2 py-1">@item.StatusName</span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Execute" asp-route-id="@item.Id" class="btn btn-primary" title="شاشة تشغيل الدفعة والصرف">
+                                            <i class="bi bi-play-circle-fill me-1"></i> شاشة التشغيل
+                                        </a>
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-secondary" title="التفاصيل وتتبع الخامات">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                <h6>لا توجد دفعات إنتاج مطابقة للبحث</h6>
+                                <p class="small mb-0">يمكنك إنشاء دفعة جديدة بربطها بأمر إنتاج معتمد.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

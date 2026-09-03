@@ -1,0 +1,91 @@
+@model FactoryX.Application.DTOs.ProductCategoryDto
+@{
+    ViewData["Title"] = "تفاصيل تصنيف المنتجات";
+}
+
+<div class="container py-4" dir="rtl">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">
+                <i class="bi bi-tag-fill text-primary me-2"></i>تفاصيل تصنيف: @Model.Name
+            </h3>
+            <span class="text-muted">@(string.IsNullOrEmpty(Model.ArabicName) ? "" : $"({Model.ArabicName})")</span>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning rounded-pill px-4 text-dark fw-semibold shadow-sm">
+                <i class="bi bi-pencil me-1"></i> تعديل
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm">
+                <i class="bi bi-arrow-right me-1"></i> عودة للتصنيفات
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-info-circle text-primary me-2"></i>بيانات التصنيف</h5>
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">كود التصنيف:</span>
+                        <span class="fw-bold text-primary font-monospace">@Model.Code</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">الاسم الأساسي:</span>
+                        <span class="fw-semibold text-dark">@Model.Name</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">الاسم العربي:</span>
+                        <span class="fw-semibold text-dark">@(string.IsNullOrEmpty(Model.ArabicName) ? "-" : Model.ArabicName)</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">حالة التنشيط:</span>
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">نشط</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1">معطل</span>
+                        }
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">عدد المنتجات التابعة:</span>
+                        <span class="badge bg-primary rounded-pill px-3 py-1">@Model.ProductCount صنف</span>
+                    </li>
+                </ul>
+
+                <hr class="my-3 text-muted" />
+
+                <div>
+                    <span class="text-muted small d-block mb-1">الوصف:</span>
+                    <p class="text-dark small bg-light p-3 rounded-3 mb-0">
+                        @(string.IsNullOrEmpty(Model.Description) ? "لا يوجد وصف إضافي مسجل لهذا التصنيف." : Model.Description)
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-boxes text-success me-2"></i>المنتجات التابعة لهذا التصنيف (@Model.ProductCount)
+                    </h5>
+                    <a asp-controller="Products" asp-action="Create" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                        <i class="bi bi-plus-lg me-1"></i> إضافة منتج لهذا التصنيف
+                    </a>
+                </div>
+
+                <div class="alert alert-light border rounded-3 p-3 text-center">
+                    <p class="text-muted mb-0 small">
+                        يمكنك استعراض والتحكم في جميع المنتجات المرتبطة بهذا التصنيف من خلال
+                        <a asp-controller="Products" asp-action="Index" asp-route-categoryId="@Model.Id" class="fw-bold text-primary text-decoration-none">
+                            صفحة قائمة المنتجات (مع التصفية حسب هذا التصنيف) <i class="bi bi-arrow-left"></i>
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

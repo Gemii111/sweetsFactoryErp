@@ -1,0 +1,82 @@
+@model FactoryX.Application.DTOs.WarehouseDto
+
+@{
+    ViewData["Title"] = "تفاصيل المستودع";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center">
+        <a asp-action="Index" class="btn btn-light rounded-circle ms-3"><i class="bi bi-arrow-right"></i></a>
+        <div>
+            <h2 class="fw-bold mb-0">@Model.Name</h2>
+            <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1">@Model.Code</span>
+            <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-3 py-1 ms-2">@Model.TypeName</span>
+        </div>
+    </div>
+    <div class="gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary shadow-sm ms-2"><i class="bi bi-pencil me-1"></i>تعديل المستودع</a>
+        <a asp-controller="WarehouseLocations" asp-action="Index" asp-route-warehouseId="@Model.Id" class="btn btn-outline-info shadow-sm"><i class="bi bi-geo-alt me-1"></i>أماكن التخزين والرفوف (@Model.LocationCount)</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div class="d-flex align-items-center">
+                <div class="bg-primary-subtle text-primary p-3 rounded-circle ms-3">
+                    <i class="bi bi-buildings fs-4"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">كود المستودع</div>
+                    <div class="fw-bold fs-5">@Model.Code</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div class="d-flex align-items-center">
+                <div class="bg-info-subtle text-info p-3 rounded-circle ms-3">
+                    <i class="bi bi-geo-alt fs-4"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">إجمالي أماكن التخزين</div>
+                    <div class="fw-bold fs-5">@Model.LocationCount</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div class="d-flex align-items-center">
+                <div class="bg-success-subtle text-success p-3 rounded-circle ms-3">
+                    <i class="bi bi-shield-check fs-4"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">الحالة التشغيلية</div>
+                    <div class="fw-bold fs-5">@(Model.IsActive ? "نشط" : "معطل")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div class="d-flex align-items-center">
+                <div class="bg-warning-subtle text-warning p-3 rounded-circle ms-3">
+                    <i class="bi bi-calendar3 fs-4"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">تاريخ الإنشاء</div>
+                    <div class="fw-bold fs-6">@Model.CreatedAt.ToString("yyyy-MM-dd")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-info-circle me-2 text-primary"></i>الوصف والملاحظات</h5>
+        <p class="text-muted mb-0">@(string.IsNullOrEmpty(Model.Description) ? "لا توجد ملاحظات إضافية مسجلة." : Model.Description)</p>
+    </div>
+</div>

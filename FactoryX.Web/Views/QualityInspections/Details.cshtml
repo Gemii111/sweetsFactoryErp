@@ -1,0 +1,489 @@
+@model FactoryX.Application.DTOs.QualityInspectionDto
+@using FactoryX.Domain.Entities
+
+@{
+    ViewData["Title"] = "تقرير فحص الجودة - " + Model.InspectionNumber;
+    var gateStatus = ViewBag.GateStatus as FactoryX.Application.DTOs.ReleaseGateResultDto;
+    var history = ViewBag.History as IEnumerable<FactoryX.Application.DTOs.QualityInspectionDto>;
+    var allRequiredPassed = Model.Items.Any() && Model.Items.Where(i => i.IsRequired).All(i => i.Result == ItemEvaluationResult.Pass);
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="bi bi-arrow-right"></i>
+            </a>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <h2 class="fw-bold mb-0 text-primary font-monospace">@Model.InspectionNumber</h2>
+                    @if (Model.FinalDecision == QualityDecision.Approved)
+                    {
+                        <span class="badge bg-success rounded-pill px-3 py-1 fs-6">
+                            <i class="bi bi-check-circle-fill me-1"></i> معتمد ومطابق (Approved)
+                        </span>
+                    }
+                    else if (Model.FinalDecision == QualityDecision.Rejected)
+                    {
+                        <span class="badge bg-danger rounded-pill px-3 py-1 fs-6">
+                            <i class="bi bi-x-octagon-fill me-1"></i> مرفوض وغير مطابق (Rejected)
+                        </span>
+                    }
+                    else if (Model.FinalDecision == QualityDecision.Hold)
+                    {
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-1 fs-6">
+                            <i class="bi bi-pause-circle-fill me-1"></i> محجوز (Hold)
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1 fs-6">
+                            <i class="bi bi-hourglass-split me-1"></i> قيد الفحص
+                        </span>
+                    }
+                </div>
+                <small class="text-muted">تقرير المطابقة الفنية والفحص المخبري لدفعة حلويات المولد النبوي</small>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            @if (Model.Status != QualityInspectionStatus.Approved && Model.Status != QualityInspectionStatus.Cancelled)
+            {
+                <a asp-action="Inspect" asp-route-id="@Model.Id" class="btn btn-primary">
+                    <i class="bi bi-clipboard2-check me-1"></i> تسجيل / تعديل القياسات
+                </a>
+
+                <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#holdModal">
+                    <i class="bi bi-pause-circle me-1"></i> احتجاز (Hold)
+                </button>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                    <i class="bi bi-x-circle me-1"></i> رفض الدفعة
+                </button>
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">
+                    <i class="bi bi-check-circle-fill me-1"></i> اعتماد ومطابقة
+                </button>
+            }
+
+            @if (Model.FinalDecision == QualityDecision.Rejected || Model.FinalDecision == QualityDecision.Hold)
+            {
+                <a asp-action="Reinspect" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <i class="bi bi-arrow-repeat me-1"></i> فتح إعادة فحص (Re-inspect)
+                </a>
+            }
+
+            <button type="button" class="btn btn-outline-secondary" onclick="window.print();">
+                <i class="bi bi-printer me-1"></i> طباعة الشهادة
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @Html.Raw(TempData["ErrorMessage"])
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- QC Release Gate Banner -->
+    @if (gateStatus != null)
+    {
+        <div class="card border-0 shadow-sm rounded-3 mb-4 @(gateStatus.IsAllowed ? "bg-success text-white" : "bg-danger text-white")">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-25 p-3 rounded-circle me-3">
+                            <i class="bi @(gateStatus.IsAllowed ? "bi-unlock-fill" : "bi-lock-fill") fs-2"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-1">
+                                بوابة الإفراج المخزني (QC Release Gate): @(gateStatus.IsAllowed ? "مسموح بالإفراج (RELEASED)" : "محظور من الإفراج (BLOCKED)")
+                            </h4>
+                            <div class="opacity-90">@gateStatus.Reason</div>
+                        </div>
+                    </div>
+                    @if (gateStatus.DecisionDate.HasValue)
+                    {
+                        <div class="text-end">
+                            <small class="d-block opacity-75">تاريخ القرار:</small>
+                            <strong>@gateStatus.DecisionDate.Value.ToString("yyyy-MM-dd HH:mm")</strong>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Main Column: Measurements & Decisions -->
+        <div class="col-lg-8">
+            <!-- Inspection Measurements Table -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-transparent py-3 border-0">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-list-check me-2 text-primary"></i> نتائج ومعايير فحص الجودة
+                    </h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40px;" class="ps-4">#</th>
+                                <th>اسم المعيار والمواصفة</th>
+                                <th>المعيار المطلوب</th>
+                                <th>القياس الفعلي</th>
+                                <th class="text-center">التقييم</th>
+                                <th>ملاحظات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items.OrderBy(i => i.Sequence))
+                            {
+                                <tr>
+                                    <td class="ps-4 fw-bold">@item.Sequence</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@item.SpecificationName</div>
+                                        @if (item.IsRequired)
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0 small">إلزامي</span>
+                                        }
+                                    </td>
+                                    <td class="small text-muted">
+                                        @if (item.DataType == InspectionDataType.Number)
+                                        {
+                                            <span>[@(item.MinValue?.ToString("N2") ?? "0") - @(item.MaxValue?.ToString("N2") ?? "∞")] @item.Unit</span>
+                                            @if (item.TargetValue.HasValue)
+                                            {
+                                                <div class="text-primary">الهدف: @item.TargetValue.Value.ToString("N2") @item.Unit</div>
+                                            }
+                                        }
+                                        else if (item.DataType == InspectionDataType.PassFail)
+                                        {
+                                            <span>PASS</span>
+                                        }
+                                        else if (item.DataType == InspectionDataType.Boolean)
+                                        {
+                                            <span>مطابق (True)</span>
+                                        }
+                                        else
+                                        {
+                                            <span>@(item.AllowedTextValues ?? "نصي")</span>
+                                        }
+                                    </td>
+                                    <td class="fw-bold">
+                                        @if (item.DataType == InspectionDataType.Number)
+                                        {
+                                            <span>@(item.ActualNumericValue.HasValue ? $"{item.ActualNumericValue.Value:N2} {item.Unit}" : "-")</span>
+                                        }
+                                        else if (item.DataType == InspectionDataType.PassFail)
+                                        {
+                                            <span>@(item.ActualPassFailValue ?? "-")</span>
+                                        }
+                                        else if (item.DataType == InspectionDataType.Boolean)
+                                        {
+                                            <span>@(item.ActualBooleanValue.HasValue ? (item.ActualBooleanValue.Value ? "نعم" : "لا") : "-")</span>
+                                        }
+                                        else
+                                        {
+                                            <span>@(item.ActualTextValue ?? "-")</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.Result == ItemEvaluationResult.Pass)
+                                        {
+                                            <span class="badge bg-success rounded-pill px-3 py-1">
+                                                <i class="bi bi-check-circle me-1"></i> PASS
+                                            </span>
+                                        }
+                                        else if (item.Result == ItemEvaluationResult.Fail)
+                                        {
+                                            <span class="badge bg-danger rounded-pill px-3 py-1">
+                                                <i class="bi bi-x-circle me-1"></i> FAIL
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1">
+                                                PENDING
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="small text-muted">
+                                        @(item.InspectorNotes ?? "-")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Notes & Decision Details -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-transparent py-3 border-0">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-chat-left-text me-2 text-primary"></i> الملاحظات والقرارات الفنية
+                    </h5>
+                </div>
+                <div class="card-body pt-0">
+                    @if (!string.IsNullOrEmpty(Model.ApprovalNotes))
+                    {
+                        <div class="alert alert-success-subtle border border-success-subtle rounded-3 mb-3">
+                            <h6 class="fw-bold text-success mb-1"><i class="bi bi-check-circle me-1"></i> مبررات وملاحظات الاعتماد:</h6>
+                            <p class="mb-0">@Model.ApprovalNotes</p>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.RejectionReason))
+                    {
+                        <div class="alert alert-danger-subtle border border-danger-subtle rounded-3 mb-3">
+                            <h6 class="fw-bold text-danger mb-1"><i class="bi bi-x-circle me-1"></i> سبب الرفض وعدم المطابقة:</h6>
+                            <p class="mb-0">@Model.RejectionReason</p>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.HoldReason))
+                    {
+                        <div class="alert alert-warning-subtle border border-warning-subtle rounded-3 mb-3">
+                            <h6 class="fw-bold text-warning-emphasis mb-1"><i class="bi bi-pause-circle me-1"></i> سبب الاحتجاز (Hold):</h6>
+                            <p class="mb-0">@Model.HoldReason</p>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ReinspectionReason))
+                    {
+                        <div class="alert alert-info-subtle border border-info-subtle rounded-3 mb-3">
+                            <h6 class="fw-bold text-info mb-1"><i class="bi bi-arrow-repeat me-1"></i> مبررات إعادة الفحص:</h6>
+                            <p class="mb-0">@Model.ReinspectionReason (فحص سابق رقم: @Model.PreviousInspectionNumber)</p>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <div class="mb-0">
+                            <label class="text-muted small d-block">ملاحظات الفحص العامة:</label>
+                            <p class="text-dark">@Model.Notes</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Batch Inspection History (Reinspections) -->
+            @if (history != null && history.Count() > 1)
+            {
+                <div class="card border-0 shadow-sm rounded-3">
+                    <div class="card-header bg-transparent py-3 border-0">
+                        <h5 class="fw-bold mb-0 text-dark">
+                            <i class="bi bi-clock-history me-2 text-primary"></i> سجل تاريخ الفحوصات وإعادة التقييم للدفعة
+                        </h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">رقم الفحص</th>
+                                    <th>تاريخ الفحص</th>
+                                    <th>المفتش</th>
+                                    <th class="text-center">القرار</th>
+                                    <th class="text-end pe-3">إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var h in history)
+                                {
+                                    <tr class="@(h.Id == Model.Id ? "table-active" : "")">
+                                        <td class="ps-3 fw-bold font-monospace">@h.InspectionNumber</td>
+                                        <td>@h.InspectionDate.ToString("yyyy-MM-dd")</td>
+                                        <td>@(h.InspectorName ?? "-")</td>
+                                        <td class="text-center">
+                                            @if (h.FinalDecision == QualityDecision.Approved)
+                                            {
+                                                <span class="badge bg-success">Approved</span>
+                                            }
+                                            else if (h.FinalDecision == QualityDecision.Rejected)
+                                            {
+                                                <span class="badge bg-danger">Rejected</span>
+                                            }
+                                            else if (h.FinalDecision == QualityDecision.Hold)
+                                            {
+                                                <span class="badge bg-warning text-dark">Hold</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Pending</span>
+                                            }
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            @if (h.Id != Model.Id)
+                                            {
+                                                <a asp-action="Details" asp-route-id="@h.Id" class="btn btn-sm btn-outline-secondary">عرض</a>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-primary">الحالي</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar Column: Batch & Traceability -->
+        <div class="col-lg-4">
+            <!-- Batch Metadata Card -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-transparent py-3 border-0">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-box-seam me-2 text-primary"></i> بيانات دفعة الإنتاج
+                    </h5>
+                </div>
+                <div class="card-body pt-0">
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted">رقم دفعة الإنتاج:</span>
+                            <span class="fw-bold font-monospace text-primary">@Model.ProductionBatchNumber</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted">المنتج التام:</span>
+                            <span class="fw-bold text-dark">@Model.ProductName</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted">أمر الإنتاج (Work Order):</span>
+                            <span class="fw-bold font-monospace">@(Model.WorkOrderNumber ?? "-")</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted">الكمية المخططة:</span>
+                            <span class="fw-bold">@Model.BatchPlannedQuantity.ToString("N2") @Model.BatchOutputUnit</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted">الكمية الفعلية المنتجة:</span>
+                            <span class="fw-bold text-success">@Model.BatchActualQuantity.ToString("N2") @Model.BatchOutputUnit</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span class="text-muted">قالب الفحص المطبق:</span>
+                            <span class="badge bg-light text-dark border">@Model.QualityTemplateCode</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Audit Trail Card -->
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-transparent py-3 border-0">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-fingerprint me-2 text-primary"></i> سجل التدقيق والمراجعة (Audit Trail)
+                    </h5>
+                </div>
+                <div class="card-body pt-0">
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item px-0">
+                            <div class="text-muted">مفتش الجودة:</div>
+                            <div class="fw-bold text-dark">@(Model.InspectorName ?? "مسؤول الجودة")</div>
+                        </li>
+                        <li class="list-group-item px-0">
+                            <div class="text-muted">تم الفتح والتسجيل بواسطة:</div>
+                            <div class="fw-bold text-dark">@(Model.CreatedByUserName ?? "المسؤول") - @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</div>
+                        </li>
+                        @if (Model.DecisionAt.HasValue)
+                        {
+                            <li class="list-group-item px-0">
+                                <div class="text-muted">تم اتخاذ القرار النهائي بواسطة:</div>
+                                <div class="fw-bold text-dark">@(Model.DecisionByUserName ?? "مدير الجودة") - @Model.DecisionAt.Value.ToString("yyyy-MM-dd HH:mm")</div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Approve" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="InspectionId" value="@Model.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-success"><i class="bi bi-check-circle me-2"></i> اعتماد مطابقة دفعة الإنتاج للإفراج</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>تأكيد اعتماد مطابقة الدفعة <strong>@Model.ProductionBatchNumber</strong> والسماح بالإفراج النهائي عنها.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ملاحظات ومبررات الاعتماد (اختياري)</label>
+                        <textarea name="ApprovalNotes" class="form-control" rows="3" placeholder="أي ملاحظات حول شهادة المطابقة..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">تراجع</button>
+                    <button type="submit" class="btn btn-success">تأكيد الاعتماد</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Reject" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="InspectionId" value="@Model.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-octagon me-2"></i> قرار رفض دفعة الإنتاج</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>سيؤدي رفض الفحص إلى حظر الدفعة <strong>@Model.ProductionBatchNumber</strong> من الإفراج المخزني.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">سبب الرفض وعدم المطابقة <span class="text-danger">*</span></label>
+                        <textarea name="RejectionReason" class="form-control" rows="3" placeholder="توضيح أسباب عدم المطابقة والعيوب الفنية..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">تراجع</button>
+                    <button type="submit" class="btn btn-danger">تأكيد الرفض</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Hold Modal -->
+<div class="modal fade" id="holdModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Hold" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="InspectionId" value="@Model.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-warning"><i class="bi bi-pause-circle me-2"></i> قرار احتجاز الدفعة (Hold)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>سيتم تعليق دفعة الإنتاج <strong>@Model.ProductionBatchNumber</strong> لحين إجراء فحوصات إضافية.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">سبب الاحتجاز والفحص الإضافي <span class="text-danger">*</span></label>
+                        <textarea name="HoldReason" class="form-control" rows="3" placeholder="توضيح الاختبارات المعملية الإضافية المطلوبة..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">تراجع</button>
+                    <button type="submit" class="btn btn-warning">تأكيد الاحتجاز</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

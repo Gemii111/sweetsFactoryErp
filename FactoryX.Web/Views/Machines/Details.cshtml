@@ -1,0 +1,32 @@
+@model FactoryX.Application.DTOs.Responses.MachineResponses.GetMachineResponse
+@{
+    ViewData["Title"] = "تفاصيل الماكينة";
+}
+<div class="container py-4">
+    @await Html.PartialAsync("_Alert")
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-body p-4">
+                    <h3 class="fw-bold mb-4 text-center text-primary"><i class="bi bi-cpu-fill me-2"></i>تفاصيل الماكينة</h3>
+                    <dl class="row mb-4">
+                        <dt class="col-5 text-muted">اسم الماكينة</dt>
+                        <dd class="col-7 fw-bold">@Model.Name</dd>
+                        <dt class="col-5 text-muted">الحالة التشغيلية</dt>
+                        <dd class="col-7">
+                            <span class="badge bg-@(Model.Status == "Active" ? "success-subtle text-success" : "secondary-subtle text-secondary") rounded-pill px-3 py-1">
+                                @(Model.Status == "Active" ? "نشطة وتعمل" : "متوقفة")
+                            </span>
+                        </dd>
+                        <dt class="col-5 text-muted">الطاقة الإنتاجية</dt>
+                        <dd class="col-7 fw-bold text-primary">@Model.Capacity <small class="text-muted">كجم/ساعة</small></dd>
+                    </dl>
+                    <div class="d-flex justify-content-between pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill"><i class="bi bi-arrow-right"></i> عودة للقائمة</a>
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning px-4 rounded-pill shadow-sm"><i class="bi bi-pencil"></i> تعديل</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

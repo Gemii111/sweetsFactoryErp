@@ -1,0 +1,376 @@
+@model FactoryX.Application.DTOs.WasteDto
+@using FactoryX.Domain.Entities
+
+@{
+    ViewData["Title"] = "تفاصيل سجل الهالك - " + Model.WasteNumber;
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="bi bi-arrow-right"></i>
+            </a>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <h2 class="fw-bold mb-0 text-primary font-monospace">@Model.WasteNumber</h2>
+                    @if (Model.Status == WasteStatus.Draft)
+                    {
+                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1 fs-6">
+                            <i class="bi bi-pencil me-1"></i> مسودة (Draft)
+                        </span>
+                    }
+                    else if (Model.Status == WasteStatus.PendingApproval)
+                    {
+                        <span class="badge bg-warning-subtle text-warning rounded-pill px-3 py-1 fs-6">
+                            <i class="bi bi-hourglass-split me-1"></i> قيد المراجعة والاعتماد (Pending Approval)
+                        </span>
+                    }
+                    else if (Model.Status == WasteStatus.Approved)
+                    {
+                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fs-6">
+                            <i class="bi bi-check-circle me-1"></i> معتمد (Approved)
+                        </span>
+                    }
+                    else if (Model.Status == WasteStatus.Rejected)
+                    {
+                        <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1 fs-6">
+                            <i class="bi bi-x-circle me-1"></i> مرفوض (Rejected)
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-dark-subtle text-dark rounded-pill px-3 py-1 fs-6">
+                            <i class="bi bi-slash-circle me-1"></i> ملغى (Cancelled)
+                        </span>
+                    }
+                </div>
+                <small class="text-muted">@Model.WasteTypeName | تاريخ التسجيل: @Model.WasteDate.ToString("yyyy-MM-dd")</small>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            @if (Model.Status == WasteStatus.Draft)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i> تعديل المسودة
+                </a>
+                <form asp-action="Submit" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-warning px-3 shadow-sm" onclick="return confirm('هل أنت متأكد من تقديم هذا السجل للاعتماد؟');">
+                        <i class="bi bi-send me-1"></i> تقديم للاعتماد
+                    </button>
+                </form>
+            }
+
+            @if (Model.Status == WasteStatus.PendingApproval)
+            {
+                <a asp-action="Approve" asp-route-id="@Model.Id" class="btn btn-success px-3 shadow-sm">
+                    <i class="bi bi-shield-check me-1"></i> مراجعة واعتماد
+                </a>
+            }
+
+            @if (Model.Status == WasteStatus.Draft || Model.Status == WasteStatus.PendingApproval)
+            {
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                    <i class="bi bi-x-circle me-1"></i> إلغاء
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Content Grid -->
+    <div class="row g-4">
+        <!-- Left: Waste and Item Details -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-transparent py-3 border-0">
+                    <h5 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-info-circle me-2"></i> تفاصيل الهالك والتكلفة
+                    </h5>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block">نوع الهالك</label>
+                            <span class="fw-bold text-dark fs-6">@Model.WasteTypeName</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block">سبب الهالك المعتمد</label>
+                            <span class="badge bg-light text-dark border fs-6">
+                                @(Model.WasteReasonCode != null ? $"[{Model.WasteReasonCode}] " : "")@(Model.WasteReasonName ?? "-")
+                            </span>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.ReasonDescription))
+                        {
+                            <div class="col-12">
+                                <label class="text-muted small d-block">بيان وتفاصيل السبب</label>
+                                <div class="p-2 bg-light rounded text-dark">@Model.ReasonDescription</div>
+                            </div>
+                        }
+
+                        <div class="col-12"><hr class="my-2" /></div>
+
+                        <!-- Quantities and Costs Card-like summary -->
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <label class="text-muted small d-block mb-1">الكمية المسجلة</label>
+                                <div class="fs-4 fw-bold text-primary">@Model.Quantity.ToString("N2") <small class="fs-6">@Model.Unit</small></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-light rounded-3 text-center">
+                                <label class="text-muted small d-block mb-1">تكلفة الوحدة</label>
+                                <div class="fs-4 fw-bold text-dark">@Model.UnitCost.ToString("N2") <small class="fs-6">ج.م</small></div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-3 bg-danger-subtle rounded-3 text-center border border-danger-subtle">
+                                <label class="text-danger small d-block mb-1 fw-bold">إجمالي تكلفة الهالك</label>
+                                <div class="fs-4 fw-bold text-danger">@Model.TotalCost.ToString("N2") <small class="fs-6">ج.م</small></div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Notes))
+                        {
+                            <div class="col-12">
+                                <label class="text-muted small d-block">ملاحظات إضافية</label>
+                                <div class="p-3 bg-light rounded text-secondary">@Model.Notes</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traceability & Linkages Card -->
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-transparent py-3 border-0">
+                    <h5 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-diagram-3 me-2"></i> بيانات التتبع والمصدر (Traceability)
+                    </h5>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle mb-0">
+                            <tbody>
+                                @if (Model.WasteType == WasteType.RawMaterialWaste)
+                                {
+                                    <tr>
+                                        <th class="table-light w-25">المادة الخام</th>
+                                        <td>
+                                            <strong>@Model.MaterialName</strong> 
+                                            @if (!string.IsNullOrEmpty(Model.MaterialCode)) { <span class="badge bg-light text-dark border font-monospace ms-2">@Model.MaterialCode</span> }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="table-light">المستودع والموقع</th>
+                                        <td>
+                                            <i class="bi bi-buildings me-1 text-primary"></i> @(Model.WarehouseName ?? "مستودع غير محدد")
+                                            @if (!string.IsNullOrEmpty(Model.LocationName))
+                                            {
+                                                <span class="text-muted ms-2"><i class="bi bi-geo-alt me-1"></i>@Model.LocationName</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="table-light">رقم تشغيلة/دفعة الخام (Lot)</th>
+                                        <td>
+                                            <code class="fw-bold text-dark fs-6">@(string.IsNullOrEmpty(Model.RawMaterialBatchNumber) ? "عام / غير مخصص" : Model.RawMaterialBatchNumber)</code>
+                                        </td>
+                                    </tr>
+                                }
+                                else if (Model.WasteType == WasteType.ProductionProcessWaste)
+                                {
+                                    <tr>
+                                        <th class="table-light w-25">دفعة الإنتاج المرتبطة</th>
+                                        <td>
+                                            @if (Model.ProductionBatchId.HasValue)
+                                            {
+                                                <a asp-controller="ProductionBatches" asp-action="Details" asp-route-id="@Model.ProductionBatchId" class="fw-bold text-primary text-decoration-none">
+                                                    <i class="bi bi-layers me-1"></i> @Model.ProductionBatchNumber
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span>-</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="table-light">أمر الإنتاج والتخطيط</th>
+                                        <td>
+                                            <span class="font-monospace">@(Model.WorkOrderNumber ?? "-")</span>
+                                        </td>
+                                    </tr>
+                                    @if (!string.IsNullOrEmpty(Model.MaterialName))
+                                    {
+                                        <tr>
+                                            <th class="table-light">الخامة المفقودة</th>
+                                            <td><strong>@Model.MaterialName</strong></td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <th class="table-light w-25">المنتج التام</th>
+                                        <td>
+                                            <strong>@Model.ProductName</strong>
+                                            @if (!string.IsNullOrEmpty(Model.ProductCode)) { <span class="badge bg-light text-dark border font-monospace ms-2">@Model.ProductCode</span> }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="table-light">دفعة الإنتاج المرتبطة</th>
+                                        <td>
+                                            @if (Model.ProductionBatchId.HasValue)
+                                            {
+                                                <a asp-controller="ProductionBatches" asp-action="Details" asp-route-id="@Model.ProductionBatchId" class="fw-bold text-primary text-decoration-none">
+                                                    <i class="bi bi-layers me-1"></i> @Model.ProductionBatchNumber
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <span>-</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+
+                                @if (Model.InventoryTransactionId.HasValue)
+                                {
+                                    <tr class="table-success">
+                                        <th class="table-success"><i class="bi bi-box-arrow-right me-1"></i> حركة الخصم المخزني</th>
+                                        <td>
+                                            <span class="badge bg-success font-monospace fs-6">WASTE #@Model.InventoryTransactionId</span>
+                                            <span class="text-muted ms-2">تم خصم الكمية (@Model.Quantity @Model.Unit) بنجاح من رصيد المستودع</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Audit and Lifecycle Sidebar -->
+        <div class="col-lg-4">
+            <!-- Approval & User Audit Card -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-header bg-transparent py-3 border-0">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-shield-lock me-2 text-primary"></i> بيانات الاعتماد والتدقيق
+                    </h5>
+                </div>
+                <div class="card-body pt-0">
+                    <div class="mb-3">
+                        <label class="text-muted small d-block">مُسجل الطلب</label>
+                        <div class="fw-bold text-dark"><i class="bi bi-person me-1"></i> @(Model.CreatedByUserName ?? "النظام")</div>
+                        <small class="text-muted">تاريخ التسجيل: @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                    </div>
+
+                    @if (Model.ApprovedAt.HasValue)
+                    {
+                        <hr />
+                        <div class="mb-3">
+                            <label class="text-muted small d-block">
+                                @(Model.Status == WasteStatus.Approved ? "المعتمد" : "تمت المراجعة بواسطة")
+                            </label>
+                            <div class="fw-bold text-dark"><i class="bi bi-person-check me-1"></i> @(Model.ApprovedByUserName ?? "المسؤول")</div>
+                            <small class="text-muted">التاريخ: @Model.ApprovedAt.Value.ToString("yyyy-MM-dd HH:mm")</small>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.ApprovalNotes))
+                        {
+                            <div class="p-3 bg-light rounded text-dark small">
+                                <strong>ملاحظات الاعتماد / الرفض:</strong>
+                                <div>@Model.ApprovalNotes</div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Inventory Impact Notice -->
+            <div class="card border-0 shadow-sm rounded-3 @(Model.Status == WasteStatus.Approved && Model.WasteType == WasteType.RawMaterialWaste ? "bg-success-subtle border border-success-subtle" : "bg-light")">
+                <div class="card-body p-3">
+                    <h6 class="fw-bold mb-2">
+                        <i class="bi bi-info-square me-1"></i> أثر المخزون والتكلفة
+                    </h6>
+                    @if (Model.WasteType == WasteType.RawMaterialWaste)
+                    {
+                        @if (Model.Status == WasteStatus.Approved)
+                        {
+                            <p class="small text-success mb-0">
+                                <strong>تم الخصم:</strong> تم خصم @Model.Quantity @Model.Unit من رصيد المستودع وتسجيل حركة إسقاط هالك رسمية.
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="small text-muted mb-0">
+                                <strong>لا يوجد أثر حالياً:</strong> لن يتم خصم كمية الخام من المخزون إلا بعد اعتماد السجل رسمياً.
+                            </p>
+                        }
+                    }
+                    else if (Model.WasteType == WasteType.ProductionProcessWaste)
+                    {
+                        <p class="small text-muted mb-0">
+                            <strong>هالك مراحل تشغيل:</strong> المواد الخام تم استهلاكها مسبقاً في أمر التشغيل، ويسجل هذا الفاقد لحساب كفاءة وتكلفة التشغيل.
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="small text-muted mb-0">
+                            <strong>مرفوضات إنتاج تام:</strong> تم تسجيل @Model.Quantity @Model.Unit كمرفوضات غير مطابقة، ولن تضاف لأرصدة الإنتاج التام.
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Cancel" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger">إلغاء سجل الهالك</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>هل أنت متأكد من رغبتك في إلغاء سجل الهالك <strong>@Model.WasteNumber</strong>؟</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">سبب الإلغاء</label>
+                        <input type="text" name="reason" class="form-control" placeholder="مثال: تسجيل بالخطأ أو تعديل الخطة..." required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">تراجع</button>
+                    <button type="submit" class="btn btn-danger">تأكيد الإلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

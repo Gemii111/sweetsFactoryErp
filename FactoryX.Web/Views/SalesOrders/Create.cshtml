@@ -1,0 +1,314 @@
+@model FactoryX.Application.DTOs.CreateSalesOrderRequest
+@using FactoryX.Domain.Entities
+@{
+    ViewData["Title"] = "إنشاء أمر بيع جديد";
+    var products = ViewBag.Products as List<FactoryX.Application.DTOs.ProductDto> ?? new();
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-cart-plus text-primary me-2"></i>إنشاء أمر بيع جديد (Create Sales Order)</h2>
+            <p class="text-muted mb-0">تسجيل طلبية عميل للمنتجات التامة وتحديد الكميات والأسعار المتفق عليها</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-1"></i> العودة للقائمة
+        </a>
+    </div>
+
+    <form asp-action="Create" method="post" id="salesOrderForm">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <!-- Header Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0"><i class="fas fa-info-circle me-2 text-primary"></i>بيانات الأمر الأساسية</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="CustomerId" class="form-label fw-bold">العميل <span class="text-danger">*</span></label>
+                        <select asp-for="CustomerId" class="form-select" asp-items="ViewBag.Customers" required>
+                            <option value="">-- اختر العميل --</option>
+                        </select>
+                        <span asp-validation-for="CustomerId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="WarehouseId" class="form-label fw-bold">مستودع المنتجات التامة <span class="text-danger">*</span></label>
+                        <select asp-for="WarehouseId" class="form-select" asp-items="ViewBag.Warehouses" required>
+                            <option value="">-- اختر المستودع --</option>
+                        </select>
+                        <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="OrderDate" class="form-label fw-bold">تاريخ أمر البيع <span class="text-danger">*</span></label>
+                        <input asp-for="OrderDate" type="date" class="form-control" value="@Model.OrderDate.ToString("yyyy-MM-dd")" required />
+                        <span asp-validation-for="OrderDate" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="RequiredDeliveryDate" class="form-label fw-bold">تاريخ التسليم المطلوب</label>
+                        <input asp-for="RequiredDeliveryDate" type="date" class="form-control" />
+                        <span asp-validation-for="RequiredDeliveryDate" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="Priority" class="form-label fw-bold">الأولوية</label>
+                        <select asp-for="Priority" class="form-select">
+                            <option value="Normal">عادي (Normal)</option>
+                            <option value="High">مرتفع (High)</option>
+                            <option value="Urgent">عاجل (Urgent)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-9">
+                        <label asp-for="Notes" class="form-label fw-bold">ملاحظات وشروط أمر البيع</label>
+                        <input asp-for="Notes" class="form-control" placeholder="ملاحظات التسليم والتعبئة الخاصة..." />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="fas fa-boxes-stacked me-2 text-primary"></i>بنود المنتجات التامة المطلوبة</h5>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="addItemBtn">
+                    <i class="fas fa-plus me-1"></i> إضافة منتج آخر
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0" id="itemsTable">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th style="width: 30%;">المنتج التام <span class="text-danger">*</span></th>
+                            <th style="width: 12%;">الكمية المطلوبة <span class="text-danger">*</span></th>
+                            <th style="width: 10%;">الوحدة</th>
+                            <th style="width: 14%;">سعر الوحدة (EGP) <span class="text-danger">*</span></th>
+                            <th style="width: 10%;">الخصم (EGP)</th>
+                            <th style="width: 10%;">الضريبة (EGP)</th>
+                            <th style="width: 14%;">إجمالي السطر (EGP)</th>
+                            <th style="width: 5%;">حذف</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody">
+                        @for (int i = 0; i < Model.Items.Count; i++)
+                        {
+                            <tr class="item-row">
+                                <td>
+                                    <select name="Items[@i].ProductId" class="form-select product-select" required>
+                                        <option value="">-- اختر المنتج --</option>
+                                        @foreach (var p in products)
+                                        {
+                                            <option value="@p.Id" data-price="@p.SellingPrice" data-unit="@p.Unit" selected="@(Model.Items[i].ProductId == p.Id)">
+                                                @p.Name (@p.Code) - السعر المعياري: @p.SellingPrice.ToString("N2")
+                                            </option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" min="0.01" name="Items[@i].OrderedQuantity" class="form-control text-center font-monospace qty-input" value="@Model.Items[i].OrderedQuantity" required />
+                                </td>
+                                <td>
+                                    <input type="text" name="Items[@i].Unit" class="form-control text-center unit-input" value="@(string.IsNullOrWhiteSpace(Model.Items[i].Unit) ? "KG" : Model.Items[i].Unit)" readonly />
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" min="0" name="Items[@i].UnitPrice" class="form-control text-center font-monospace price-input" value="@Model.Items[i].UnitPrice" required />
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" min="0" name="Items[@i].DiscountAmount" class="form-control text-center font-monospace discount-input" value="@Model.Items[i].DiscountAmount" />
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" min="0" name="Items[@i].TaxAmount" class="form-control text-center font-monospace tax-input" value="@Model.Items[i].TaxAmount" />
+                                </td>
+                                <td>
+                                    <input type="text" name="Items[@i].TotalPrice" class="form-control text-center font-monospace fw-bold line-total" value="@Model.Items[i].TotalPrice.ToString("N2")" readonly />
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-row-btn" title="حذف السطر">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light p-3">
+                <div class="row justify-content-end text-end">
+                    <div class="col-md-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>المجموع الفرعي (Subtotal):</span>
+                            <span class="fw-bold font-monospace" id="subTotalDisplay">0.00 EGP</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 text-danger">
+                            <span>إجمالي الخصم (Discount):</span>
+                            <span class="fw-bold font-monospace" id="discountDisplay">0.00 EGP</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2 text-info">
+                            <span>إجمالي الضريبة (VAT / Tax):</span>
+                            <span class="fw-bold font-monospace" id="taxDisplay">0.00 EGP</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-top pt-2 fs-5">
+                            <span class="fw-bold">الإجمالي النهائي (Grand Total):</span>
+                            <span class="fw-bold text-success font-monospace" id="grandTotalDisplay">0.00 EGP</span>
+                        </div>
+                        <input type="hidden" asp-for="SubTotal" id="hiddenSubTotal" />
+                        <input type="hidden" asp-for="DiscountAmount" id="hiddenDiscount" />
+                        <input type="hidden" asp-for="TaxAmount" id="hiddenTax" />
+                        <input type="hidden" asp-for="TotalAmount" id="hiddenTotal" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+            <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+            <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                <i class="fas fa-save me-1"></i> حفظ أمر البيع كمسودة
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        const productsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(products.Select(p => new { p.Id, p.Name, p.Code, p.SellingPrice, p.Unit })));
+
+        function recalculateTotals() {
+            let subtotal = 0;
+            let discount = 0;
+            let tax = 0;
+
+            document.querySelectorAll('#itemsBody tr.item-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.qty-input')?.value) || 0;
+                const price = parseFloat(row.querySelector('.price-input')?.value) || 0;
+                const disc = parseFloat(row.querySelector('.discount-input')?.value) || 0;
+                const tx = parseFloat(row.querySelector('.tax-input')?.value) || 0;
+
+                const lineSubtotal = qty * price;
+                const lineTotal = Math.max(0, lineSubtotal - disc + tx);
+
+                const lineTotalInput = row.querySelector('.line-total');
+                if (lineTotalInput) {
+                    lineTotalInput.value = lineTotal.toFixed(2);
+                }
+
+                subtotal += lineSubtotal;
+                discount += disc;
+                tax += tx;
+            });
+
+            const grandTotal = Math.max(0, subtotal - discount + tax);
+
+            document.getElementById('subTotalDisplay').textContent = subtotal.toFixed(2) + ' EGP';
+            document.getElementById('discountDisplay').textContent = discount.toFixed(2) + ' EGP';
+            document.getElementById('taxDisplay').textContent = tax.toFixed(2) + ' EGP';
+            document.getElementById('grandTotalDisplay').textContent = grandTotal.toFixed(2) + ' EGP';
+
+            document.getElementById('hiddenSubTotal').value = subtotal.toFixed(2);
+            document.getElementById('hiddenDiscount').value = discount.toFixed(2);
+            document.getElementById('hiddenTax').value = tax.toFixed(2);
+            document.getElementById('hiddenTotal').value = grandTotal.toFixed(2);
+        }
+
+        function bindRowEvents(row) {
+            const select = row.querySelector('.product-select');
+            const priceInput = row.querySelector('.price-input');
+            const unitInput = row.querySelector('.unit-input');
+
+            select?.addEventListener('change', function () {
+                const selectedOpt = this.options[this.selectedIndex];
+                const price = selectedOpt.getAttribute('data-price');
+                const unit = selectedOpt.getAttribute('data-unit');
+
+                if (price && (!priceInput.value || parseFloat(priceInput.value) === 0)) {
+                    priceInput.value = parseFloat(price).toFixed(2);
+                }
+                if (unit) {
+                    unitInput.value = unit;
+                }
+                recalculateTotals();
+            });
+
+            row.querySelectorAll('input').forEach(inp => {
+                inp.addEventListener('input', recalculateTotals);
+            });
+
+            row.querySelector('.remove-row-btn')?.addEventListener('click', function () {
+                const allRows = document.querySelectorAll('#itemsBody tr.item-row');
+                if (allRows.length > 1) {
+                    row.remove();
+                    reindexRows();
+                    recalculateTotals();
+                } else {
+                    alert('يجب أن يحتوي أمر البيع على بند واحد على الأقل.');
+                }
+            });
+        }
+
+        function reindexRows() {
+            document.querySelectorAll('#itemsBody tr.item-row').forEach((row, idx) => {
+                row.querySelectorAll('input, select').forEach(el => {
+                    const name = el.getAttribute('name');
+                    if (name) {
+                        el.setAttribute('name', name.replace(/Items\[\d+\]/, `Items[${idx}]`));
+                    }
+                });
+            });
+        }
+
+        document.getElementById('addItemBtn').addEventListener('click', function () {
+            const tbody = document.getElementById('itemsBody');
+            const nextIdx = tbody.querySelectorAll('tr.item-row').length;
+
+            let optionsHtml = '<option value="">-- اختر المنتج --</option>';
+            productsData.forEach(p => {
+                optionsHtml += `<option value="${p.Id}" data-price="${p.SellingPrice}" data-unit="${p.Unit}">${p.Name} (${p.Code}) - السعر المعياري: ${p.SellingPrice.toFixed(2)}</option>`;
+            });
+
+            const tr = document.createElement('tr');
+            tr.className = 'item-row';
+            tr.innerHTML = `
+                <td>
+                    <select name="Items[${nextIdx}].ProductId" class="form-select product-select" required>
+                        ${optionsHtml}
+                    </select>
+                </td>
+                <td>
+                    <input type="number" step="0.01" min="0.01" name="Items[${nextIdx}].OrderedQuantity" class="form-control text-center font-monospace qty-input" value="10" required />
+                </td>
+                <td>
+                    <input type="text" name="Items[${nextIdx}].Unit" class="form-control text-center unit-input" value="KG" readonly />
+                </td>
+                <td>
+                    <input type="number" step="0.01" min="0" name="Items[${nextIdx}].UnitPrice" class="form-control text-center font-monospace price-input" value="0.00" required />
+                </td>
+                <td>
+                    <input type="number" step="0.01" min="0" name="Items[${nextIdx}].DiscountAmount" class="form-control text-center font-monospace discount-input" value="0.00" />
+                </td>
+                <td>
+                    <input type="number" step="0.01" min="0" name="Items[${nextIdx}].TaxAmount" class="form-control text-center font-monospace tax-input" value="0.00" />
+                </td>
+                <td>
+                    <input type="text" name="Items[${nextIdx}].TotalPrice" class="form-control text-center font-monospace fw-bold line-total" value="0.00" readonly />
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-row-btn" title="حذف السطر">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(tr);
+            bindRowEvents(tr);
+            recalculateTotals();
+        });
+
+        document.querySelectorAll('#itemsBody tr.item-row').forEach(bindRowEvents);
+        recalculateTotals();
+    </script>
+}

@@ -1,0 +1,37 @@
+@model FactoryX.Application.DTOs.Requests.OperatorRequests.InsertOperatorRequest
+@{
+    ViewData["Title"] = "إضافة مشغل جديد";
+}
+
+<partial name="_Alert" />
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0 rounded-4 bg-white">
+            <div class="card-body p-4">
+                <h3 class="fw-bold mb-4 text-center text-primary"><i class="bi bi-person-plus me-2"></i>إضافة مشغل / عامل جديد</h3>
+                <form asp-action="Create" method="post" autocomplete="off">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold">الاسم الكامل</label>
+                        <input asp-for="Name" class="form-control" placeholder="مثال: أحمد محمود" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-4">
+                        <label asp-for="EmployeeNumber" class="form-label fw-semibold">الرقم الوظيفي (Employee No)</label>
+                        <input asp-for="EmployeeNumber" class="form-control" placeholder="مثال: EMP-101" />
+                        <span asp-validation-for="EmployeeNumber" class="text-danger small"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill"><i class="bi bi-arrow-right"></i> إلغاء</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill shadow-sm"><i class="bi bi-save me-1"></i> حفظ المشغل</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

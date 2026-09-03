@@ -1,0 +1,136 @@
+@model List<FactoryX.Application.DTOs.UserAdminItemDto>
+@{
+    ViewData["Title"] = "إدارة المستخدمين وحسابات النظام";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-people-fill text-primary me-2"></i>إدارة المستخدمين والحسابات</h2>
+        <p class="text-muted mb-0">التحكم في حسابات مستخدمي ERP وتعيين الأدوار والصلاحيات والمستودعات المصرح بها</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-person-plus-fill me-1"></i>إضافة مستخدم جديد
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">اسم المستخدم</th>
+                        <th>الاسم الكامل</th>
+                        <th>البريد الإلكتروني</th>
+                        <th>الأدوار الوظيفية</th>
+                        <th>صلاحية المستودعات</th>
+                        <th>الحالة</th>
+                        <th>آخر دخول</th>
+                        <th class="text-end pe-3">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">لا يوجد مستخدمون مسجلون</td>
+                        </tr>
+                    }
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-bold font-monospace text-primary">@user.Username</td>
+                            <td>@user.FullName</td>
+                            <td>@(string.IsNullOrEmpty(user.Email) ? "-" : user.Email)</td>
+                            <td>
+                                @if (user.AssignedRoles.Any())
+                                {
+                                    @foreach (var r in user.AssignedRoles)
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1">@r</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary">@user.Role</span>
+                                }
+                            </td>
+                            <td>
+                                @if (user.IsAllWarehousesAllowed)
+                                {
+                                    <span class="badge bg-success-subtle text-success border"><i class="bi bi-globe me-1"></i>جميع المستودعات</span>
+                                }
+                                else if (user.AllowedWarehouseNames.Any())
+                                {
+                                    <span class="badge bg-info-subtle text-info border">@user.AllowedWarehouseNames.Count مستودع</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning-subtle text-warning border">غير محدد</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!user.IsActive)
+                                {
+                                    <span class="badge bg-danger">معطل</span>
+                                }
+                                else if (user.IsLocked)
+                                {
+                                    <span class="badge bg-warning text-dark">مقفل حتى @user.LockedUntil?.ToString("HH:mm")</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">نشط</span>
+                                }
+                            </td>
+                            <td>
+                                <small class="text-muted">@(user.LastLoginAt.HasValue ? user.LastLoginAt.Value.ToString("yyyy-MM-dd HH:mm") : "لم يسجل")</small>
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-outline-secondary" title="تعديل">
+                                        <i class="bi bi-pencil-fill"></i>
+                                    </a>
+                                    <a asp-action="Warehouses" asp-route-id="@user.Id" class="btn btn-outline-info" title="صلاحيات المستودعات">
+                                        <i class="bi bi-building"></i>
+                                    </a>
+                                    @if (user.IsLocked)
+                                    {
+                                        <form asp-action="Unlock" asp-route-id="@user.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-warning" title="إلغاء القفل">
+                                                <i class="bi bi-unlock-fill"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    <form asp-action="ToggleStatus" asp-route-id="@user.Id" asp-route-isActive="@(!user.IsActive)" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn @(user.IsActive ? "btn-outline-danger" : "btn-outline-success")" title="@(user.IsActive ? "تعطيل الحساب" : "تفعيل الحساب")">
+                                            <i class="bi @(user.IsActive ? "bi-person-slash" : "bi-person-check")"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

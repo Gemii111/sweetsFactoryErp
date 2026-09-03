@@ -1,0 +1,158 @@
+@model FactoryX.Application.DTOs.CustomerStatementDto
+@{
+    ViewData["Title"] = $"كشف حساب العميل - {Model.CustomerName}";
+}
+
+<div class="container-fluid py-3">
+    <!-- Header Toolbar (Hidden in Print) -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom d-print-none">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-file-alt text-info me-2"></i>كشف حساب عميل تشغيلي (Customer Statement)</h2>
+            <p class="text-muted mb-0">حركة الفواتير وسندات القبض والرصيد المتراكم</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Print" asp-route-id="@Model.CustomerId" asp-route-fromDate="@ViewBag.FromDate" asp-route-toDate="@ViewBag.ToDate" target="_blank" class="btn btn-outline-primary shadow-sm">
+                <i class="fas fa-print me-1"></i> طباعة كشف الحساب
+            </a>
+            <a asp-controller="Invoices" asp-action="Create" asp-route-customerId="@Model.CustomerId" class="btn btn-outline-primary shadow-sm">
+                <i class="fas fa-plus me-1"></i> إصدار فاتورة
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-1"></i> العودة لقائمة العملاء
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Range Filter Card -->
+    <div class="card border-0 shadow-sm mb-4 d-print-none">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <input type="hidden" name="id" value="@Model.CustomerId" />
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">من تاريخ</label>
+                    <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small text-muted">إلى تاريخ</label>
+                    <input type="date" name="toDate" class="form-control" value="@ViewBag.ToDate" />
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-info text-white w-100"><i class="fas fa-filter me-1"></i> تصفية الفترة</button>
+                    <a asp-action="Details" asp-route-id="@Model.CustomerId" class="btn btn-outline-secondary"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Summary Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+            <div class="row align-items-center pb-3 mb-3 border-bottom">
+                <div class="col-md-6">
+                    <span class="badge bg-light text-primary border font-monospace fs-5 mb-2">@Model.CustomerCode</span>
+                    <h3 class="fw-bold mb-1">@Model.CustomerName</h3>
+                    <p class="text-muted mb-0">تصنيف العميل: @Model.CustomerType | هاتف: @(Model.Phone ?? "—")</p>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <small class="text-muted d-block">الرصيد الختامي المستحق:</small>
+                    <h2 class="fw-bold font-monospace @(Model.ClosingBalance > 0 ? "text-danger" : "text-success") mb-0">
+                        @Model.ClosingBalance.ToString("N2") <small class="fs-5">EGP</small>
+                    </h2>
+                </div>
+            </div>
+
+            <!-- Financial Period KPI Summary -->
+            <div class="row g-3">
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded text-center">
+                        <small class="text-muted d-block">الرصيد الافتتاحي</small>
+                        <span class="fw-bold font-monospace fs-5">@Model.OpeningBalance.ToString("N2")</span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded text-center">
+                        <small class="text-muted d-block">إجمالي مبيعات الفترة (مدين)</small>
+                        <span class="fw-bold font-monospace fs-5 text-primary">+@Model.TotalInvoiced.ToString("N2")</span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded text-center">
+                        <small class="text-muted d-block">إجمالي تحصيلات الفترة (دائن)</small>
+                        <span class="fw-bold font-monospace fs-5 text-success">-@Model.TotalPaid.ToString("N2")</span>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 bg-light rounded text-center">
+                        <small class="text-muted d-block">الحد الائتماني المتاح</small>
+                        <span class="fw-bold font-monospace fs-5">@Model.CreditLimit.ToString("N2")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statement Timeline Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-list-ol me-2"></i>حركة الحساب والعمليات التفصيلية</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>نوع المستند</th>
+                        <th>رقم المستند</th>
+                        <th>البيان والملاحظات</th>
+                        <th>المرجع</th>
+                        <th>مدين / مبيعات (+)</th>
+                        <th>دائن / تحصيل (-)</th>
+                        <th>الرصيد المتراكم</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Lines != null && Model.Lines.Any())
+                    {
+                        foreach (var line in Model.Lines)
+                        {
+                            <tr>
+                                <td>@line.Date.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    @if (line.DebitAmount > 0)
+                                    {
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">@line.DocumentType</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success">@line.DocumentType</span>
+                                    }
+                                </td>
+                                <td><span class="font-monospace fw-bold">@line.DocumentNumber</span></td>
+                                <td>@line.Description</td>
+                                <td>@(line.Reference ?? "—")</td>
+                                <td class="fw-bold font-monospace text-primary">
+                                    @(line.DebitAmount > 0 ? line.DebitAmount.ToString("N2") : "—")
+                                </td>
+                                <td class="fw-bold font-monospace text-success">
+                                    @(line.CreditAmount > 0 ? line.CreditAmount.ToString("N2") : "—")
+                                </td>
+                                <td class="fw-bold font-monospace @(line.RunningBalance > 0 ? "text-danger" : "text-muted")">
+                                    @line.RunningBalance.ToString("N2") EGP
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="fas fa-receipt fs-1 d-block mb-3 opacity-25"></i>
+                                لا توجد حركات مسجلة لهذا العميل في الفترة المحددة.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

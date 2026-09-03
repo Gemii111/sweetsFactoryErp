@@ -1,0 +1,56 @@
+@model FactoryX.Application.DTOs.ProductionCostSummaryReportDto
+@{
+    ViewData["Title"] = "تقرير تكاليف تشغيلات الإنتاج وتكلفة الوحدة";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-calculator-fill text-primary me-2"></i>تقرير تكاليف تشغيلات الإنتاج (Production Batch Costing)</h2>
+        <p class="text-muted mb-0">تحليل عناصر تكلفة التشغيلات: الخامات المباشرة، العمالة، الآلات، التكاليف الإضافية، والهالك</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">رقم التشغيلة</th>
+                        <th>اسم المنتج</th>
+                        <th class="text-end">الناتج الفعلي</th>
+                        <th class="text-end">تكلفة الخامات</th>
+                        <th class="text-end">العمالة والآلات</th>
+                        <th class="text-end">تكلفة الهالك</th>
+                        <th class="text-end">إجمالي تكلفة الدفعة</th>
+                        <th class="text-end pe-3">تكلفة الكيلوجرام الواحد</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.CostSummaries.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">لا توجد تشغيلات مكتملة مسجلة</td>
+                        </tr>
+                    }
+                    @foreach (var c in Model.CostSummaries)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">@c.BatchNumber</td>
+                            <td class="fw-semibold">@c.ProductName</td>
+                            <td class="text-end font-monospace">@c.OutputQuantity.ToString("N2") KG</td>
+                            <td class="text-end font-monospace">@c.MaterialCost.ToString("N2")</td>
+                            <td class="text-end font-monospace">@((c.LaborCost + c.MachineCost).ToString("N2"))</td>
+                            <td class="text-end font-monospace text-danger">@c.WasteCost.ToString("N2")</td>
+                            <td class="text-end font-monospace fw-bold text-primary">@c.TotalCost.ToString("N2") EGP</td>
+                            <td class="text-end font-monospace pe-3 fw-bold text-success">@c.CostPerUnit.ToString("N2") EGP / KG</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,94 @@
+@model FactoryX.Application.DTOs.PurchaseSummaryReportDto
+@{
+    ViewData["Title"] = "تقرير ملخص المشتريات والتوريدات";
+    ViewData["ShowSupplierFilter"] = true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-cart-check text-warning me-2"></i>تقرير ملخص المشتريات والتوريدات (Purchasing Summary)</h2>
+        <p class="text-muted mb-0">متابعة طلبات وأوامر الشراء، أذونات الاستلام الفعلي (GRN)، والمستحقات المالية للموردين</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">طلبات وأوامر الشراء</small>
+            <h4 class="fw-bold text-dark font-monospace mb-0">@Model.TotalRequestsCount <small class="fs-6">طلب</small> / @Model.TotalOrdersCount <small class="fs-6">أمر</small></h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">إجمالي قيمة أوامر الشراء</small>
+            <h4 class="fw-bold text-warning font-monospace mb-0">@Model.TotalPurchaseValue.ToString("N2") EGP</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">أذونات الاستلام المقبولة (GRN)</small>
+            <h4 class="fw-bold text-success font-monospace mb-0">@Model.TotalReceivedQuantity.ToString("N2") <small class="fs-6">KG</small></h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">الكميات المرفوضة في الفحص</small>
+            <h4 class="fw-bold text-danger font-monospace mb-0">@Model.TotalRejectedQuantity.ToString("N2") <small class="fs-6">KG</small></h4>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-bold">ملخص المشتريات والمستحقات حسب الموردين</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">كود المورد</th>
+                        <th>اسم المورد</th>
+                        <th class="text-center">أوامر الشراء</th>
+                        <th class="text-end">قيمة الأوامر</th>
+                        <th class="text-end">قيمة المستلم (GRN)</th>
+                        <th class="text-end">المسدد للمورد</th>
+                        <th class="text-end pe-3">المستحق للدفع</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.SupplierSummaries.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">لا توجد مشتريات مسجلة</td>
+                        </tr>
+                    }
+                    @foreach (var s in Model.SupplierSummaries)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">@s.SupplierCode</td>
+                            <td class="fw-semibold">
+                                <a asp-controller="SupplierLedger" asp-action="Index" asp-route-supplierId="@s.SupplierId" class="text-decoration-none">
+                                    @s.SupplierName
+                                </a>
+                            </td>
+                            <td class="text-center"><span class="badge bg-warning-subtle text-dark">@s.OrdersCount</span></td>
+                            <td class="text-end font-monospace">@s.OrderedValue.ToString("N2")</td>
+                            <td class="text-end font-monospace text-success fw-bold">@s.ReceivedValue.ToString("N2")</td>
+                            <td class="text-end font-monospace text-primary">@s.PaidValue.ToString("N2")</td>
+                            <td class="text-end font-monospace pe-3 fw-bold @(s.OutstandingPayable > 0 ? "text-danger" : "text-dark")">
+                                @s.OutstandingPayable.ToString("N2") EGP
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

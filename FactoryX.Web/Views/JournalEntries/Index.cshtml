@@ -1,0 +1,152 @@
+@model IEnumerable<FactoryX.Application.DTOs.JournalEntryDto>
+@{
+    ViewData["Title"] = "دفتر اليومية العامة والقيود المحاسبية";
+    var periods = ViewBag.Periods as IEnumerable<FactoryX.Application.DTOs.AccountingPeriodDto> ?? new List<FactoryX.Application.DTOs.AccountingPeriodDto>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-journal-bookmark-fill text-primary me-2"></i>دفتر اليومية العامة (General Journal)</h2>
+        <p class="text-muted mb-0">استعراض وتتبع كافة القيود المحاسبية التلقائية واليدوية والقيود العكسية</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>إنشاء قيد يدوي جديد
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Filters Filter Card -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold mb-1">الفترة المالية</label>
+                <select name="periodId" class="form-select form-select-sm">
+                    <option value="">-- جميع الفترات --</option>
+                    @foreach (var p in periods)
+                    {
+                        <option value="@p.Id" selected="@(p.Id == (int?)ViewBag.SelectedPeriodId)">@p.PeriodName (@(p.Status == FactoryX.Domain.Entities.AccountingPeriodStatus.Open ? "مفتوحة" : "مغلقة"))</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold mb-1">من تاريخ</label>
+                <input type="date" name="fromDate" value="@ViewBag.FromDate" class="form-control form-control-sm" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold mb-1">إلى تاريخ</label>
+                <input type="date" name="toDate" value="@ViewBag.ToDate" class="form-control form-control-sm" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold mb-1">مصدر القيد</label>
+                <select name="referenceType" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<FactoryX.Domain.Entities.JournalReferenceType>()">
+                    <option value="">-- جميع المصادر --</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold mb-1">بحث</label>
+                <input type="text" name="searchTerm" value="@ViewBag.SearchTerm" placeholder="رقم القيد أو البيان..." class="form-control form-control-sm" />
+            </div>
+
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-filter"></i> تصفية</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">رقم القيد</th>
+                        <th>التاريخ</th>
+                        <th>الفترة</th>
+                        <th>البيان / الشرح</th>
+                        <th>مصدر القيد</th>
+                        <th>المستند المرجعي</th>
+                        <th class="text-end">إجمالي المدين</th>
+                        <th class="text-end">إجمالي الدائن</th>
+                        <th class="text-center">الحالة</th>
+                        <th class="text-end pe-3">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                لا توجد قيود يومية مسجلة مطابقة للبحث
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="text-decoration-none">
+                                    @item.JournalNumber
+                                </a>
+                            </td>
+                            <td>@item.EntryDate.ToString("yyyy-MM-dd")</td>
+                            <td><span class="badge bg-light text-dark border">@item.PeriodName</span></td>
+                            <td class="text-truncate" style="max-width: 250px;" title="@item.Description">@item.Description</td>
+                            <td>
+                                <span class="badge bg-info-subtle text-dark border">@item.ReferenceTypeName</span>
+                            </td>
+                            <td>@(item.ReferenceDocumentNumber ?? "-")</td>
+                            <td class="text-end font-monospace fw-bold text-success">@item.TotalDebit.ToString("N2")</td>
+                            <td class="text-end font-monospace fw-bold text-danger">@item.TotalCredit.ToString("N2")</td>
+                            <td class="text-center">
+                                @if (item.Status == FactoryX.Domain.Entities.JournalEntryStatus.Posted)
+                                {
+                                    <span class="badge bg-success-subtle text-success">مرحل (Posted)</span>
+                                }
+                                else if (item.Status == FactoryX.Domain.Entities.JournalEntryStatus.Reversed)
+                                {
+                                    <span class="badge bg-danger-subtle text-danger">معكوس (Reversed)</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary">مسودة</span>
+                                }
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary" title="عرض التفاصيل">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="Print" asp-route-id="@item.Id" target="_blank" class="btn btn-outline-secondary" title="طباعة سند القيد">
+                                        <i class="bi bi-printer"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

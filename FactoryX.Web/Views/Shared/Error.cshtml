@@ -1,0 +1,56 @@
+@model FactoryX.Web.Models.ErrorViewModel
+@{
+    ViewData["Title"] = "تنبيه خطأ غير متوقع";
+    Layout = "_Layout";
+}
+
+<div class="container py-5" dir="rtl">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg text-center p-4">
+                <div class="mb-4">
+                    <div class="bg-danger-subtle text-danger rounded-circle d-inline-flex p-4 mb-2">
+                        <i class="bi bi-exclamation-octagon-fill display-4"></i>
+                    </div>
+                    <h3 class="fw-bold text-danger mt-2">حدث خطأ غير متوقع</h3>
+                    <p class="text-muted mb-0">
+                        @Model.FriendlyMessage
+                    </p>
+                </div>
+
+                <div class="bg-light p-3 rounded-3 mb-4 border text-start" dir="ltr">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small fw-bold">Reference / Correlation ID:</span>
+                        <span class="badge bg-secondary">System Audit Logged</span>
+                    </div>
+                    <div class="fs-5 fw-bold text-primary text-break">
+                        <code>@Model.ReferenceNumber</code>
+                    </div>
+                    @if (Model.ShowRequestId && Model.RequestId != Model.ReferenceNumber)
+                    {
+                        <div class="small text-muted mt-1">
+                            Request Trace: <code>@Model.RequestId</code>
+                        </div>
+                    }
+                    <div class="small text-muted mt-1">
+                        Timestamp (UTC): @Model.Timestamp.ToString("yyyy-MM-dd HH:mm:ss") UTC
+                    </div>
+                </div>
+
+                <div class="alert alert-info py-2 small text-end" dir="rtl">
+                    <i class="bi bi-shield-lock me-1"></i>
+                    تم حفظ رقم المرجع في سجلات التدقيق والأمان، ويمكن لمدير النظام تتبع التفاصيل الفنية دون كشف بيانات حساسة.
+                </div>
+
+                <div class="d-flex justify-content-center gap-2 mt-2">
+                    <a href="/" class="btn btn-primary px-4">
+                        <i class="bi bi-house-door me-1"></i> العودة للرئيسية
+                    </a>
+                    <button type="button" onclick="history.back()" class="btn btn-outline-secondary px-3">
+                        <i class="bi bi-arrow-right me-1"></i> الصفحة السابقة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

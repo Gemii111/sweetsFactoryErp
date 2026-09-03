@@ -1,0 +1,153 @@
+@model FactoryX.Application.DTOs.ProductDto
+@{
+    ViewData["Title"] = "تفاصيل المنتج التام";
+}
+
+<div class="container py-4" dir="rtl">
+    <!-- شريط الإجراءات العلوي -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <h3 class="fw-bold text-dark mb-0">@Model.Name</h3>
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">نشط</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">معطل</span>
+                }
+            </div>
+            <p class="text-muted mb-0">@(string.IsNullOrEmpty(Model.ArabicName) ? "" : Model.ArabicName) | كود: <span class="font-monospace text-primary fw-bold">@Model.Code</span> | SKU: <span class="font-monospace text-secondary fw-bold">@Model.SKU</span></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning rounded-pill px-4 text-dark fw-semibold shadow-sm">
+                <i class="bi bi-pencil me-1"></i> تعديل البيانات
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm">
+                <i class="bi bi-arrow-right me-1"></i> قائمة المنتجات
+            </a>
+        </div>
+    </div>
+
+    <!-- كروت التسعير والوزن والتكلفة السريعة -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-3 border-start border-success border-4">
+                <span class="text-muted small d-block">سعر البيع للمستهلك</span>
+                <h3 class="fw-bold text-success mb-0 mt-1">@Model.SellingPrice.ToString("N2") <small class="fs-6 text-muted">ج.م</small></h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-3 border-start border-primary border-4">
+                <span class="text-muted small d-block">سعر الجملة</span>
+                <h3 class="fw-bold text-primary mb-0 mt-1">@(Model.WholesalePrice.HasValue ? Model.WholesalePrice.Value.ToString("N2") : "-") <small class="fs-6 text-muted">ج.م</small></h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-3 border-start border-info border-4">
+                <span class="text-muted small d-block">التكلفة المعيارية التقديرية</span>
+                <h3 class="fw-bold text-info mb-0 mt-1">@Model.StandardCost.ToString("N2") <small class="fs-6 text-muted">ج.م</small></h3>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-3 border-start border-warning border-4">
+                <span class="text-muted small d-block">الوزن الصافي للعبوة</span>
+                <h3 class="fw-bold text-warning mb-0 mt-1">@Model.Weight.ToString("N0") <small class="fs-6 text-muted">@Model.WeightUnit (@Model.Unit)</small></h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- تفاصيل البطاقة الفنية -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+                <h5 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>البطاقة الفنية والتصنيف</h5>
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">كود الصنف الأساسي (Code):</span>
+                        <span class="fw-bold text-primary font-monospace">@Model.Code</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">رمز الصنف المخزني (SKU):</span>
+                        <span class="fw-bold text-secondary font-monospace">@Model.SKU</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">الباركود الدولي (Barcode):</span>
+                        <span class="fw-bold text-dark font-monospace">@(string.IsNullOrEmpty(Model.Barcode) ? "غير مسجل" : Model.Barcode)</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">تصنيف العائلة:</span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">
+                            @(string.IsNullOrEmpty(Model.CategoryName) ? "غير مصنف" : Model.CategoryName)
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">نوع المنتج (Type):</span>
+                        <span class="fw-semibold text-dark">@Model.ProductTypeName</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">مدة الصلاحية:</span>
+                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1">
+                            <i class="bi bi-clock-history me-1"></i> @Model.ExpiryPeriod @Model.ExpiryUnit (@Model.ExpiryPeriodDays يوم)
+                        </span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between py-2 border-0">
+                        <span class="text-muted">حد مخزون الأمان:</span>
+                        <span class="fw-bold text-dark">@Model.MinimumStock.ToString("N0") @Model.Unit</span>
+                    </li>
+                </ul>
+
+                <hr class="my-3 text-muted" />
+
+                <div>
+                    <span class="text-muted small d-block mb-1">وصف المنتج وملاحظات الإنتاج:</span>
+                    <p class="text-dark small bg-light p-3 rounded-3 mb-0">
+                        @(string.IsNullOrEmpty(Model.Description) ? "لا يوجد وصف إضافي مسجل لهذا المنتج." : Model.Description)
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- السجلات التاريخية وأوامر التشغيل -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+                <h5 class="fw-bold text-primary mb-3"><i class="bi bi-clock-history me-2"></i>السجلات التاريخية والتشغيل</h5>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-4 text-center">
+                            <span class="text-muted small d-block">أوامر الشغل المرتبطة</span>
+                            <h4 class="fw-bold text-primary mb-0 mt-1">@Model.WorkOrderCount أمر</h4>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-light rounded-4 text-center">
+                            <span class="text-muted small d-block">سجلات الإنتاج الفعلية</span>
+                            <h4 class="fw-bold text-success mb-0 mt-1">@Model.ProductionRecordCount تسجيل</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info border-0 rounded-4 p-3 small">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-shield-check fs-4 me-2"></i>
+                        <div>
+                            <strong>حماية السجلات التاريخية:</strong>
+                            <p class="mb-0 mt-1">هذا الصنف محمي برمجياً من الحذف المباشر في حال وجود أوامر تشغيل أو سجلات إنتاج مسجلة باسمه، للحفاظ على دقة التقارير وحساب التكاليف.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <span class="text-muted small d-block mb-1">تاريخ الإنشاء في النظام:</span>
+                    <span class="small font-monospace text-dark">@Model.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd - hh:mm tt")</span>
+                </div>
+                <div class="mt-2">
+                    <span class="text-muted small d-block mb-1">آخر تحديث:</span>
+                    <span class="small font-monospace text-dark">@Model.UpdatedAt.ToLocalTime().ToString("yyyy/MM/dd - hh:mm tt")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

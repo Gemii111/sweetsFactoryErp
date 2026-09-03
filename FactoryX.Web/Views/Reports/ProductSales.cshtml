@@ -1,0 +1,65 @@
+@model FactoryX.Application.DTOs.ProductSalesReportDto
+@{
+    ViewData["Title"] = "تقرير مبيعات وهوامش ربح المنتجات";
+    ViewData["ShowProductFilter"] = true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-tag-fill text-primary me-2"></i>تقرير مبيعات وهوامش ربح المنتجات (Product Sales & Margins)</h2>
+        <p class="text-muted mb-0">تحليل الكميات المباعة، الإيرادات المحققة، تكلفة المبيعات، ومجمل هامش الربح لكل صنف</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">كود المنتج</th>
+                        <th>اسم الصنف</th>
+                        <th>التصنيف</th>
+                        <th class="text-end">الكمية المباعة</th>
+                        <th class="text-end">إيراد المبيعات</th>
+                        <th class="text-end">تكلفة البضاعة (COGS)</th>
+                        <th class="text-end">مجمل الربح</th>
+                        <th class="text-center pe-3">نسبة الهامش %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Products.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">لا توجد مبيعات مسجلة للمنتجات</td>
+                        </tr>
+                    }
+                    @foreach (var p in Model.Products)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">@p.ProductCode</td>
+                            <td class="fw-semibold">@p.ProductName</td>
+                            <td><span class="badge bg-light text-dark border">@p.CategoryName</span></td>
+                            <td class="text-end font-monospace">@p.QuantitySold.ToString("N2") @p.Unit</td>
+                            <td class="text-end font-monospace fw-bold text-primary">@p.Revenue.ToString("N2")</td>
+                            <td class="text-end font-monospace text-muted">@p.CostOfGoodsSold.ToString("N2")</td>
+                            <td class="text-end font-monospace fw-bold @(p.GrossProfit >= 0 ? "text-success" : "text-danger")">
+                                @p.GrossProfit.ToString("N2") EGP
+                            </td>
+                            <td class="text-center pe-3">
+                                <span class="badge @(p.GrossMarginPercent >= 20 ? "bg-success" : (p.GrossMarginPercent >= 10 ? "bg-warning text-dark" : "bg-danger")) font-monospace">
+                                    @p.GrossMarginPercent%
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

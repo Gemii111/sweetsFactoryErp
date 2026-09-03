@@ -1,0 +1,51 @@
+@model FactoryX.Application.DTOs.ProductionRecordDto
+@{
+    ViewData["Title"] = "تسجيل إنتاج جديد";
+}
+
+<partial name="_Alert" />
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm border-0 rounded-4 bg-white">
+            <div class="card-body p-4">
+                <h3 class="fw-bold mb-4 text-center text-primary"><i class="bi bi-clipboard-plus me-2"></i>تسجيل كمية إنتاج</h3>
+                <form asp-action="Create" method="post" autocomplete="off">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                    <div class="mb-3">
+                        <label asp-for="WorkOrderId" class="form-label fw-semibold">أمر التشغيل المرتبط</label>
+                        <select asp-for="WorkOrderId" class="form-select" asp-items="ViewBag.WorkOrders">
+                            <option value="">-- اختر أمر التشغيل --</option>
+                        </select>
+                        <span asp-validation-for="WorkOrderId" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="OperatorId" class="form-label fw-semibold">المشغل / العامل المسؤول</label>
+                        <select asp-for="OperatorId" class="form-select" asp-items="ViewBag.Operators">
+                            <option value="">-- اختر المشغل --</option>
+                        </select>
+                        <span asp-validation-for="OperatorId" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="QuantityProduced" class="form-label fw-semibold">الكمية المصنعة فعلياً</label>
+                        <input asp-for="QuantityProduced" class="form-control" type="number" step="0.01" placeholder="مثال: 250" />
+                        <span asp-validation-for="QuantityProduced" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-4">
+                        <label asp-for="Timestamp" class="form-label fw-semibold">تاريخ ووقت الإنتاج</label>
+                        <input asp-for="Timestamp" type="datetime-local" class="form-control" />
+                        <span asp-validation-for="Timestamp" class="text-danger small"></span>
+                    </div>
+                    <div class="d-flex justify-content-between mt-4">
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill"><i class="bi bi-arrow-right"></i> إلغاء</a>
+                        <button type="submit" class="btn btn-primary px-4 rounded-pill shadow-sm"><i class="bi bi-save me-1"></i> حفظ السجل</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

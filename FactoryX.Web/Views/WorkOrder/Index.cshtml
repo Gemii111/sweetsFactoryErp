@@ -1,0 +1,5 @@
+@model IEnumerable<FactoryX.Application.DTOs.ProductionOrderDto>
+@{
+    ViewData["Title"] = "أوامر الإنتاج (Production Orders)";
+}
+@await Html.PartialAsync("~/Views/ProductionOrders/Index.cshtml", Model)

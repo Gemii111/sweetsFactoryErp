@@ -1,0 +1,62 @@
+@model FactoryX.Application.DTOs.MaterialConsumptionVarianceReportDto
+@{
+    ViewData["Title"] = "تقرير انحراف استهلاك الخامات عن التركيبة القياسية BOM";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-pie-chart text-danger me-2"></i>تقرير انحراف استهلاك الخامات (BOM Consumption Variance)</h2>
+        <p class="text-muted mb-0">مقارنة دقيقة بين احتياجات التركيبة المعتمدة (BOM) والاستهلاك الفعلي المسحوب في التشغيلات</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">أمر الشغل</th>
+                        <th>رقم التشغيلة</th>
+                        <th>المنتج</th>
+                        <th>الخامة / المادة</th>
+                        <th class="text-end">المطلوب بالمعيار (BOM)</th>
+                        <th class="text-end">المستهلك الفعلي</th>
+                        <th class="text-end">كمية الانحراف</th>
+                        <th class="text-center pe-3">نسبة الانحراف %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Variances.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">لا توجد بيانات انحراف مسجلة</td>
+                        </tr>
+                    }
+                    @foreach (var v in Model.Variances)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace">@v.WorkOrderNumber</td>
+                            <td class="font-monospace fw-bold">@v.BatchNumber</td>
+                            <td>@v.ProductName</td>
+                            <td class="fw-semibold text-primary">@v.MaterialName</td>
+                            <td class="text-end font-monospace">@v.PlannedRequirementQuantity.ToString("N2") @v.Unit</td>
+                            <td class="text-end font-monospace fw-bold">@v.ActualConsumedQuantity.ToString("N2") @v.Unit</td>
+                            <td class="text-end font-monospace @(v.VarianceQuantity > 0 ? "text-danger" : "text-success")">
+                                @(v.VarianceQuantity > 0 ? "+" : "")@v.VarianceQuantity.ToString("N2")
+                            </td>
+                            <td class="text-center pe-3">
+                                <span class="badge @(Math.Abs(v.VariancePercent) <= 5 ? "bg-success" : "bg-danger") font-monospace">
+                                    @(v.VariancePercent > 0 ? "+" : "")@v.VariancePercent%
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

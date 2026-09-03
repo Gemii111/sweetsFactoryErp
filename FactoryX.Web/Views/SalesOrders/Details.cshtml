@@ -1,0 +1,298 @@
+@model FactoryX.Application.DTOs.SalesOrderDto
+@using FactoryX.Domain.Entities
+@{
+    ViewData["Title"] = $"تفاصيل أمر البيع - {Model.OrderNumber}";
+    var fulfillPercent = Model.TotalOrderedQuantity > 0
+        ? Math.Min(100, Math.Round((Model.TotalFulfilledQuantity / Model.TotalOrderedQuantity) * 100, 1))
+        : 0;
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h2 class="fw-bold mb-0 font-monospace text-primary">@Model.OrderNumber</h2>
+                @switch (Model.Status)
+                {
+                    case SalesOrderStatus.Draft:
+                        <span class="badge bg-secondary fs-6"><i class="fas fa-pencil-alt me-1"></i>مسودة (Draft)</span>
+                        break;
+                    case SalesOrderStatus.Confirmed:
+                        <span class="badge bg-primary fs-6"><i class="fas fa-check me-1"></i>معتمد (Confirmed)</span>
+                        break;
+                    case SalesOrderStatus.PartiallyFulfilled:
+                        <span class="badge bg-info text-dark fs-6"><i class="fas fa-spinner me-1"></i>تسليم جزئي (Partially Fulfilled)</span>
+                        break;
+                    case SalesOrderStatus.FullyFulfilled:
+                        <span class="badge bg-success fs-6"><i class="fas fa-check-double me-1"></i>مكتمل التسليم (Fully Fulfilled)</span>
+                        break;
+                    case SalesOrderStatus.Cancelled:
+                        <span class="badge bg-danger fs-6"><i class="fas fa-times me-1"></i>ملغي (Cancelled)</span>
+                        break;
+                    case SalesOrderStatus.Closed:
+                        <span class="badge bg-dark fs-6"><i class="fas fa-lock me-1"></i>مغلق (Closed)</span>
+                        break;
+                    default:
+                        <span class="badge bg-secondary fs-6">@Model.StatusName</span>
+                        break;
+                }
+                <span class="badge @(Model.Priority == SalesOrderPriority.Urgent ? "bg-danger" : (Model.Priority == SalesOrderPriority.High ? "bg-warning text-dark" : "bg-light text-dark border"))">
+                    الأولوية: @Model.PriorityName
+                </span>
+            </div>
+            <p class="text-muted mb-0">
+                العميل: <a asp-controller="Customers" asp-action="Details" asp-route-id="@Model.CustomerId" class="fw-bold text-decoration-none">@Model.CustomerName (@Model.CustomerCode)</a> • 
+                المستودع: <span class="fw-bold text-dark">@Model.WarehouseName</span> • 
+                تاريخ الطلب: <span class="font-monospace">@Model.OrderDate.ToString("yyyy-MM-dd")</span>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            @if (Model.Status == SalesOrderStatus.Draft)
+            {
+                <form asp-action="Confirm" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success shadow-sm" onclick="return confirm('هل أنت متأكد من اعتماد أمر البيع؟')">
+                        <i class="fas fa-check-circle me-1"></i> اعتماد أمر البيع
+                    </button>
+                </form>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-warning">
+                    <i class="fas fa-edit me-1"></i> تعديل
+                </a>
+                <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('هل أنت متأكد من إلغاء أمر البيع؟')">
+                        <i class="fas fa-times-circle me-1"></i> إلغاء الأمر
+                    </button>
+                </form>
+            }
+            @if ((Model.Status == SalesOrderStatus.Confirmed || Model.Status == SalesOrderStatus.PartiallyFulfilled) && Model.RemainingQuantity > 0)
+            {
+                <a asp-controller="SalesFulfillments" asp-action="Create" asp-route-salesOrderId="@Model.Id" class="btn btn-success shadow-sm">
+                    <i class="fas fa-truck-loading me-1"></i> تسليم وصرف مبيعات (Fulfillment)
+                </a>
+            }
+            @if (Model.Status == SalesOrderStatus.Confirmed && Model.TotalFulfilledQuantity == 0)
+            {
+                <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('هل تريد إلغاء أمر البيع المعتمد؟')">
+                        <i class="fas fa-ban me-1"></i> إلغاء الأمر
+                    </button>
+                </form>
+            }
+            @if (Model.Status == SalesOrderStatus.PartiallyFulfilled || Model.Status == SalesOrderStatus.FullyFulfilled)
+            {
+                <form asp-action="Close" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-dark" onclick="return confirm('هل تريد إغلاق أمر البيع نهائياً؟')">
+                        <i class="fas fa-lock me-1"></i> إغلاق الأمر
+                    </button>
+                </form>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-1"></i> العودة للقائمة
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- KPI Summary & Progress -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body py-3">
+                    <small class="text-muted d-block mb-1">إجمالي الكمية المطلوبة</small>
+                    <h4 class="fw-bold mb-0 font-monospace text-primary">@Model.TotalOrderedQuantity.ToString("N2")</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body py-3">
+                    <small class="text-muted d-block mb-1">الكمية المصروفة المسلمة</small>
+                    <h4 class="fw-bold mb-0 font-monospace text-success">@Model.TotalFulfilledQuantity.ToString("N2")</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body py-3">
+                    <small class="text-muted d-block mb-1">الكمية المتبقية للتسليم</small>
+                    <h4 class="fw-bold mb-0 font-monospace text-danger">@Model.RemainingQuantity.ToString("N2")</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body py-3">
+                    <small class="text-muted d-block mb-1">نسبة إنجاز التسليم</small>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="progress flex-grow-1" style="height: 10px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: @fulfillPercent%;" aria-valuenow="@fulfillPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <span class="fw-bold font-monospace">@fulfillPercent%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-0">
+            <h5 class="fw-bold mb-0"><i class="fas fa-boxes-stacked me-2 text-primary"></i>بنود أمر البيع والتسليم (@Model.Items.Count)</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>المنتج التام</th>
+                        <th>كود / SKU</th>
+                        <th class="text-center">المطلوب</th>
+                        <th class="text-center">تم التسليم</th>
+                        <th class="text-center">المتبقي</th>
+                        <th class="text-center">الوحدة</th>
+                        <th class="text-end">سعر الوحدة</th>
+                        <th class="text-end">الخصم</th>
+                        <th class="text-end">الضريبة</th>
+                        <th class="text-end">الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ int rowNum = 1; }
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>@(rowNum++)</td>
+                            <td>
+                                <div class="fw-bold">@item.ProductName</div>
+                                @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                {
+                                    <small class="text-muted">@item.Notes</small>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border font-monospace">@item.ProductCode</span>
+                                @if (!string.IsNullOrWhiteSpace(item.ProductSKU))
+                                {
+                                    <small class="text-muted d-block font-monospace">@item.ProductSKU</small>
+                                }
+                            </td>
+                            <td class="text-center font-monospace fw-bold">@item.OrderedQuantity.ToString("N2")</td>
+                            <td class="text-center font-monospace text-success fw-bold">@item.FulfilledQuantity.ToString("N2")</td>
+                            <td class="text-center font-monospace text-danger fw-bold">@item.RemainingQuantity.ToString("N2")</td>
+                            <td class="text-center"><span class="badge bg-light text-secondary border">@item.Unit</span></td>
+                            <td class="text-end font-monospace">@item.UnitPrice.ToString("N2") EGP</td>
+                            <td class="text-end font-monospace text-danger">@item.DiscountAmount.ToString("N2") EGP</td>
+                            <td class="text-end font-monospace text-info">@item.TaxAmount.ToString("N2") EGP</td>
+                            <td class="text-end font-monospace fw-bold">@item.TotalPrice.ToString("N2") EGP</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-light">
+                    <tr>
+                        <td colspan="7" class="text-start fw-bold">المجاميع المالية:</td>
+                        <td colspan="4" class="text-end">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>المجموع الفرعي:</span>
+                                <span class="font-monospace">@Model.SubTotal.ToString("N2") EGP</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1 text-danger">
+                                <span>الخصم:</span>
+                                <span class="font-monospace">@Model.DiscountAmount.ToString("N2") EGP</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1 text-info">
+                                <span>الضريبة:</span>
+                                <span class="font-monospace">@Model.TaxAmount.ToString("N2") EGP</span>
+                            </div>
+                            <div class="d-flex justify-content-between border-top pt-1 fs-5 fw-bold text-success">
+                                <span>الإجمالي النهائي:</span>
+                                <span class="font-monospace">@Model.TotalAmount.ToString("N2") EGP</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- Fulfillments History -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0"><i class="fas fa-truck-ramp-box me-2 text-primary"></i>سجل شحنات التسليم والصرف المخزني (@Model.Fulfillments.Count)</h5>
+            @if ((Model.Status == SalesOrderStatus.Confirmed || Model.Status == SalesOrderStatus.PartiallyFulfilled) && Model.RemainingQuantity > 0)
+            {
+                <a asp-controller="SalesFulfillments" asp-action="Create" asp-route-salesOrderId="@Model.Id" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus me-1"></i> تسليم شحنة جديدة
+                </a>
+            }
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم سند التسليم</th>
+                        <th>تاريخ الصرف</th>
+                        <th>المستودع</th>
+                        <th>إجمالي الكمية المصروفة</th>
+                        <th>القيمة الإجمالية</th>
+                        <th>المسؤول عن الصرف</th>
+                        <th>الحالة</th>
+                        <th class="text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Fulfillments.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                لم يتم صرف أو تسليم أي شحنات لهذا الأمر حتى الآن.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var f in Model.Fulfillments)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-primary border font-monospace fs-6">@f.FulfillmentNumber</span>
+                                </td>
+                                <td>@f.FulfillmentDate.ToString("yyyy-MM-dd")</td>
+                                <td>@f.WarehouseName</td>
+                                <td class="font-monospace fw-bold text-success">@f.TotalQuantity.ToString("N2")</td>
+                                <td class="font-monospace fw-bold">@f.TotalPrice.ToString("N2") EGP</td>
+                                <td>@(f.ShippedByName ?? "—")</td>
+                                <td>
+                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>تم الصرف والتسليم</span>
+                                </td>
+                                <td class="text-center">
+                                    <a asp-controller="SalesFulfillments" asp-action="Details" asp-route-id="@f.Id" class="btn btn-sm btn-outline-info" title="عرض سند التسليم">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

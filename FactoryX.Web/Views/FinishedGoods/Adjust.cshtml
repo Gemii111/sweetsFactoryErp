@@ -1,0 +1,130 @@
+@model FactoryX.Application.DTOs.FinishedGoodsAdjustmentRequest
+@{
+    ViewData["Title"] = "تسوية جردية لمخزون المنتجات التامة";
+    var currentStock = ViewBag.CurrentStock as FactoryX.Application.DTOs.FinishedGoodsStockDto;
+}
+
+<div class="container py-3" style="max-width: 800px;">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-sliders text-warning me-2"></i>تسوية جردية لمخزون منتج تام</h2>
+            <p class="text-muted mb-0">تعديل رصيد المخزون الفعلي بعد الجرد وتوثيق الفارق في سجل الحركات</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary shadow-sm">
+            <i class="fas fa-arrow-left me-1"></i> العودة للمخزون
+        </a>
+    </div>
+
+    @if (currentStock != null)
+    {
+        <div class="alert alert-info shadow-sm mb-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="fw-bold mb-1"><i class="fas fa-info-circle me-1"></i>الرصيد الدفتري الحالي:</h6>
+                    <span>المنتج: <strong>@currentStock.ProductName</strong> | التشغيلة: <strong class="font-monospace">@currentStock.BatchNumber</strong> | المستودع: <strong>@currentStock.WarehouseName</strong></span>
+                </div>
+                <div class="text-end">
+                    <span class="fs-4 fw-bold text-primary">@currentStock.Quantity.ToString("N0")</span> <small>@currentStock.Unit</small>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form asp-action="Adjust" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="WarehouseId" class="form-label fw-bold">مستودع المنتجات التامة <span class="text-danger">*</span></label>
+                        <select asp-for="WarehouseId" asp-items="ViewBag.Warehouses" class="form-select" id="warehouseSelect" required>
+                            <option value="">-- اختر مستودع المنتجات التامة --</option>
+                        </select>
+                        <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="LocationId" class="form-label fw-bold">موقع التخزين (اختياري)</label>
+                        <select asp-for="LocationId" class="form-select" id="locationSelect">
+                            <option value="">-- المنطقة العامة --</option>
+                        </select>
+                        <span asp-validation-for="LocationId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="ProductId" class="form-label fw-bold">المنتج التام <span class="text-danger">*</span></label>
+                        <select asp-for="ProductId" asp-items="ViewBag.Products" class="form-select" required>
+                            <option value="">-- اختر المنتج التام --</option>
+                        </select>
+                        <span asp-validation-for="ProductId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="BatchNumber" class="form-label fw-bold">رقم التشغيلة (Batch Number) <span class="text-danger">*</span></label>
+                        <input asp-for="BatchNumber" class="form-control font-monospace" placeholder="مثال: B-20260831-0001" required />
+                        <span asp-validation-for="BatchNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="ActualQuantity" class="form-label fw-bold">الكمية الفعلية بعد الجرد <span class="text-danger">*</span></label>
+                        <input asp-for="ActualQuantity" class="form-control form-control-lg fw-bold text-success" type="number" step="any" min="0" required />
+                        <span asp-validation-for="ActualQuantity" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Unit" class="form-label fw-bold">وحدة القياس <span class="text-danger">*</span></label>
+                        <input asp-for="Unit" class="form-control" placeholder="KG, علبة, كرتونة" required />
+                        <span asp-validation-for="Unit" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Reason" class="form-label fw-bold">سبب التسوية الجردية <span class="text-danger">*</span></label>
+                        <textarea asp-for="Reason" class="form-control" rows="3" placeholder="توضيح سبب الفارق الجردي (جرد دوري، تصحيح إدخال سابق، تلف عينات...)" required></textarea>
+                        <span asp-validation-for="Reason" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                    <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+                    <button type="submit" class="btn btn-warning px-4 fw-bold">
+                        <i class="fas fa-check me-1"></i> اعتماد وحفظ التسوية
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            function loadLocations(warehouseId, selectedLocationId) {
+                if (!warehouseId) {
+                    $('#locationSelect').html('<option value="">-- المنطقة العامة --</option>');
+                    return;
+                }
+                $.get('/FinishedGoods/GetLocationsByWarehouse?warehouseId=' + warehouseId, function (data) {
+                    var options = '<option value="">-- المنطقة العامة --</option>';
+                    $.each(data, function (i, item) {
+                        var isSel = (selectedLocationId && selectedLocationId == item.id) ? 'selected' : '';
+                        options += '<option value="' + item.id + '" ' + isSel + '>' + item.name + ' (' + item.code + ')</option>';
+                    });
+                    $('#locationSelect').html(options);
+                });
+            }
+
+            $('#warehouseSelect').change(function () {
+                loadLocations($(this).val());
+            });
+
+            var initialWh = $('#warehouseSelect').val();
+            var initialLoc = '@(Model?.LocationId ?? 0)';
+            if (initialWh) {
+                loadLocations(initialWh, initialLoc);
+            }
+        });
+    </script>
+}

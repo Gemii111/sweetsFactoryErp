@@ -1,0 +1,77 @@
+@model FactoryX.Application.DTOs.FinishedGoodsStockReportDto
+@{
+    ViewData["Title"] = "تقرير أرصدة ومخزون الإنتاج التام";
+    ViewData["ShowWarehouseFilter"] = true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-box-seam-fill text-primary me-2"></i>تقرير أرصدة ومخزون الإنتاج التام (Finished Goods Stock)</h2>
+        <p class="text-muted mb-0">أرصدة حلويات المولد الجاهزة للتسليم بالمستودعات مع تواريخ الصلاحية والتقييم المالي</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">إجمالي وزن الإنتاج التام المتاح</small>
+            <h3 class="fw-bold text-dark font-monospace mb-0">@Model.TotalQuantity.ToString("N2") <small class="fs-6 text-muted">KG</small></h3>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 bg-primary-subtle p-3">
+            <small class="text-primary fw-bold">إجمالي التقييم المالي للإنتاج التام</small>
+            <h3 class="fw-bold text-primary font-monospace mb-0">@Model.TotalValuation.ToString("N2") EGP</h3>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">كود المنتج</th>
+                        <th>اسم المنتج</th>
+                        <th>المستودع</th>
+                        <th>رقم التشغيلة (Batch)</th>
+                        <th>تاريخ الصلاحية</th>
+                        <th class="text-end">الرصيد الفعلي</th>
+                        <th class="text-end">المحجوز للطلبات</th>
+                        <th class="text-end">المتاح للبيع</th>
+                        <th class="text-end pe-3">إجمالي القيمة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">لا يوجد مخزون إنتاج تام مسجل</td>
+                        </tr>
+                    }
+                    @foreach (var i in Model.Items)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">@i.ProductCode</td>
+                            <td class="fw-semibold">@i.ProductName</td>
+                            <td>@i.WarehouseName</td>
+                            <td class="font-monospace fw-bold text-primary">@i.BatchNumber</td>
+                            <td>@i.ExpiryDate.ToString("yyyy-MM-dd")</td>
+                            <td class="text-end font-monospace fw-bold">@i.CurrentQuantity.ToString("N2") @i.Unit</td>
+                            <td class="text-end font-monospace text-muted">@i.ReservedQuantity.ToString("N2")</td>
+                            <td class="text-end font-monospace text-success fw-bold">@i.AvailableQuantity.ToString("N2")</td>
+                            <td class="text-end font-monospace pe-3 fw-bold text-primary">@i.TotalValue.ToString("N2") EGP</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

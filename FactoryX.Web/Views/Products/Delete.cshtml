@@ -1,0 +1,32 @@
+@model FactoryX.Application.DTOs.Responses.ProductResponses.GetProductResponse
+@{
+    ViewData["Title"] = "حذف المنتج";
+}
+<div class="container py-4">
+    @await Html.PartialAsync("_Alert")
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-body p-4">
+                    <h3 class="fw-bold mb-4 text-center text-danger"><i class="bi bi-trash me-2"></i>تأكيد حذف المنتج</h3>
+                    <div class="alert alert-warning mb-4 rounded-3"><i class="bi bi-exclamation-triangle-fill me-1"></i> هل أنت متأكد من رغبتك في حذف هذا الصنف نهائياً؟</div>
+                    <dl class="row mb-4">
+                        <dt class="col-5 text-muted">اسم المنتج</dt>
+                        <dd class="col-7 fw-bold">@Model.Name</dd>
+                        <dt class="col-5 text-muted">كود المنتج</dt>
+                        <dd class="col-7"><span class="badge bg-primary-subtle text-primary border px-3 py-1">@Model.Code</span></dd>
+                        <dt class="col-5 text-muted">الوصف</dt>
+                        <dd class="col-7 text-muted">@(string.IsNullOrEmpty(Model.Description) ? "بدون وصف." : Model.Description)</dd>
+                    </dl>
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill"><i class="bi bi-arrow-right"></i> إلغاء</a>
+                            <button type="submit" class="btn btn-danger px-4 rounded-pill shadow-sm"><i class="bi bi-trash"></i> تأكيد الحذف</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

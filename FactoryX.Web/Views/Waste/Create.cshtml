@@ -1,0 +1,266 @@
+@model FactoryX.Application.DTOs.CreateWasteRequest
+@using FactoryX.Domain.Entities
+
+@{
+    ViewData["Title"] = "تسجيل هالك ومرفوضات جديد";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <div>
+                    <h2 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-trash3 me-2"></i> تسجيل هالك / مرفوضات إنتاج جديد
+                    </h2>
+                    <small class="text-muted">اختر نوع الهالك واستكمل البيانات المطلوبة لحساب التكاليف والربط المخزني</small>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post" id="wasteForm">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 rounded-3" role="alert"></div>
+
+                        <!-- 1. Waste Type Selector -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">نوع الهالك / المرفوضات <span class="text-danger">*</span></label>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="form-check card p-3 border cursor-pointer h-100 type-card @(Model.WasteType == WasteType.RawMaterialWaste ? "border-primary bg-primary-subtle" : "")">
+                                        <input class="form-check-input" type="radio" asp-for="WasteType" value="RawMaterialWaste" id="typeRawMat" />
+                                        <label class="form-check-label fw-bold d-block mt-1" for="typeRawMat">
+                                            <i class="bi bi-box-seam text-warning me-1"></i> هالك مواد خام
+                                            <small class="d-block text-muted fw-normal mt-1">تلف أو انتهاء صلاحية خامات بالمستودع أو الصالة</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check card p-3 border cursor-pointer h-100 type-card @(Model.WasteType == WasteType.ProductionProcessWaste ? "border-primary bg-primary-subtle" : "")">
+                                        <input class="form-check-input" type="radio" asp-for="WasteType" value="ProductionProcessWaste" id="typeProcess" />
+                                        <label class="form-check-label fw-bold d-block mt-1" for="typeProcess">
+                                            <i class="bi bi-fire text-danger me-1"></i> هالك مراحل التشغيل
+                                            <small class="d-block text-muted fw-normal mt-1">فاقد أو احتراق أثناء غلي وطهي وتشكيل الدفعة</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check card p-3 border cursor-pointer h-100 type-card @(Model.WasteType == WasteType.OutputRejection ? "border-primary bg-primary-subtle" : "")">
+                                        <input class="form-check-input" type="radio" asp-for="WasteType" value="OutputRejection" id="typeRejection" />
+                                        <label class="form-check-label fw-bold d-block mt-1" for="typeRejection">
+                                            <i class="bi bi-x-octagon text-primary me-1"></i> مرفوضات إنتاج تام
+                                            <small class="d-block text-muted fw-normal mt-1">منتجات غير مطابقة للأوزان أو مكسورة بعد التشغيل</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4" />
+
+                        <!-- Dynamic Section 1: Production Batch Link (for Process Waste and Output Rejection) -->
+                        <div id="batchSection" class="mb-3">
+                            <label asp-for="ProductionBatchId" class="form-label fw-bold">دفعة الإنتاج المرتبطة <span class="text-danger">*</span></label>
+                            <select asp-for="ProductionBatchId" asp-items="ViewBag.ProductionBatches" class="form-select" id="batchSelect">
+                                <option value="">-- اختر دفعة الإنتاج --</option>
+                            </select>
+                            <span asp-validation-for="ProductionBatchId" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Dynamic Section 2: Material Selection (for Raw Material Waste & Process Waste) -->
+                        <div id="materialSection" class="mb-3">
+                            <label asp-for="MaterialId" class="form-label fw-bold">المادة الخام <span class="text-danger">*</span></label>
+                            <select asp-for="MaterialId" asp-items="ViewBag.Materials" class="form-select" id="materialSelect">
+                                <option value="">-- اختر المادة الخام --</option>
+                            </select>
+                            <span asp-validation-for="MaterialId" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Dynamic Section 3: Product Selection (for Output Rejection) -->
+                        <div id="productSection" class="mb-3">
+                            <label asp-for="ProductId" class="form-label fw-bold">المنتج التام <span class="text-danger">*</span></label>
+                            <select asp-for="ProductId" asp-items="ViewBag.Products" class="form-select" id="productSelect">
+                                <option value="">-- اختر المنتج التام --</option>
+                            </select>
+                            <span asp-validation-for="ProductId" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Dynamic Section 4: Physical Storage Location (for Raw Material Waste) -->
+                        <div id="storageSection" class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="WarehouseId" class="form-label fw-bold">مستودع الصرف / الإسقاط <span class="text-danger">*</span></label>
+                                <select asp-for="WarehouseId" asp-items="ViewBag.Warehouses" class="form-select" id="warehouseSelect">
+                                    <option value="">-- اختر المستودع --</option>
+                                </select>
+                                <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="RawMaterialBatchNumber" class="form-label fw-bold">رقم دفعة الخام (Lot / Batch)</label>
+                                <input asp-for="RawMaterialBatchNumber" class="form-control font-monospace" placeholder="مثال: BAT-HNY-01 أو اختياري" id="lotInput" />
+                                <span asp-validation-for="RawMaterialBatchNumber" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Quantities & Cost Row -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="Quantity" class="form-label fw-bold">كمية الهالك <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input asp-for="Quantity" type="number" step="0.0001" class="form-control fw-bold text-primary" id="quantityInput" placeholder="0.00" />
+                                    <input asp-for="Unit" class="form-control" style="max-width: 90px;" id="unitInput" placeholder="KG" />
+                                </div>
+                                <span asp-validation-for="Quantity" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="UnitCost" class="form-label fw-bold">تكلفة الوحدة (ج.م)</label>
+                                <input asp-for="UnitCost" type="number" step="0.01" class="form-control" id="unitCostInput" placeholder="0.00" />
+                                <span asp-validation-for="UnitCost" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">إجمالي تكلفة الهالك المتوقعة</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control fw-bold text-danger bg-light" id="totalCostDisplay" value="0.00 ج.م" readonly />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reason & Date Row -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="WasteReasonId" class="form-label fw-bold">سبب الهالك <span class="text-danger">*</span></label>
+                                <select asp-for="WasteReasonId" asp-items="ViewBag.WasteReasons" class="form-select">
+                                    <option value="">-- اختر سبب الهالك المعتمد --</option>
+                                </select>
+                                <span asp-validation-for="WasteReasonId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="WasteDate" class="form-label fw-bold">تاريخ وقوع الهالك <span class="text-danger">*</span></label>
+                                <input asp-for="WasteDate" type="date" class="form-control" value="@Model.WasteDate.ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="WasteDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ReasonDescription" class="form-label fw-bold">بيان تفصيلي لسبب الهالك</label>
+                            <input asp-for="ReasonDescription" class="form-control" placeholder="مثال: زيادة في درجة حرارة القدر أدت لكرملة مفرطة..." />
+                            <span asp-validation-for="ReasonDescription" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Notes" class="form-label fw-bold">ملاحظات إضافية</label>
+                            <textarea asp-for="Notes" class="form-control" rows="2" placeholder="أي ملاحظات فنية أو إدارية إضافية..."></textarea>
+                            <span asp-validation-for="Notes" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Submission Option -->
+                        <div class="p-3 bg-light rounded-3 mb-4 border">
+                            <div class="form-check">
+                                <input asp-for="SubmitDirectly" class="form-check-input" type="checkbox" id="submitDirectlyCheck" />
+                                <label class="form-check-label fw-bold" for="submitDirectlyCheck">
+                                    تقديم السجل للاعتماد مباشرة (Pending Approval) بدلاً من الحفظ كمسودة
+                                </label>
+                                <div class="form-text">في حال تفعيل هذا الخيار، سيتم نقل السجل فوراً لقائمة الاعتماد، ولن يتم خصم المخزون إلا بعد اعتماد المسؤول.</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                <i class="bi bi-save me-1"></i> حفظ سجل الهالك
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const typeRadios = document.querySelectorAll('input[name="WasteType"]');
+            const batchSection = document.getElementById('batchSection');
+            const materialSection = document.getElementById('materialSection');
+            const productSection = document.getElementById('productSection');
+            const storageSection = document.getElementById('storageSection');
+
+            const materialSelect = document.getElementById('materialSelect');
+            const productSelect = document.getElementById('productSelect');
+            const batchSelect = document.getElementById('batchSelect');
+            const quantityInput = document.getElementById('quantityInput');
+            const unitCostInput = document.getElementById('unitCostInput');
+            const totalCostDisplay = document.getElementById('totalCostDisplay');
+            const unitInput = document.getElementById('unitInput');
+
+            function updateVisibility() {
+                const selectedType = document.querySelector('input[name="WasteType"]:checked')?.value || 'RawMaterialWaste';
+
+                document.querySelectorAll('.type-card').forEach(card => card.classList.remove('border-primary', 'bg-primary-subtle'));
+                document.querySelector(`input[value="${selectedType}"]`)?.closest('.type-card')?.classList.add('border-primary', 'bg-primary-subtle');
+
+                if (selectedType === 'RawMaterialWaste') {
+                    batchSection.style.display = 'none';
+                    materialSection.style.display = 'block';
+                    productSection.style.display = 'none';
+                    storageSection.style.display = 'flex';
+                } else if (selectedType === 'ProductionProcessWaste') {
+                    batchSection.style.display = 'block';
+                    materialSection.style.display = 'block';
+                    productSection.style.display = 'none';
+                    storageSection.style.display = 'none';
+                } else if (selectedType === 'OutputRejection') {
+                    batchSection.style.display = 'block';
+                    materialSection.style.display = 'none';
+                    productSection.style.display = 'block';
+                    storageSection.style.display = 'none';
+                }
+
+                fetchCost();
+            }
+
+            function fetchCost() {
+                const selectedType = document.querySelector('input[name="WasteType"]:checked')?.value || 'RawMaterialWaste';
+                const matId = materialSelect.value;
+                const prodId = productSelect.value;
+                const bId = batchSelect.value;
+
+                fetch(`/Waste/GetItemCost?type=${selectedType}&materialId=${matId}&productId=${prodId}&batchId=${bId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.cost > 0 && (!unitCostInput.value || unitCostInput.value == "0")) {
+                            unitCostInput.value = data.cost.toFixed(2);
+                        }
+                        if (data && data.unit) {
+                            unitInput.value = data.unit;
+                        }
+                        calcTotal();
+                    })
+                    .catch(() => calcTotal());
+            }
+
+            function calcTotal() {
+                const q = parseFloat(quantityInput.value) || 0;
+                const c = parseFloat(unitCostInput.value) || 0;
+                const total = q * c;
+                totalCostDisplay.value = total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م';
+            }
+
+            typeRadios.forEach(r => r.addEventListener('change', updateVisibility));
+            materialSelect.addEventListener('change', fetchCost);
+            productSelect.addEventListener('change', fetchCost);
+            batchSelect.addEventListener('change', fetchCost);
+            quantityInput.addEventListener('input', calcTotal);
+            unitCostInput.addEventListener('input', calcTotal);
+
+            updateVisibility();
+            calcTotal();
+        });
+    </script>
+}

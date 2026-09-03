@@ -1,0 +1,131 @@
+@model FactoryX.Application.DTOs.PaymentDto
+@{
+    Layout = null;
+    ViewData["Title"] = $"إيصال استلام نقدية - {Model.PaymentNumber}";
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إيصال استلام نقدية - @Model.PaymentNumber</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        body {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .receipt-box {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 30px;
+            border: 2px dashed #198754;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+        @@media print {
+            body { background: transparent; }
+            .receipt-box {
+                border: 2px dashed #000;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+                max-width: 100%;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-3">
+        <!-- Print Toolbar -->
+        <div class="no-print text-center mb-4">
+            <button onclick="window.print()" class="btn btn-success px-4 shadow-sm">
+                <i class="fas fa-print me-1"></i> طباعة إيصال القبض (Print Receipt)
+            </button>
+            <button onclick="window.close()" class="btn btn-outline-secondary px-3 ms-2">
+                إغلاق
+            </button>
+        </div>
+
+        <div class="receipt-box">
+            <!-- Header -->
+            <div class="row align-items-center border-bottom pb-3 mb-4">
+                <div class="col-6">
+                    <h3 class="fw-bold mb-1 text-primary">مصنع حلاوة المولد النبوي الشريف</h3>
+                    <h6 class="text-muted mb-0">Mawlid Sweets Factory ERP — الخزينة والتحصيل</h6>
+                </div>
+                <div class="col-6 text-end">
+                    <h2 class="fw-bold mb-1 text-success">إيصال استلام نقدية</h2>
+                    <span class="badge bg-light text-success border font-monospace fs-5">@Model.PaymentNumber</span>
+                </div>
+            </div>
+
+            <!-- Receipt Body -->
+            <div class="bg-light p-4 rounded mb-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <small class="text-muted d-block">التاريخ:</small>
+                        <div class="fw-bold fs-6">@Model.PaymentDate.ToString("yyyy/MM/dd")</div>
+                    </div>
+                    <div class="col-6 text-end">
+                        <small class="text-muted d-block">المبلغ المحصل:</small>
+                        <div class="fw-bold text-success fs-3 font-monospace">@Model.Amount.ToString("N2") @Model.Currency</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-muted">استلمنا من السيد / السادة:</span>
+                    <span class="fw-bold fs-5 border-bottom border-dark pb-1 d-inline-block w-75 ms-2">@Model.CustomerName (@Model.CustomerCode)</span>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-muted">مبلغاً وقدره:</span>
+                    <span class="fw-bold fs-5 border-bottom border-dark pb-1 d-inline-block w-75 ms-2 font-monospace">@Model.Amount.ToString("N2") @Model.Currency</span>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <span class="text-muted">طريقة السداد:</span>
+                        <span class="fw-bold ms-2">@Model.PaymentMethodName</span>
+                    </div>
+                    <div class="col-6 text-end">
+                        <span class="text-muted">الرقم المرجعي / الشيك:</span>
+                        <span class="fw-bold font-monospace ms-2">@(Model.ReferenceNumber ?? "—")</span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <span class="text-muted">وذلك سداداً عن:</span>
+                    <span class="fw-bold ms-2">فاتورة مبيعات رقم [@Model.InvoiceNumber]</span>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <div>
+                        <span class="text-muted">ملاحظات وبيان:</span>
+                        <span class="ms-2">@Model.Notes</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Signatures -->
+            <div class="row pt-4 border-top mt-4">
+                <div class="col-6 text-center">
+                    <p class="fw-bold mb-4">المستلم / أمين الخزينة</p>
+                    <p class="fw-bold text-primary mb-1">@(Model.ReceivedByName ?? "المسؤول")</p>
+                    <p class="text-muted">................................</p>
+                </div>
+                <div class="col-6 text-center">
+                    <p class="fw-bold mb-4">توقيع المسدد / المندوب</p>
+                    <p class="text-muted mt-4">................................</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

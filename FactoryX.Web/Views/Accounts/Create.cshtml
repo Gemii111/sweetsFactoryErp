@@ -1,0 +1,94 @@
+@model FactoryX.Application.DTOs.AccountCreateDto
+@{
+    ViewData["Title"] = "إضافة حساب مالي جديد";
+    var parentAccounts = ViewBag.ParentAccounts as List<FactoryX.Application.DTOs.AccountDto> ?? new List<FactoryX.Application.DTOs.AccountDto>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-plus-circle-fill text-primary me-2"></i>إضافة حساب مالي جديد إلى شجرة الحسابات</h5>
+                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-right me-1"></i>العودة للدليل
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="AccountCode" class="form-label fw-bold">رمز / كود الحساب <span class="text-danger">*</span></label>
+                            <input asp-for="AccountCode" class="form-control font-monospace" placeholder="مثال: 1105 أو 2102" required />
+                            <span asp-validation-for="AccountCode" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="AccountType" class="form-label fw-bold">نوع / تصنيف الحساب <span class="text-danger">*</span></label>
+                            <select asp-for="AccountType" class="form-select" asp-items="Html.GetEnumSelectList<FactoryX.Domain.Entities.AccountType>()"></select>
+                            <span asp-validation-for="AccountType" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="AccountNameAr" class="form-label fw-bold">اسم الحساب (عربي) <span class="text-danger">*</span></label>
+                            <input asp-for="AccountNameAr" class="form-control" placeholder="مثال: خزينة منفذ البيع 1" required />
+                            <span asp-validation-for="AccountNameAr" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="AccountName" class="form-label fw-bold">اسم الحساب (English) <span class="text-danger">*</span></label>
+                            <input asp-for="AccountName" class="form-control" placeholder="e.g. POS Outlet 1 Cash" required />
+                            <span asp-validation-for="AccountName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ParentAccountId" class="form-label fw-bold">الحساب الرئيسي التابع له</label>
+                            <select asp-for="ParentAccountId" class="form-select">
+                                <option value="">-- بدون حساب رئيسي (حساب من المستوى الأول) --</option>
+                                @foreach (var p in parentAccounts)
+                                {
+                                    <option value="@p.Id">@p.AccountCode - @p.AccountNameAr (@p.AccountTypeName)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="AccountRole" class="form-label fw-bold">الدور المحاسبي الآلي (إن وجد)</label>
+                            <select asp-for="AccountRole" class="form-select" asp-items="Html.GetEnumSelectList<FactoryX.Domain.Entities.AccountRole>()"></select>
+                            <small class="text-muted">يستخدم للتوجيه الآلي مع المبيعات والمشتريات والمخازن</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-4">
+                                <input asp-for="IsControlAccount" class="form-check-input" type="checkbox" role="switch" />
+                                <label asp-for="IsControlAccount" class="form-check-label fw-bold">حساب رئيسي / تجميعي (Control Account)</label>
+                                <div class="text-muted small">إذا كان مفعلاً، لا يمكن الترحيل المباشر عليه ويستخدم فقط لتجميع الحسابات الفرعية</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-4">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" checked />
+                                <label asp-for="IsActive" class="form-check-label fw-bold">تفعيل الحساب (Active)</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Notes" class="form-label fw-bold">ملاحظات إضافية</label>
+                            <textarea asp-for="Notes" class="form-control" rows="2" placeholder="أي تفاصيل أو ملاحظات حول طبيعة استخدام هذا الحساب"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i>حفظ الحساب</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

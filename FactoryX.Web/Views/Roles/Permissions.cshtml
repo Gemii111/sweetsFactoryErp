@@ -1,0 +1,79 @@
+@model FactoryX.Application.DTOs.RolePermissionMatrixDto
+@{
+    ViewData["Title"] = "مصفوفة صلاحيات الدور: " + Model.RoleDisplayName;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>مصفوفة الصلاحيات: @Model.RoleDisplayName</h2>
+        <p class="text-muted mb-0">تحديد الصلاحيات الدقيقة الممنوحة للدور <span class="badge bg-light text-dark border font-monospace">@Model.RoleCode</span></p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>العودة لقائمة الأدوار
+    </a>
+</div>
+
+<form asp-action="Permissions" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="roleId" value="@Model.RoleId" />
+
+    <div class="row g-4">
+        @foreach (var group in Model.PermissionsByModule)
+        {
+            var moduleId = "mod_" + group.Key.Replace(" ", "_");
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+                        <h6 class="mb-0 fw-bold text-primary">
+                            <i class="bi bi-folder-fill me-2"></i>صلاحيات وحدة: @group.Key
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 select-all-btn" data-target="@moduleId">
+                            تحديد الكل / إلغاء
+                        </button>
+                    </div>
+                    <div class="card-body p-3" id="@moduleId">
+                        <div class="d-flex flex-column gap-2">
+                            @foreach (var perm in group.Value)
+                            {
+                                <div class="form-check p-2 rounded bg-light border">
+                                    <input class="form-check-input ms-2 me-2 perm-checkbox" type="checkbox" name="selectedPermissionIds" value="@perm.Id" id="perm_@perm.Id" @(perm.IsAssigned ? "checked" : "") />
+                                    <label class="form-check-label w-100" for="perm_@perm.Id">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="fw-bold text-dark">@perm.Name</span>
+                                            <span class="badge bg-secondary-subtle text-secondary font-monospace">@perm.Code</span>
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(perm.Description))
+                                        {
+                                            <small class="text-muted d-block mt-1">@perm.Description</small>
+                                        }
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <a asp-action="Index" class="btn btn-outline-secondary">إلغاء</a>
+        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>حفظ مصفوفة الصلاحيات</button>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.select-all-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const container = document.getElementById(targetId);
+            if (container) {
+                const checkboxes = container.querySelectorAll('.perm-checkbox');
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                checkboxes.forEach(cb => cb.checked = !allChecked);
+            }
+        });
+    });
+</script>
+}

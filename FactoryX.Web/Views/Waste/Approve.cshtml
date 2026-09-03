@@ -1,0 +1,156 @@
+@model FactoryX.Application.DTOs.WasteDto
+@using FactoryX.Domain.Entities
+
+@{
+    ViewData["Title"] = "مراجعة واعتماد سجل الهالك - " + Model.WasteNumber;
+    var availableStock = ViewBag.AvailableStock as decimal?;
+    var hasShortage = Model.WasteType == WasteType.RawMaterialWaste && availableStock.HasValue && availableStock.Value < Model.Quantity;
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm me-3">
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <div>
+                    <h2 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-shield-check me-2"></i> مراجعة واعتماد سجل الهالك: @Model.WasteNumber
+                    </h2>
+                    <small class="text-muted">مراجعة أثر التكلفة والمخزون واتخاذ قرار الاعتماد أو الرفض</small>
+                </div>
+            </div>
+
+            <!-- Alert Messages -->
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> @Html.Raw(TempData["ErrorMessage"])
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (hasShortage)
+            {
+                <div class="alert alert-danger rounded-3 shadow-sm mb-4">
+                    <h5 class="fw-bold mb-1"><i class="bi bi-exclamation-octagon-fill me-2"></i> تنبيه: عجز في رصيد المادة الخام بالمستودع!</h5>
+                    <p class="mb-0">
+                        الرصيد المتاح حالياً في المستودع: <strong>@availableStock?.ToString("N2") @Model.Unit</strong> | 
+                        الكمية المطلوب إسقاطها: <strong>@Model.Quantity.ToString("N2") @Model.Unit</strong>.
+                        لن تتم عملية الاعتماد وسيتم إيقافها لحماية الأرصدة من القيم السالبة.
+                    </p>
+                </div>
+            }
+
+            <!-- Review Card -->
+            <div class="card border-0 shadow-sm rounded-3 mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">بيانات الهالك والتكاليف</h5>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block">نوع الهالك</label>
+                            <span class="fs-6 fw-bold text-dark">@Model.WasteTypeName</span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block">سبب الهالك</label>
+                            <span class="badge bg-light text-dark border fs-6">
+                                @(Model.WasteReasonCode != null ? $"[{Model.WasteReasonCode}] " : "")@(Model.WasteReasonName ?? "-")
+                            </span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block">البيان / الخامة / المنتج</label>
+                            <div class="fw-bold text-primary fs-5">
+                                @(Model.MaterialName ?? Model.ProductName ?? "غير محدد")
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small d-block">دفعة الخام / دفعة الإنتاج</label>
+                            <span class="font-monospace fw-bold">
+                                @(Model.RawMaterialBatchNumber ?? Model.ProductionBatchNumber ?? "عام")
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Cost Cards -->
+                    <div class="row g-3 p-3 bg-light rounded-3 mb-4">
+                        <div class="col-md-4 text-center">
+                            <small class="text-muted d-block">الكمية</small>
+                            <div class="fs-4 fw-bold text-dark">@Model.Quantity.ToString("N2") <small class="fs-6">@Model.Unit</small></div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <small class="text-muted d-block">تكلفة الوحدة</small>
+                            <div class="fs-4 fw-bold text-dark">@Model.UnitCost.ToString("N2") <small class="fs-6">ج.م</small></div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <small class="text-danger fw-bold d-block">إجمالي تكلفة الهالك</small>
+                            <div class="fs-4 fw-bold text-danger">@Model.TotalCost.ToString("N2") <small class="fs-6">ج.م</small></div>
+                        </div>
+                    </div>
+
+                    <!-- Inventory Impact Info -->
+                    @if (Model.WasteType == WasteType.RawMaterialWaste)
+                    {
+                        <div class="p-3 bg-warning-subtle text-warning-emphasis rounded-3 border border-warning-subtle mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-box-arrow-right fs-4 me-3"></i>
+                                <div>
+                                    <div class="fw-bold">أثر الاعتماد على المخزون:</div>
+                                    <div>عند الاعتماد، سيتم خصم <strong>@Model.Quantity.ToString("N2") @Model.Unit</strong> من مستودع <strong>@Model.WarehouseName</strong> آلياً وتسجيل حركة مخزنية رسمية.</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Approval Form -->
+                    <form asp-action="Approve" method="post" class="mb-4">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="WasteId" value="@Model.Id" />
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">ملاحظات الاعتماد (اختياري)</label>
+                            <textarea name="ApprovalNotes" class="form-control" rows="2" placeholder="ملاحظات توثيقية حول اعتماد هذا الهالك..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-outline-danger px-4" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                <i class="bi bi-x-circle me-1"></i> رفض الطلب
+                            </button>
+                            <button type="submit" class="btn btn-success px-4 shadow-sm" @(hasShortage ? "disabled" : "") onclick="return confirm('تأكيد اعتماد سجل الهالك وخصم الكميات من المخزون؟');">
+                                <i class="bi bi-check-circle me-1"></i> تأكيد الاعتماد النهائي
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Reject" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="WasteId" value="@Model.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-circle me-2"></i> رفض اعتماد سجل الهالك</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>يرجى توضيح سبب رفض اعتماد سجل الهالك <strong>@Model.WasteNumber</strong>:</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">سبب الرفض <span class="text-danger">*</span></label>
+                        <textarea name="RejectionReason" class="form-control" rows="3" placeholder="توضيح سبب عدم الاعتماد (مثال: الكمية مبالغ فيها، أو عدم وجود ما يثبت التلف...)" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">تراجع</button>
+                    <button type="submit" class="btn btn-danger">تأكيد الرفض</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

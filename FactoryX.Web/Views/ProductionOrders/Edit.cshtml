@@ -1,0 +1,267 @@
+@model FactoryX.Application.DTOs.UpdateProductionOrderRequest
+@{
+    ViewData["Title"] = $"تعديل أمر الإنتاج: {Model.OrderNumber}";
+}
+
+<div class="container-fluid py-4" dir="rtl">
+    @await Html.PartialAsync("_Alert")
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 font-monospace fs-6">
+                    @Model.OrderNumber
+                </span>
+                <h3 class="fw-bold text-dark mb-0">تعديل بيانات التخطيط لأمر الإنتاج</h3>
+            </div>
+            <p class="text-muted mb-0">تحديث الكميات المخططة، تواريخ الجدولة، أو الموارد المخصصة قبل اعتماد التشغيل.</p>
+        </div>
+        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary rounded-pill px-3">
+            <i class="bi bi-arrow-right me-1"></i> العودة لتفاصيل الأمر
+        </a>
+    </div>
+
+    <form asp-action="Edit" asp-route-id="@Model.Id" method="post" id="prodOrderEditForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 mb-4"></div>
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+                        <i class="bi bi-sliders text-danger me-2"></i>معلمات الإنتاج والجدولة
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="OrderNumber" class="form-label fw-semibold text-secondary">رقم أمر الإنتاج <span class="text-danger">*</span></label>
+                            <input asp-for="OrderNumber" class="form-control font-monospace rounded-3 py-2" />
+                            <span asp-validation-for="OrderNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Priority" class="form-label fw-semibold text-secondary">درجة الأولوية <span class="text-danger">*</span></label>
+                            <select asp-for="Priority" asp-items="ViewBag.Priorities" class="form-select rounded-3 py-2"></select>
+                            <span asp-validation-for="Priority" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ProductId" class="form-label fw-semibold text-secondary">المنتج التام <span class="text-danger">*</span></label>
+                            <select asp-for="ProductId" asp-items="ViewBag.Products" class="form-select rounded-3 py-2" id="productSelect">
+                                <option value="">-- اختر المنتج التام --</option>
+                            </select>
+                            <span asp-validation-for="ProductId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="RecipeVersionId" class="form-label fw-semibold text-secondary">إصدار الوصفة (BOM) <span class="text-danger">*</span></label>
+                            <select asp-for="RecipeVersionId" class="form-select rounded-3 py-2" id="recipeVersionSelect">
+                                <option value="">-- تحميل الوصفات المعتمدة --</option>
+                            </select>
+                            <span asp-validation-for="RecipeVersionId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="PlannedQuantity" class="form-label fw-semibold text-secondary">الكمية المخططة <span class="text-danger">*</span></label>
+                            <input asp-for="PlannedQuantity" type="number" step="0.01" min="0.01" class="form-control rounded-3 py-2 fw-bold text-primary" id="plannedQtyInput" />
+                            <span asp-validation-for="PlannedQuantity" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label asp-for="OutputUnit" class="form-label fw-semibold text-secondary">الوحدة <span class="text-danger">*</span></label>
+                            <input asp-for="OutputUnit" class="form-control rounded-3 py-2" id="outputUnitInput" />
+                            <span asp-validation-for="OutputUnit" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="PlannedDate" class="form-label fw-semibold text-secondary">تاريخ الإنتاج المخطط <span class="text-danger">*</span></label>
+                            <input asp-for="PlannedDate" type="date" class="form-control rounded-3 py-2" id="plannedDateInput" value="@Model.PlannedDate.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="PlannedDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label asp-for="DueDate" class="form-label fw-semibold text-secondary">تاريخ الاستحقاق</label>
+                            <input asp-for="DueDate" type="date" class="form-control rounded-3 py-2" id="dueDateInput" value="@Model.DueDate?.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="DueDate" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- جدول الاحتساب الفوري للخامات -->
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-calculator text-danger me-2"></i>احتساب متطلبات الخامات التقديرية الحية
+                        </h5>
+                        <span class="badge bg-light text-secondary border px-3 py-2" id="bomCalcStatus">
+                            <i class="bi bi-arrow-repeat me-1"></i> احتساب فوري
+                        </span>
+                    </div>
+
+                    <div class="table-responsive" id="requirementsTableContainer">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-secondary">كود المادة</th>
+                                    <th class="text-secondary">اسم الخامة</th>
+                                    <th class="text-secondary text-center">كمية الوصفة</th>
+                                    <th class="text-secondary text-center text-primary">الكمية المطلوبة</th>
+                                    <th class="text-secondary text-center">الرصيد بالمخزن</th>
+                                    <th class="text-secondary text-center text-danger">العجز</th>
+                                    <th class="text-secondary text-center">حالة التوفر</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requirementsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+                        <i class="bi bi-gear text-danger me-2"></i>الموارد التشغيلية
+                    </h5>
+
+                    <div class="d-flex flex-column gap-3">
+                        <div>
+                            <label asp-for="MachineId" class="form-label fw-semibold text-secondary">الماكينة / خط التشغيل</label>
+                            <select asp-for="MachineId" asp-items="ViewBag.Machines" class="form-select rounded-3 py-2">
+                                <option value="">-- غير محدد --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label asp-for="OperatorId" class="form-label fw-semibold text-secondary">المشغل / المشرف</label>
+                            <select asp-for="OperatorId" asp-items="ViewBag.Operators" class="form-select rounded-3 py-2">
+                                <option value="">-- غير محدد --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label asp-for="ShiftId" class="form-label fw-semibold text-secondary">وردية التشغيل (Shift)</label>
+                            <select asp-for="ShiftId" asp-items="ViewBag.Shifts" class="form-select rounded-3 py-2">
+                                <option value="">-- غير محدد --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label asp-for="Notes" class="form-label fw-semibold text-secondary">الملاحظات</label>
+                            <textarea asp-for="Notes" class="form-control rounded-3" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary rounded-pill py-2 shadow-sm">
+                            <i class="bi bi-check-lg me-1"></i> حفظ التعديلات
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary rounded-pill py-2">
+                            <i class="bi bi-x-circle me-1"></i> إلغاء
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const productSelect = document.getElementById('productSelect');
+            const recipeVersionSelect = document.getElementById('recipeVersionSelect');
+            const plannedQtyInput = document.getElementById('plannedQtyInput');
+            const plannedDateInput = document.getElementById('plannedDateInput');
+            const reqBody = document.getElementById('requirementsTableBody');
+            const bomCalcStatus = document.getElementById('bomCalcStatus');
+
+            const currentProductId = '@Model.ProductId';
+            const currentVersionId = '@Model.RecipeVersionId';
+
+            async function loadRecipeVersions(productId, selectedVersionId = null) {
+                if (!productId || productId === '0') return;
+                const plannedDate = plannedDateInput.value;
+                try {
+                    const response = await fetch(`/ProductionOrders/GetActiveVersions?productId=${productId}&plannedDate=${plannedDate}`);
+                    const versions = await response.json();
+
+                    let options = '<option value="">-- اختر إصدار الوصفة --</option>';
+                    versions.forEach(v => {
+                        const isSel = (selectedVersionId && parseInt(selectedVersionId) === v.id) ? 'selected' : '';
+                        options += `<option value="${v.id}" data-unit="${v.outputUnit}" ${isSel}>${v.displayText}</option>`;
+                    });
+                    recipeVersionSelect.innerHTML = options;
+
+                    if (selectedVersionId) {
+                        recipeVersionSelect.value = selectedVersionId;
+                    }
+                    calculateRequirements();
+                } catch (e) {
+                    console.error("Failed to load versions", e);
+                }
+            }
+
+            async function calculateRequirements() {
+                const versionId = recipeVersionSelect.value;
+                const plannedQty = parseFloat(plannedQtyInput.value) || 0;
+
+                if (!versionId || plannedQty <= 0) {
+                    reqBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">يرجى تحديد إصدار الوصفة والكمية</td></tr>';
+                    return;
+                }
+
+                bomCalcStatus.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> جارٍ الاحتساب...';
+
+                try {
+                    const response = await fetch(`/ProductionOrders/CalculateRequirements?recipeVersionId=${versionId}&plannedQuantity=${plannedQty}`);
+                    const data = await response.json();
+
+                    if (data.success && data.items && data.items.length > 0) {
+                        reqBody.innerHTML = '';
+                        data.items.forEach(item => {
+                            const badge = item.availabilityStatus === 1 ? 'bg-success text-white' :
+                                          item.availabilityStatus === 2 ? 'bg-warning text-dark' : 'bg-danger text-white';
+
+                            const shortageText = item.shortageQuantity > 0 ?
+                                `<span class="text-danger fw-bold">${item.shortageQuantity.toFixed(2)} ${item.stockUnit}</span>` :
+                                `<span class="text-muted">0 ${item.stockUnit}</span>`;
+
+                            const tr = `
+                                <tr>
+                                    <td class="font-monospace text-secondary">${item.materialCode}</td>
+                                    <td class="fw-semibold text-dark">${item.materialName}</td>
+                                    <td class="text-center">${item.recipeQuantity.toFixed(2)} ${item.stockUnit}</td>
+                                    <td class="text-center fw-bold text-primary">${item.requiredQuantity.toFixed(2)} ${item.stockUnit}</td>
+                                    <td class="text-center fw-semibold text-dark">${item.currentStock.toFixed(2)} ${item.stockUnit}</td>
+                                    <td class="text-center">${shortageText}</td>
+                                    <td class="text-center"><span class="badge ${badge} rounded-pill px-3 py-1">${item.availabilityStatusText}</span></td>
+                                </tr>
+                            `;
+                            reqBody.insertAdjacentHTML('beforeend', tr);
+                        });
+                        bomCalcStatus.innerHTML = '<i class="bi bi-check-circle text-success me-1"></i> تم الاحتساب بنجاح';
+                    }
+                } catch (e) {
+                    console.error("Failed to calculate requirements", e);
+                }
+            }
+
+            productSelect.addEventListener('change', function () {
+                loadRecipeVersions(this.value);
+            });
+
+            recipeVersionSelect.addEventListener('change', calculateRequirements);
+            plannedQtyInput.addEventListener('input', calculateRequirements);
+            plannedDateInput.addEventListener('change', function () {
+                loadRecipeVersions(productSelect.value, recipeVersionSelect.value);
+            });
+
+            if (currentProductId) {
+                loadRecipeVersions(currentProductId, currentVersionId);
+            }
+        });
+    </script>
+}

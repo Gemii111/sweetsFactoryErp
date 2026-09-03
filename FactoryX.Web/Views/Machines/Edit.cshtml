@@ -1,0 +1,45 @@
+@model FactoryX.Application.DTOs.Requests.MachineRequests.UpdateMachineRequest
+@{
+    ViewData["Title"] = "تعديل الماكينة";
+}
+<div class="container py-4">
+    @await Html.PartialAsync("_Alert")
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
+                    <h3 class="fw-bold mb-4 text-center text-warning"><i class="bi bi-pencil me-2"></i>تعديل بيانات الماكينة</h3>
+                    <form asp-action="Edit" method="post" novalidate>
+                        <input type="hidden" asp-for="Id" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold">اسم الماكينة / الخط</label>
+                            <input asp-for="Name" class="form-control" autocomplete="off" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Status" class="form-label fw-semibold">الحالة التشغيلية</label>
+                            <select asp-for="Status" class="form-select">
+                                <option value="Active">نشطة وتعمل (Active)</option>
+                                <option value="Inactive">متوقفة / تحت الصيانة (Inactive)</option>
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-4">
+                            <label asp-for="Capacity" class="form-label fw-semibold">الطاقة الإنتاجية (كجم/ساعة)</label>
+                            <input asp-for="Capacity" class="form-control" type="number" min="1" />
+                            <span asp-validation-for="Capacity" class="text-danger small"></span>
+                        </div>
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4"><i class="bi bi-arrow-right"></i> إلغاء</a>
+                            <button type="submit" class="btn btn-warning px-4 shadow-sm"><i class="bi bi-check-lg"></i> حفظ التعديلات</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

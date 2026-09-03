@@ -1,0 +1,121 @@
+@model FactoryX.Application.DTOs.BalanceSheetReportDto
+@{
+    ViewData["Title"] = "قائمة المركز المالي والميزانية العمومية";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-bank text-primary me-2"></i>قائمة المركز المالي والميزانية العمومية (Balance Sheet)</h2>
+        <p class="text-muted mb-0">الموقف المالي للأصول والالتزامات وحقوق الملكية كما هي في تاريخ @Model.AsOfDate.ToString("yyyy-MM-dd")</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow-sm border-0 p-4">
+            <div class="text-center mb-4 pb-3 border-bottom">
+                <h4 class="fw-bold mb-1">شركة مصنع حلويات المولد</h4>
+                <h5 class="text-primary fw-bold mb-1">الميزانية العمومية والمركز المالي</h5>
+                <p class="text-muted small mb-0">كما في @Model.AsOfDate.ToString("yyyy-MM-dd") (القيم بالجنيه المصري EGP)</p>
+            </div>
+
+            <div class="row g-4 font-monospace">
+                <!-- 1. Assets Column -->
+                <div class="col-md-6 border-end">
+                    <h5 class="fw-bold text-dark font-sans-serif border-bottom pb-2 mb-3">
+                        <i class="bi bi-folder-check text-success me-1"></i>الأصول المتداولة (Assets)
+                    </h5>
+                    <table class="table table-sm table-borderless align-middle mb-0">
+                        <tbody>
+                            @foreach (var a in Model.AssetAccounts)
+                            {
+                                <tr>
+                                    <td class="text-muted small">@a.AccountCode</td>
+                                    <td>@a.AccountNameAr</td>
+                                    <td class="text-end fw-bold">@a.Balance.ToString("N2")</td>
+                                </tr>
+                            }
+                            <tr class="border-top border-dark table-light">
+                                <td colspan="2" class="fw-bold fs-6 py-2">إجمالي الأصول (Total Assets):</td>
+                                <td class="text-end fw-bold text-success fs-5 py-2">@Model.TotalAssets.ToString("N2")</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 2. Liabilities & Equity Column -->
+                <div class="col-md-6">
+                    <h5 class="fw-bold text-dark font-sans-serif border-bottom pb-2 mb-3">
+                        <i class="bi bi-shield-exclamation text-danger me-1"></i>الالتزامات وحقوق الملكية
+                    </h5>
+
+                    <h6 class="fw-bold text-muted small font-sans-serif mt-2 mb-2">أولاً: الالتزامات المتداولة (Liabilities)</h6>
+                    <table class="table table-sm table-borderless align-middle mb-3">
+                        <tbody>
+                            @foreach (var l in Model.LiabilityAccounts)
+                            {
+                                <tr>
+                                    <td class="text-muted small">@l.AccountCode</td>
+                                    <td>@l.AccountNameAr</td>
+                                    <td class="text-end fw-bold">@l.Balance.ToString("N2")</td>
+                                </tr>
+                            }
+                            <tr class="border-top">
+                                <td colspan="2" class="fw-bold">مجموع الالتزامات:</td>
+                                <td class="text-end fw-bold text-danger">@Model.TotalLiabilities.ToString("N2")</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h6 class="fw-bold text-muted small font-sans-serif mt-3 mb-2">ثانياً: حقوق الملكية (Equity)</h6>
+                    <table class="table table-sm table-borderless align-middle mb-0">
+                        <tbody>
+                            @foreach (var e in Model.EquityAccounts)
+                            {
+                                <tr>
+                                    <td class="text-muted small">@e.AccountCode</td>
+                                    <td>@e.AccountNameAr</td>
+                                    <td class="text-end fw-bold">@e.Balance.ToString("N2")</td>
+                                </tr>
+                            }
+                            <tr>
+                                <td class="text-muted small">P&L</td>
+                                <td>أرباح / (خسائر) الفترة الحالية</td>
+                                <td class="text-end fw-bold @(Model.CurrentYearNetIncome >= 0 ? "text-success" : "text-danger")">
+                                    @Model.CurrentYearNetIncome.ToString("N2")
+                                </td>
+                            </tr>
+                            <tr class="border-top">
+                                <td colspan="2" class="fw-bold">مجموع حقوق الملكية:</td>
+                                <td class="text-end fw-bold text-primary">@Model.TotalEquity.ToString("N2")</td>
+                            </tr>
+                            <tr class="border-top border-dark table-light">
+                                <td colspan="2" class="fw-bold fs-6 py-2">مجموع الالتزامات والملكية:</td>
+                                <td class="text-end fw-bold text-success fs-5 py-2">@Model.TotalLiabilitiesAndEquity.ToString("N2")</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Balance Verification Badge -->
+            <div class="mt-4 pt-3 border-top text-center">
+                @if (Model.IsBalanced)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success p-2 px-4 fs-6">
+                        <i class="bi bi-check-circle-fill me-1"></i>الميزانية متزنة تماماً: الأصول = الالتزامات + حقوق الملكية
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-warning-subtle text-warning border border-warning p-2 px-4 fs-6">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>فارق ميزانية طفيف تحت التسوية
+                    </span>
+                }
+            </div>
+        </div>
+    </div>
+</div>

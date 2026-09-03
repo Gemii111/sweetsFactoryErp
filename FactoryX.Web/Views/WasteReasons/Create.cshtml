@@ -1,0 +1,66 @@
+@model FactoryX.Application.DTOs.CreateWasteReasonRequest
+
+@{
+    ViewData["Title"] = "إضافة سبب هالك جديد";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <h2 class="fw-bold mb-0 text-primary">
+                    <i class="bi bi-plus-circle me-2"></i> إضافة سبب هالك جديد
+                </h2>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 rounded-3" role="alert"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Code" class="form-label fw-bold">كود السبب <span class="text-danger">*</span></label>
+                            <input asp-for="Code" class="form-control font-monospace" placeholder="مثال: WR-SPIL أو WR-BURN" />
+                            <span asp-validation-for="Code" class="text-danger small"></span>
+                            <div class="form-text">كود فريد يحدد سبب الهالك في العمليات الإحصائية</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Reason" class="form-label fw-bold">اسم / عنوان السبب <span class="text-danger">*</span></label>
+                            <input asp-for="Reason" class="form-control" placeholder="مثال: انسكاب أثناء النقل اليدوي" />
+                            <span asp-validation-for="Reason" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-bold">الوصف والتفاصيل</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="وصف تفصيلي لحالات حدوث هذا الهالك..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch" checked />
+                                <label class="form-check-label fw-bold" for="isActiveSwitch">تفعيل السبب للاختيار في سجلات الهالك</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                <i class="bi bi-save me-1"></i> حفظ سبب الهالك
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

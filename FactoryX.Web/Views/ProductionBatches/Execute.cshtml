@@ -1,0 +1,389 @@
+@model FactoryX.Application.DTOs.BatchExecutionDetailsDto
+@{
+    ViewData["Title"] = $"شاشة تشغيل الدفعة - {Model.Batch.BatchNumber}";
+}
+
+<div class="container-fluid py-4" dir="rtl">
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @Html.Raw(TempData["SuccessMessage"])
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @Html.Raw(TempData["ErrorMessage"])
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Cockpit Header -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 bg-primary text-white">
+        <div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <span class="badge bg-white text-primary px-3 py-1 mb-2 font-monospace fs-6">
+                        <i class="bi bi-cpu-fill me-1"></i> وحدة التحكم في تشغيل الدفعة
+                    </span>
+                    <h2 class="fw-bold mb-1">دفعة تصنيع: @Model.Batch.BatchNumber</h2>
+                    <p class="mb-0 text-white-50">
+                        أمر الإنتاج: <strong>@Model.Batch.WorkOrderNumber</strong> |
+                        المنتج: <strong>@Model.Batch.ProductName</strong> |
+                        المخطط: <strong>@Model.Batch.PlannedQuantity.ToString("N2") @Model.Batch.OutputUnit</strong>
+                    </p>
+                </div>
+                <div class="text-end">
+                    <span class="badge @Model.Batch.StatusBadgeClass fs-5 px-3 py-2 shadow-sm d-block mb-2">
+                        @Model.Batch.StatusName
+                    </span>
+                    <a asp-action="Details" asp-route-id="@Model.Batch.Id" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-eye me-1"></i> عرض سجل التتبع
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Execution Action Bar -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body py-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="fw-bold text-muted">إجراءات التشغيل الحالية:</span>
+                    @if (Model.Batch.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Planned)
+                    {
+                        <span class="badge bg-info text-dark">جاهز للبدء وصرف الخامات</span>
+                    }
+                    else if (Model.Batch.Status == FactoryX.Domain.Entities.ProductionBatchStatus.InProgress)
+                    {
+                        <span class="badge bg-warning text-dark"><i class="bi bi-arrow-repeat spin me-1"></i> جاري التشغيل على خط الإنتاج</span>
+                    }
+                    else if (Model.Batch.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Paused)
+                    {
+                        <span class="badge bg-secondary"><i class="bi bi-pause-circle me-1"></i> متوقف مؤقتاً</span>
+                    }
+                    else if (Model.Batch.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Completed)
+                    {
+                        <span class="badge bg-success"><i class="bi bi-check2-all me-1"></i> اكتملت الدفعة بنجاح</span>
+                    }
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    @if (Model.Batch.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Planned)
+                    {
+                        <button type="submit" form="startBatchForm" class="btn btn-success px-4 shadow-sm" @(Model.CanStart ? "" : "disabled")>
+                            <i class="bi bi-play-fill fs-5 me-1"></i> بدء التشغيل وصرف الخامات من المخزون
+                        </button>
+                    }
+                    else if (Model.Batch.Status == FactoryX.Domain.Entities.ProductionBatchStatus.InProgress)
+                    {
+                        <button type="button" class="btn btn-warning px-3" data-bs-toggle="modal" data-bs-target="#pauseModal">
+                            <i class="bi bi-pause-fill me-1"></i> إيقاف مؤقت
+                        </button>
+                        <button type="button" class="btn btn-success px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#completeModal">
+                            <i class="bi bi-check-circle-fill me-1"></i> إكمال الدفعة وتسجيل الإنتاج الفعلي
+                        </button>
+                        <button type="button" class="btn btn-outline-danger px-3" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="bi bi-x-circle me-1"></i> إلغاء الدفعة
+                        </button>
+                    }
+                    else if (Model.Batch.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Paused)
+                    {
+                        <form method="post" asp-action="Resume" asp-route-id="@Model.Batch.Id" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                <i class="bi bi-play-circle me-1"></i> استئناف التشغيل
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-success px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#completeModal">
+                            <i class="bi bi-check-circle-fill me-1"></i> إكمال الدفعة
+                        </button>
+                        <button type="button" class="btn btn-outline-danger px-3" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="bi bi-x-circle me-1"></i> إلغاء الدفعة
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Material Consumption and Requirements Cockpit Table -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-transparent py-3 border-0 d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="fw-bold mb-0 text-primary">
+                    <i class="bi bi-journal-check me-2"></i> مطابقة خامات الوصفة المجمدة والأرصدة الحية (BOM & FEFO Stock Allocation)
+                </h5>
+                <small class="text-muted">يتم الصرف آلياً بالاستناد إلى تاريخ انتهاء الصلاحية الأقرب (First Expired, First Out)</small>
+            </div>
+            @if (Model.MaterialRequirements.Any(m => m.HasShortage))
+            {
+                <span class="badge bg-danger p-2"><i class="bi bi-exclamation-octagon me-1"></i> يوجد عجز في أرصدة بعض الخامات</span>
+            }
+        </div>
+
+        @if (Model.Batch.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Planned)
+        {
+            <form method="post" asp-action="Start" id="startBatchForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="BatchId" value="@Model.Batch.Id" />
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>المادة الخام</th>
+                                <th>الكمية المطلوبة (BOM)</th>
+                                <th>الرصيد المتاح (FEFO)</th>
+                                <th>حالة التوفر</th>
+                                <th>مستودع الصرف ودفعة الخام (Lot)</th>
+                                <th>الكمية المصروفة فعلياً</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.MaterialRequirements.Count; i++)
+                            {
+                                var req = Model.MaterialRequirements[i];
+                                <tr>
+                                    <td>@(i + 1)</td>
+                                    <td>
+                                        <input type="hidden" name="Consumptions[@i].MaterialId" value="@req.MaterialId" />
+                                        <span class="badge bg-secondary font-monospace">@req.MaterialCode</span>
+                                        <strong class="d-block mt-1">@req.MaterialName</strong>
+                                        @if (!string.IsNullOrEmpty(req.MaterialArabicName))
+                                        {
+                                            <small class="text-muted">@req.MaterialArabicName</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong class="text-primary fs-6">@req.PlannedQuantity.ToString("N4") @req.Unit</strong>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">@req.TotalAvailableStock.ToString("N2") @req.Unit</span>
+                                    </td>
+                                    <td>
+                                        @if (req.HasShortage)
+                                        {
+                                            <span class="badge bg-danger">عجز: @req.ShortageQuantity.ToString("N2") @req.Unit</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check-lg me-1"></i> متوفر بالكامل</span>
+                                        }
+                                    </td>
+                                    <td style="min-width: 280px;">
+                                        @if (req.AvailableBatches.Any())
+                                        {
+                                            <select class="form-select form-select-sm batch-selector" data-index="@i" required>
+                                                @foreach (var b in req.AvailableBatches)
+                                                {
+                                                    <option value="@b.WarehouseId|@b.LocationId|@b.BatchNumber"
+                                                            disabled="@(b.IsExpired)"
+                                                            selected="@(b.WarehouseId == req.SelectedWarehouseId && b.BatchNumber == req.SelectedBatchNumber)">
+                                                        @b.DisplayText
+                                                    </option>
+                                                }
+                                            </select>
+                                            <input type="hidden" id="wh_@i" name="Consumptions[@i].WarehouseId" value="@req.SelectedWarehouseId" />
+                                            <input type="hidden" id="loc_@i" name="Consumptions[@i].LocationId" value="@req.SelectedLocationId" />
+                                            <input type="hidden" id="lot_@i" name="Consumptions[@i].RawMaterialBatchNumber" value="@req.SelectedBatchNumber" />
+                                        }
+                                        else
+                                        {
+                                            <span class="text-danger small"><i class="bi bi-x-circle me-1"></i> لا توجد أرصدة في أي مستودع</span>
+                                        }
+                                    </td>
+                                    <td style="min-width: 150px;">
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" step="0.0001" name="Consumptions[@i].ActualQuantity" class="form-control fw-bold text-primary" value="@req.PlannedQuantity" required />
+                                            <span class="input-group-text">@req.Unit</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        }
+        else
+        {
+            <!-- Already Started / Consumed Table -->
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>كود الخامة</th>
+                            <th>المادة الخام</th>
+                            <th>مستودع الصرف</th>
+                            <th>تشغيلة الخامة (Lot/Batch)</th>
+                            <th>المخطط (BOM)</th>
+                            <th>المصروف فعلياً</th>
+                            <th>الفارق (Variance)</th>
+                            <th>التكلفة الإجمالية</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Batch.Consumptions != null && Model.Batch.Consumptions.Any())
+                        {
+                            foreach (var c in Model.Batch.Consumptions)
+                            {
+                                <tr>
+                                    <td><span class="badge bg-secondary font-monospace">@c.MaterialCode</span></td>
+                                    <td>
+                                        <strong>@c.MaterialName</strong>
+                                        @if (!string.IsNullOrEmpty(c.MaterialArabicName))
+                                        {
+                                            <small class="text-muted d-block">@c.MaterialArabicName</small>
+                                        }
+                                    </td>
+                                    <td>@(c.WarehouseName ?? "المستودع الرئيسي")</td>
+                                    <td>
+                                        <span class="badge bg-info text-dark font-monospace">
+                                            <i class="bi bi-upc-scan me-1"></i> @(string.IsNullOrEmpty(c.RawMaterialBatchNumber) ? "عام" : c.RawMaterialBatchNumber)
+                                        </span>
+                                    </td>
+                                    <td>@c.PlannedQuantity.ToString("N4") @c.Unit</td>
+                                    <td><strong class="text-primary">@c.ActualQuantity.ToString("N4") @c.Unit</strong></td>
+                                    <td>
+                                        @if (c.Variance > 0)
+                                        {
+                                            <span class="badge bg-danger">+@c.Variance.ToString("N4")</span>
+                                        }
+                                        else if (c.Variance < 0)
+                                        {
+                                            <span class="badge bg-success">@c.Variance.ToString("N4")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-dark border">0.0000</span>
+                                        }
+                                    </td>
+                                    <td><strong>@c.TotalCost.ToString("N2") ج.م</strong></td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">لا توجد سجلات صرف مسجلة.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal: Pause Batch -->
+<div class="modal fade" id="pauseModal" tabindex="-1" dir="rtl">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pause-circle me-1"></i> إيقاف مؤقت للتشغيل</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-action="Pause">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Batch.Id" />
+                <div class="modal-body">
+                    <p class="text-muted">يرجى تسجيل سبب الإيقاف المؤقت للدفعة (عطل، تغيير وردية، صيانة...):</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">سبب التوقف المؤقت</label>
+                        <input type="text" name="reason" class="form-control" placeholder="مثال: تغيير القالب أو انتظار المشغل..." />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-warning px-4">تأكيد الإيقاف المؤقت</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Complete Batch -->
+<div class="modal fade" id="completeModal" tabindex="-1" dir="rtl">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-check-circle me-1"></i> إكمال الدفعة وتسجيل الإنتاج الفعلي</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-action="Complete">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="BatchId" value="@Model.Batch.Id" />
+                <div class="modal-body">
+                    <div class="alert alert-info py-2">
+                        الكمية المخططة الأصلية: <strong>@Model.Batch.PlannedQuantity.ToString("N2") @Model.Batch.OutputUnit</strong>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">الكمية الفعلية المنتجة <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" step="0.01" name="ActualOutputQuantity" class="form-control form-control-lg fw-bold text-success" value="@Model.Batch.PlannedQuantity" required />
+                            <span class="input-group-text">@Model.Batch.OutputUnit</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">ملاحظات الإنجاز</label>
+                        <textarea name="Notes" class="form-control" rows="2" placeholder="ملاحظات الجودة والإنتاج النهائي..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-success px-4">تأكيد الإكمال وتوثيق السجل</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Cancel Batch -->
+<div class="modal fade" id="cancelModal" tabindex="-1" dir="rtl">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-x-circle me-1"></i> إلغاء دفعة الإنتاج</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-action="Cancel">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="BatchId" value="@Model.Batch.Id" />
+                <div class="modal-body">
+                    <div class="alert alert-warning py-2 small">
+                        تنبيه: الخامات التي تم صرفها مسبقاً لهذه الدفعة ستبقى مسجلة في سجل التتبع ولن يتم حذف سجل الحركات.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">سبب الإلغاء <span class="text-danger">*</span></label>
+                        <textarea name="CancellationReason" class="form-control" rows="3" placeholder="اكتب سبب إلغاء الدفعة بالتفصيل..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">تراجع</button>
+                    <button type="submit" class="btn btn-danger px-4">تأكيد الإلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.batch-selector').forEach(sel => {
+            sel.addEventListener('change', function () {
+                const idx = this.getAttribute('data-index');
+                const parts = this.value.split('|');
+                if (parts.length === 3) {
+                    document.getElementById(`wh_${idx}`).value = parts[0];
+                    document.getElementById(`loc_${idx}`).value = parts[1] === '' ? '' : parts[1];
+                    document.getElementById(`lot_${idx}`).value = parts[2];
+                }
+            });
+        });
+    </script>
+}

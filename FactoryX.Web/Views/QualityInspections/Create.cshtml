@@ -1,0 +1,133 @@
+@model FactoryX.Application.DTOs.CreateQualityInspectionRequest
+
+@{
+    ViewData["Title"] = "فتح فحص جودة لدفعة إنتاج";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <div>
+                    <h2 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-plus-circle me-2"></i> فتح فحص جودة لدفعة إنتاج (New QC Inspection)
+                    </h2>
+                    <small class="text-muted">اختر دفعة الإنتاج والقالب المعياري لبدء تسجيل القياسات المعملية والفنية</small>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post" id="createQcForm">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 rounded-3" role="alert"></div>
+
+                        <!-- 1. Production Batch Selection -->
+                        <div class="mb-4">
+                            <label asp-for="ProductionBatchId" class="form-label fw-bold">دفعة الإنتاج المراد فحصها <span class="text-danger">*</span></label>
+                            <select asp-for="ProductionBatchId" asp-items="ViewBag.Batches" class="form-select font-monospace" id="batchSelect">
+                                <option value="">-- اختر دفعة الإنتاج --</option>
+                            </select>
+                            <span asp-validation-for="ProductionBatchId" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Auto-detected Product & Template Info Box -->
+                        <div id="batchInfoCard" class="alert alert-info-subtle border border-info-subtle rounded-3 mb-4 p-3" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-info-circle-fill text-info fs-4 me-3"></i>
+                                <div>
+                                    <div class="fw-bold text-dark">المنتج المرتبط: <span id="productNameSpan" class="text-primary">-</span></div>
+                                    <small class="text-muted">القالب المعياري المقترح: <strong id="templateNameSpan" class="text-dark">-</strong></small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Quality Template Selection -->
+                        <div class="mb-3">
+                            <label asp-for="QualityTemplateId" class="form-label fw-bold">قالب / مواصفة الفحص القياسية</label>
+                            <select asp-for="QualityTemplateId" asp-items="ViewBag.Templates" class="form-select" id="templateSelect">
+                                <option value="">-- اختر القالب القياسي (أو اتركه للاختيار التلقائي) --</option>
+                            </select>
+                            <span asp-validation-for="QualityTemplateId" class="text-danger small"></span>
+                        </div>
+
+                        <!-- 3. Inspector & Date -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="InspectorId" class="form-label fw-bold">المفتش / مسؤول الجودة</label>
+                                <select asp-for="InspectorId" asp-items="ViewBag.Users" class="form-select">
+                                    <option value="">-- المسؤول الحالي (افتراضي) --</option>
+                                </select>
+                                <span asp-validation-for="InspectorId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="InspectionDate" class="form-label fw-bold">تاريخ الفحص <span class="text-danger">*</span></label>
+                                <input asp-for="InspectionDate" type="date" class="form-control" value="@Model.InspectionDate.ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="InspectionDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Notes" class="form-label fw-bold">ملاحظات أولية</label>
+                            <textarea asp-for="Notes" class="form-control" rows="3" placeholder="أي ملاحظات عامة حول ظروف سحب العينة أو صالة الإنتاج..."></textarea>
+                            <span asp-validation-for="Notes" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                <i class="bi bi-arrow-left-circle me-1"></i> فتح الفحص وبدء إدخال القياسات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const batchSelect = document.getElementById('batchSelect');
+            const templateSelect = document.getElementById('templateSelect');
+            const batchInfoCard = document.getElementById('batchInfoCard');
+            const productNameSpan = document.getElementById('productNameSpan');
+            const templateNameSpan = document.getElementById('templateNameSpan');
+
+            function onBatchChange() {
+                const batchId = batchSelect.value;
+                if (!batchId) {
+                    batchInfoCard.style.display = 'none';
+                    return;
+                }
+
+                fetch(`/QualityInspections/GetTemplateForBatch?batchId=${batchId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data) {
+                            productNameSpan.innerText = data.productName || '-';
+                            templateNameSpan.innerText = data.templateName ? `[${data.templateCode}] ${data.templateName}` : 'لا يوجد قالب مخصص (سيتم استخدام القالب العام)';
+                            if (data.templateId && (!templateSelect.value || templateSelect.value == "0")) {
+                                templateSelect.value = data.templateId;
+                            }
+                            batchInfoCard.style.display = 'block';
+                        }
+                    })
+                    .catch(() => {
+                        batchInfoCard.style.display = 'none';
+                    });
+            }
+
+            batchSelect.addEventListener('change', onBatchChange);
+            if (batchSelect.value) {
+                onBatchChange();
+            }
+        });
+    </script>
+}

@@ -1,0 +1,339 @@
+@model FactoryX.Web.Models.SystemHealthViewModel
+@{
+    ViewData["Title"] = "صحة وجاهزية النظام والتشغيل الإنتاجي";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid py-4" dir="rtl">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1 text-primary">
+                <i class="bi bi-heart-pulse-fill me-2 text-danger"></i>
+                صحة وجاهزية النظام والتشغيل الإنتاجي
+            </h2>
+            <p class="text-muted mb-0">
+                مراقبة الجاهزية التشغيلية، سلامة قاعدة البيانات، الأقراص التخزينية، والنسخ الاحتياطي (Production Readiness)
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary p-2 fs-6">
+                <i class="bi bi-tag-fill me-1"></i> @Model.Version
+            </span>
+            <span class="badge @(Model.EnvironmentName == "Production" ? "bg-success" : "bg-warning text-dark") p-2 fs-6">
+                <i class="bi bi-hdd-network me-1"></i> @Model.EnvironmentName
+            </span>
+            <a href="/SystemHealth" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-arrow-clockwise me-1"></i> تحديث الحالة
+            </a>
+            <a href="/health/ready" target="_blank" class="btn btn-outline-info btn-sm">
+                <i class="bi bi-box-arrow-up-right me-1"></i> Readiness JSON
+            </a>
+        </div>
+    </div>
+
+    <!-- Overall Readiness Banner -->
+    <div class="card mb-4 border-0 shadow-sm @(Model.IsProductionReady ? "bg-success" : "bg-warning") text-white">
+        <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-white rounded-circle p-3 text-dark d-flex align-items-center justify-content-center" style="width: 64px; height: 64px;">
+                    <i class="bi @(Model.IsProductionReady ? "bi-shield-check text-success" : "bi-exclamation-triangle text-warning") fs-1"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-1">
+                        @(Model.IsProductionReady ? "النظام جاهز تماماً للتشغيل الإنتاجي (Production Ready)" : "تنبيهات جاهزية تشغيلية بحاجة للمراجعة")
+                    </h4>
+                    <p class="mb-0 text-white-50">
+                        @(Model.IsProductionReady 
+                            ? "جميع الفحوصات الحيوية للبنية التحتية، الاتصال، الصلاحيات، والنسخ الاحتياطي مطابقة للمعايير المعتمدة."
+                            : "يرجى مراجعة التنبيهات الموضحة أدناه بخصوص النسخ الاحتياطي أو الأقراص قبل إطلاق الخدمة.")
+                    </p>
+                </div>
+            </div>
+            <div>
+                <span class="badge bg-light text-dark fs-5 px-3 py-2">
+                    @(Model.IsProductionReady ? "جاهزية: 100%" : "حالة: تحذير تشغيلي")
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Status Cards -->
+    <div class="row g-3 mb-4">
+        <!-- Database -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fw-bold">قاعدة البيانات</span>
+                        <span class="badge @(Model.DatabaseConnected ? "bg-success" : "bg-danger")">
+                            @(Model.DatabaseConnected ? "متصل" : "منفصل")
+                        </span>
+                    </div>
+                    <h3 class="fw-bold mb-1">@Model.DatabaseLatencyMs <small class="fs-6 text-muted">ms</small></h3>
+                    <small class="text-muted d-block">
+                        <i class="bi bi-database me-1"></i> @Model.DatabaseEngine
+                    </small>
+                    <small class="text-success">
+                        <i class="bi bi-check-circle me-1"></i> @Model.AppliedMigrationsCount ترحيل مطبق
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Backup Status -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fw-bold">النسخ الاحتياطي</span>
+                        <span class="badge @(Model.BackupStatusBadge == "PASS" ? "bg-success" : (Model.BackupStatusBadge == "WARNING" ? "bg-warning text-dark" : "bg-danger"))">
+                            @Model.BackupStatusBadge
+                        </span>
+                    </div>
+                    <h4 class="fw-bold mb-1 text-truncate" title="@(Model.LatestBackupFileName ?? "لا توجد نسخة مسجلة")">
+                        @(Model.LatestBackupFileName != null ? $"{Model.LatestBackupAgeHours:F1} ساعة" : "غير متوفر")
+                    </h4>
+                    <small class="text-muted d-block">
+                        <i class="bi bi-clock-history me-1"></i> عمر أحدث نسخة احتياطية
+                    </small>
+                    <small class="text-muted">
+                        @(Model.LatestBackupSizeMb.HasValue ? $"الحجم: {Model.LatestBackupSizeMb} MB" : "المجلد مهيأ")
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Uptime & Memory -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fw-bold">استقرار التطبيق</span>
+                        <span class="badge bg-info text-dark">نشط</span>
+                    </div>
+                    <h3 class="fw-bold mb-1">@((int)Model.Uptime.TotalHours)h @Model.Uptime.Minutes m</h3>
+                    <small class="text-muted d-block">
+                        <i class="bi bi-cpu me-1"></i> مدة تشغيل العملية (Uptime)
+                    </small>
+                    <small class="text-muted">
+                        <i class="bi bi-memory me-1"></i> استهلاك الذاكرة: @Model.MemoryUsageMb MB
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security & Audit -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted fw-bold">الأمان والتدقيق</span>
+                        <span class="badge bg-success">محمي</span>
+                    </div>
+                    <h4 class="fw-bold mb-1">RBAC + Audit</h4>
+                    <small class="text-muted d-block">
+                        <i class="bi bi-shield-lock me-1"></i> الصلاحيات المتعددة مفعلة
+                    </small>
+                    <small class="text-success">
+                        <i class="bi bi-journal-check me-1"></i> سجل التدقيق غير قابل للتعديل
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content: Readiness Table & Storage Disks -->
+    <div class="row g-4 mb-4">
+        <!-- Readiness Checklist -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-list-check me-2 text-primary"></i>
+                        جدول فحص جاهزية الإنتاج (Production Readiness Checklist)
+                    </h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 35%;">معيار الفحص</th>
+                                <th style="width: 20%;">التصنيف</th>
+                                <th style="width: 15%;">الحالة</th>
+                                <th style="width: 30%;">التفاصيل والملاحظات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var check in Model.ReadinessChecks)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@check.Name</td>
+                                    <td><span class="badge bg-light text-dark border">@check.Category</span></td>
+                                    <td>
+                                        @if (check.Status == "PASS")
+                                        {
+                                            <span class="badge bg-success px-2 py-1"><i class="bi bi-check-lg me-1"></i> PASS</span>
+                                        }
+                                        else if (check.Status == "WARNING")
+                                        {
+                                            <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-exclamation-triangle me-1"></i> WARNING</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger px-2 py-1"><i class="bi bi-x-circle me-1"></i> FAIL</span>
+                                        }
+                                    </td>
+                                    <td class="text-muted small">@check.Details</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Storage & Disks -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3 border-0">
+                    <h5 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-hdd-fill me-2 text-primary"></i>
+                        المساحة التخزينية للأقراص
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Disks.Count > 0)
+                    {
+                        @foreach (var disk in Model.Disks)
+                        {
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="fw-bold">@disk.DriveName (@disk.DriveLabel)</span>
+                                    <span class="badge @(disk.Status == "PASS" ? "bg-success" : (disk.Status == "WARNING" ? "bg-warning text-dark" : "bg-danger"))">
+                                        @disk.FreeSpacePercent% متاح
+                                    </span>
+                                </div>
+                                <small class="text-muted d-block mb-2">@disk.Role</small>
+                                <div class="progress" style="height: 10px;">
+                                    @{
+                                        var usedPercent = 100 - disk.FreeSpacePercent;
+                                        var barClass = disk.Status == "PASS" ? "bg-success" : (disk.Status == "WARNING" ? "bg-warning" : "bg-danger");
+                                    }
+                                    <div class="progress-bar @barClass" role="progressbar" style="width: @usedPercent%;" aria-valuenow="@usedPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted small mt-1">
+                                    <span>المتبقي: @disk.FreeSpaceGb GB</span>
+                                    <span>الإجمالي: @disk.TotalSizeGb GB</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-1"></i> تعذر قراءة معلومات الأقراص التخزينية في هذه البيئة.
+                        </div>
+                    }
+
+                    <div class="border-top pt-3 mt-3">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>حد التحذير (Warning Threshold):</span>
+                            <span class="fw-bold">&lt; 20%</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>حد الخطر (Critical Threshold):</span>
+                            <span class="fw-bold text-danger">&lt; 10%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup & Disaster Recovery Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-shield-shaded me-2 text-primary"></i>
+                إدارة وسياسات النسخ الاحتياطي والتعافي من الكوارث (Disaster Recovery Strategy)
+            </h5>
+            <span class="badge bg-secondary">Target RPO: 24h | Target RTO: 4h</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <ul class="list-group list-group-flush small">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>مجلد النسخ الاحتياطي المهيأ:</span>
+                            <code class="text-primary">@Model.BackupDirectoryPath</code>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>حالة توفر المجلد:</span>
+                            <span class="badge @(Model.BackupDirectoryExists ? "bg-success" : "bg-warning text-dark")">
+                                @(Model.BackupDirectoryExists ? "متاح وجاهز" : "غير متاح حالياً")
+                            </span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>أحدث ملف نسخة احتياطية:</span>
+                            <span class="fw-bold">@(Model.LatestBackupFileName ?? "لا توجد ملفات بعد")</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                            <span>تاريخ ووقت أحدث نسخة:</span>
+                            <span>@(Model.LatestBackupTime.HasValue ? Model.LatestBackupTime.Value.ToString("yyyy-MM-dd HH:mm:ss") : "N/A")</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <div class="alert alert-light border small mb-0">
+                        <h6 class="fw-bold text-primary mb-2">
+                            <i class="bi bi-terminal me-1"></i> أوامر وإجراءات التحقق الآمن
+                        </h6>
+                        <p class="mb-1">
+                            • للنسخ الاحتياطي الآلي مع التحقق الكامل:
+                            <code>powershell -File scripts/backup/backup_database.ps1 -Type Full</code>
+                        </p>
+                        <p class="mb-1">
+                            • للتحقق من سلامة الملف عبر محرك SQL Server:
+                            <code>RESTORE VERIFYONLY FROM DISK = '...'</code>
+                        </p>
+                        <p class="mb-0">
+                            • لاختبار الاستعادة الآمنة دون مساس بالبيانات الإنتاجية:
+                            <code>powershell -File scripts/backup/restore_database.ps1 -TestOnly</code>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Server & Environment Information -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-0">
+            <h6 class="fw-bold mb-0 text-muted">
+                <i class="bi bi-info-circle me-2"></i>
+                معلومات الخادم والتوقيت المرجعي
+            </h6>
+        </div>
+        <div class="card-body py-2">
+            <div class="row g-3 small text-muted">
+                <div class="col-md-3">
+                    <strong>توقيت الخادم المحلي:</strong>
+                    <div class="text-dark">@Model.ServerTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                </div>
+                <div class="col-md-3">
+                    <strong>توقيت جرينتش الموحد (UTC):</strong>
+                    <div class="text-dark">@Model.UtcTime.ToString("yyyy-MM-dd HH:mm:ss") UTC</div>
+                </div>
+                <div class="col-md-3">
+                    <strong>المنطقة الزمنية:</strong>
+                    <div class="text-dark">@Model.ServerTimeZone</div>
+                </div>
+                <div class="col-md-3">
+                    <strong>أحدث ترحيل قاعدة بيانات:</strong>
+                    <div class="text-dark text-truncate" title="@Model.LatestMigration">@Model.LatestMigration</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

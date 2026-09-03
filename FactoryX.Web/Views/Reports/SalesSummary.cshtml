@@ -1,0 +1,105 @@
+@model FactoryX.Application.DTOs.SalesSummaryReportDto
+@{
+    ViewData["Title"] = "تقرير ملخص المبيعات الشامل";
+    ViewData["ShowCustomerFilter"] = true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-receipt text-primary me-2"></i>تقرير ملخص المبيعات الشامل</h2>
+        <p class="text-muted mb-0">تحليل أوامر البيع، الكميات المطلوبة والمسلمة، المبالغ المفوترة، والمديونية المستحقة</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">إجمالي الأوامر والكميات</small>
+            <h4 class="fw-bold text-dark font-monospace mb-0">@Model.TotalOrders <small class="fs-6 text-muted">طلب</small> / @Model.TotalOrderedQuantity.ToString("N2") <small class="fs-6 text-muted">KG</small></h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">إجمالي قيمة المبيعات</small>
+            <h4 class="fw-bold text-primary font-monospace mb-0">@Model.TotalOrderValue.ToString("N2") EGP</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">المبالغ المفوترة</small>
+            <h4 class="fw-bold text-success font-monospace mb-0">@Model.TotalInvoicedAmount.ToString("N2") EGP</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">صافي المديونية المستحقة</small>
+            <h4 class="fw-bold text-danger font-monospace mb-0">@Model.TotalOutstandingReceivable.ToString("N2") EGP</h4>
+        </div>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">رقم الطلب</th>
+                        <th>التاريخ</th>
+                        <th>العميل</th>
+                        <th class="text-end">الكمية المطلوبة</th>
+                        <th class="text-end">الكمية المسلمة</th>
+                        <th class="text-end">قيمة الطلب</th>
+                        <th class="text-end">المبلغ المفوتر</th>
+                        <th class="text-center">الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">لا توجد مبيعات مسجلة مطابقة لمعايير البحث</td>
+                        </tr>
+                    }
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">
+                                <a asp-controller="SalesOrders" asp-action="Details" asp-route-id="@item.OrderId" class="text-decoration-none">
+                                    @item.OrderNumber
+                                </a>
+                            </td>
+                            <td>@item.OrderDate.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                <span class="fw-semibold">@item.CustomerName</span>
+                                <small class="text-muted font-monospace d-block">@item.CustomerCode</small>
+                            </td>
+                            <td class="text-end font-monospace">@item.OrderedQuantity.ToString("N2")</td>
+                            <td class="text-end font-monospace text-success fw-bold">@item.FulfilledQuantity.ToString("N2")</td>
+                            <td class="text-end font-monospace fw-bold">@item.OrderAmount.ToString("N2")</td>
+                            <td class="text-end font-monospace text-primary">@item.InvoicedAmount.ToString("N2")</td>
+                            <td class="text-center"><span class="badge bg-secondary-subtle text-dark border">@item.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-light fw-bold font-monospace">
+                    <tr>
+                        <td colspan="3" class="text-end ps-3">الإجمالي العام:</td>
+                        <td class="text-end">@Model.TotalOrderedQuantity.ToString("N2")</td>
+                        <td class="text-end text-success">@Model.TotalFulfilledQuantity.ToString("N2")</td>
+                        <td class="text-end text-primary">@Model.TotalOrderValue.ToString("N2")</td>
+                        <td class="text-end text-success">@Model.TotalInvoicedAmount.ToString("N2")</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>

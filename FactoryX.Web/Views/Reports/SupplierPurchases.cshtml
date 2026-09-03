@@ -1,0 +1,57 @@
+@model FactoryX.Application.DTOs.SupplierPurchaseReportDto
+@{
+    ViewData["Title"] = "تقرير مشتريات ومستحقات الموردين";
+    ViewData["ShowSupplierFilter"] = true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-people-fill text-warning me-2"></i>تقرير مشتريات ومستحقات الموردين (Supplier Purchases)</h2>
+        <p class="text-muted mb-0">تحليل التوريدات، المدفوعات المسددة، والرصيد الدائن المستحق لكل مورد</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">كود المورد</th>
+                        <th>اسم المورد</th>
+                        <th class="text-center">عدد الأوامر</th>
+                        <th class="text-end">إجمالي الطلبات</th>
+                        <th class="text-end">المستلم الفعلي</th>
+                        <th class="text-end">المسدد</th>
+                        <th class="text-end pe-3">الرصيد الدائن المستحق</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.Suppliers)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">@s.SupplierCode</td>
+                            <td class="fw-semibold">
+                                <a asp-controller="SupplierLedger" asp-action="Index" asp-route-supplierId="@s.SupplierId" class="text-decoration-none">
+                                    @s.SupplierName
+                                </a>
+                            </td>
+                            <td class="text-center"><span class="badge bg-light text-dark border">@s.OrdersCount</span></td>
+                            <td class="text-end font-monospace">@s.OrderedValue.ToString("N2")</td>
+                            <td class="text-end font-monospace text-success">@s.ReceivedValue.ToString("N2")</td>
+                            <td class="text-end font-monospace text-primary">@s.PaidValue.ToString("N2")</td>
+                            <td class="text-end font-monospace pe-3 fw-bold @(s.OutstandingPayable > 0 ? "text-danger" : "text-dark")">
+                                @s.OutstandingPayable.ToString("N2") EGP
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

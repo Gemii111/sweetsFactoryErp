@@ -1,0 +1,98 @@
+@model IEnumerable<FactoryX.Application.DTOs.CustomerBalanceSummaryDto>
+@{
+    ViewData["Title"] = "كشوف حسابات العملاء (Customer Statements)";
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-address-book text-info me-2"></i>كشوف حسابات العملاء (Customer Statements)</h2>
+            <p class="text-muted mb-0">عرض ومتابعة أرصدة العملاء التشغيلية الصادرة والمحصلة والمتبقية</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="Invoices" asp-action="Index" class="btn btn-outline-primary shadow-sm">
+                <i class="fas fa-file-invoice-dollar me-1"></i> فواتير المبيعات
+            </a>
+            <a asp-controller="Payments" asp-action="Index" class="btn btn-outline-success shadow-sm">
+                <i class="fas fa-money-bill-wave me-1"></i> سندات القبض
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label small text-muted">بحث باسم العميل أو الكود</label>
+                    <input type="text" name="searchTerm" class="form-control" placeholder="اكتب اسم العميل أو كوده..." value="@ViewBag.SearchTerm" />
+                </div>
+                <div class="col-md-2 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i> بحث</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customers Directory Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>كود العميل</th>
+                        <th>اسم العميل</th>
+                        <th>التصنيف</th>
+                        <th>الهاتف</th>
+                        <th>الحد الائتماني</th>
+                        <th>إجمالي المفوتر</th>
+                        <th>إجمالي المسدد</th>
+                        <th>الرصيد المستحق الحالي</th>
+                        <th class="text-center">كشف الحساب</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var c in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="font-monospace fw-bold text-primary">@c.CustomerCode</span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">@c.CustomerName</div>
+                                    <small class="text-muted">@c.InvoicesCount فواتير | @c.PaymentsCount دفعات</small>
+                                </td>
+                                <td><span class="badge bg-light text-dark border">@c.CustomerType</span></td>
+                                <td>@(c.Phone ?? "—")</td>
+                                <td class="font-monospace">@c.CreditLimit.ToString("N2") EGP</td>
+                                <td class="fw-bold font-monospace text-dark">@c.TotalInvoiced.ToString("N2")</td>
+                                <td class="fw-bold font-monospace text-success">@c.TotalPaid.ToString("N2")</td>
+                                <td class="fw-bold font-monospace @(c.OutstandingBalance > 0 ? "text-danger fs-6" : "text-muted")">
+                                    @c.OutstandingBalance.ToString("N2") EGP
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="Details" asp-route-id="@c.CustomerId" class="btn btn-sm btn-outline-info">
+                                        <i class="fas fa-list-alt me-1"></i> عرض كشف الحساب
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="fas fa-users fs-1 d-block mb-3 opacity-25"></i>
+                                لا يوجد عملاء مطابقين لمعايير البحث.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

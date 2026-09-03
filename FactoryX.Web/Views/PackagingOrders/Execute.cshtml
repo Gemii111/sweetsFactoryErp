@@ -1,0 +1,181 @@
+@model FactoryX.Application.DTOs.PackagingOrderDto
+@{
+    ViewData["Title"] = $"تنفيذ أمر التعبئة - {Model.OrderNumber}";
+    var warehouses = ViewBag.Warehouses as SelectList;
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success fs-5 font-monospace">@Model.OrderNumber</span>
+                <h2 class="fw-bold mb-0">تنفيذ وصرف مواد أمر التعبئة</h2>
+            </div>
+            <p class="text-muted mb-0">تسجيل الكمية المعبأة الفعلية وصرف مواد التعبئة والتغليف آلياً من المستودع المحدد</p>
+        </div>
+        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-1"></i> العودة لتفاصيل الأمر
+        </a>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <form asp-action="Execute" method="post" id="executeForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="PackagingOrderId" value="@Model.Id" />
+
+        <div class="row g-4">
+            <!-- Execution Control Card -->
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-success text-white py-3">
+                        <h5 class="card-title mb-0"><i class="fas fa-play-circle me-2"></i>بيانات التنفيذ والإنتاج الفعلي</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Batch & Product Info -->
+                        <div class="alert alert-light border mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">دفعة الإنتاج:</span>
+                                <span class="font-monospace fw-bold">@Model.BatchNumber</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">المنتج التام:</span>
+                                <span class="fw-bold text-primary">@Model.ProductName</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="text-muted">مواصفة التعبئة:</span>
+                                <span>@Model.PackagingBOMName</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">وزن العبوة الصافي:</span>
+                                <span class="fw-bold">@Model.PackSizeKg.ToString("0.###") كجم</span>
+                            </div>
+                        </div>
+
+                        <!-- Actual Packaged Quantity Input -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">الكمية المعبأة الفعلية (عبوة): <span class="text-danger">*</span></label>
+                            <input type="number" name="ActualPackagedQuantity" id="actualQtyInput" class="form-control form-control-lg font-monospace text-primary fw-bold" value="@(Model.PlannedQuantity > 0 ? Model.PlannedQuantity : 100)" min="1" step="1" required oninput="recalcRequirements()" />
+                            <small class="text-muted">الكمية المخططة كانت: @Model.PlannedQuantity.ToString("N0") @Model.PackUnit (الحد الأقصى النظري: @Model.TheoreticalMaxPacks.ToString("N0"))</small>
+                        </div>
+
+                        <!-- Packaging Warehouse Selection -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">مستودع صرف مواد التعبئة: <span class="text-danger">*</span></label>
+                            <select name="WarehouseId" asp-items="warehouses" class="form-select" id="whSelect" required onchange="recalcRequirements()">
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">ملاحظات التنفيذ والإغلاق:</label>
+                            <textarea name="Notes" class="form-control" rows="3" placeholder="أي ملاحظات حول جودة التعبئة أو استهلاك المواد..."></textarea>
+                        </div>
+
+                        <div class="alert alert-warning border-warning mt-3 mb-0 small">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            <strong>تنبيه الصرف الآلي:</strong> عند تأكيد التنفيذ، سيتم خصم كميات مواد التعبئة آلياً من رصيد المستودع المحدد وإنشاء قيود حركة المخزون (Packaging Consumption) وتغيير حالة الأمر إلى مكتمل (Completed).
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Material Requirements & Stock Availability Live Check -->
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fas fa-boxes-stacked me-2"></i>مواد التعبئة المطلوب صرفها وتوافر الرصيد</h5>
+                        <span class="badge bg-secondary" id="availBadge">جاري التحقق...</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">مادة التعبئة</th>
+                                        <th>الكمية للصرف</th>
+                                        <th>الرصيد المتاح</th>
+                                        <th>العجز</th>
+                                        <th class="pe-3">حالة الرصيد</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="execReqBody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="p-3 bg-light border-top text-end">
+                            <button type="submit" class="btn btn-success btn-lg px-5 shadow-sm" id="btnExecuteConfirm">
+                                <i class="fas fa-check-double me-1"></i> تأكيد التنفيذ وصرف المواد
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        const bomId = @Model.PackagingBOMId;
+        const versionId = @(Model.PackagingBOMVersionId ?? 0);
+
+        async function recalcRequirements() {
+            const qty = document.getElementById('actualQtyInput').value || 1;
+            const whId = document.getElementById('whSelect').value;
+
+            if (qty <= 0) return;
+
+            try {
+                const response = await fetch(`/PackagingOrders/GetRequirements?bomId=${bomId}&quantity=${qty}&versionId=${versionId}&warehouseId=${whId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const tbody = document.getElementById('execReqBody');
+                    tbody.innerHTML = '';
+
+                    data.requirements.forEach(r => {
+                        const tr = document.createElement('tr');
+                        const statusBadge = r.isSufficient
+                            ? '<span class="badge bg-success"><i class="fas fa-check me-1"></i>متوفر بالكامل</span>'
+                            : '<span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>عجز بالرصيد</span>';
+
+                        tr.innerHTML = `
+                            <td class="ps-3 fw-bold">${r.materialName} <small class="text-muted font-monospace">(${r.materialCode})</small></td>
+                            <td><span class="fw-bold text-primary">${r.requiredQuantity}</span> ${r.unit}</td>
+                            <td><span class="fw-bold">${r.availableQuantity}</span> ${r.unit}</td>
+                            <td><span class="${r.shortageQuantity > 0 ? 'fw-bold text-danger' : 'text-muted'}">${r.shortageQuantity}</span> ${r.unit}</td>
+                            <td class="pe-3">${statusBadge}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    const badge = document.getElementById('availBadge');
+                    const btn = document.getElementById('btnExecuteConfirm');
+                    if (data.allSufficient) {
+                        badge.className = 'badge bg-success';
+                        badge.innerText = 'جميع المواد متوفرة للصرف';
+                        btn.disabled = false;
+                    } else {
+                        badge.className = 'badge bg-danger';
+                        badge.innerText = 'يوجد عجز في رصيد المواد بالمستودع';
+                        btn.disabled = true;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            recalcRequirements();
+        });
+    </script>
+}

@@ -1,0 +1,103 @@
+@model FactoryX.Application.DTOs.ReinspectRequest
+@using FactoryX.Domain.Entities
+
+@{
+    ViewData["Title"] = "إعادة فحص وتقييم دفعة إنتاج";
+    var prev = ViewBag.PreviousInspection as FactoryX.Application.DTOs.QualityInspectionDto;
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Details" asp-route-id="@Model.PreviousInspectionId" class="btn btn-outline-secondary btn-sm me-3">
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <div>
+                    <h2 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-arrow-repeat me-2"></i> طلب إعادة فحص جودة (Re-inspection)
+                    </h2>
+                    <small class="text-muted">إعادة تقييم الدفعة المحتجزة أو المرفوضة مع الحفاظ التام على السجل التاريخي للفحص السابق</small>
+                </div>
+            </div>
+
+            @if (prev != null)
+            {
+                <div class="card border-0 shadow-sm rounded-3 mb-4 bg-light">
+                    <div class="card-body p-3">
+                        <h6 class="fw-bold text-dark mb-2">بيانات الفحص السابق المرتبط:</h6>
+                        <div class="row g-2 small">
+                            <div class="col-md-4">
+                                <span class="text-muted">رقم الفحص السابق:</span>
+                                <strong class="font-monospace text-primary">@prev.InspectionNumber</strong>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted">دفعة الإنتاج:</span>
+                                <strong>@prev.ProductionBatchNumber</strong>
+                            </div>
+                            <div class="col-md-4">
+                                <span class="text-muted">القرار السابق:</span>
+                                @if (prev.FinalDecision == QualityDecision.Hold)
+                                {
+                                    <span class="badge bg-warning text-dark">Hold (محجوز)</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Rejected (مرفوض)</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-4">
+                    <form asp-action="Reinspect" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="PreviousInspectionId" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 rounded-3" role="alert"></div>
+
+                        <div class="mb-4">
+                            <label asp-for="ReinspectionReason" class="form-label fw-bold">سبب ومبررات إعادة الفحص <span class="text-danger">*</span></label>
+                            <textarea asp-for="ReinspectionReason" class="form-control" rows="3" placeholder="توضيح الإجراء التصحيحي المتخذ أو سبب إعادة سحب العينة..." required></textarea>
+                            <span asp-validation-for="ReinspectionReason" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="QualityTemplateId" class="form-label fw-bold">قالب / مواصفة الفحص القياسية</label>
+                            <select asp-for="QualityTemplateId" asp-items="ViewBag.Templates" class="form-select">
+                                <option value="">-- القالب القياسي المرتبط --</option>
+                            </select>
+                            <span asp-validation-for="QualityTemplateId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="InspectorId" class="form-label fw-bold">المفتش المكلف بإعادة الفحص</label>
+                            <select asp-for="InspectorId" asp-items="ViewBag.Users" class="form-select">
+                                <option value="">-- مسؤول الجودة الحالي --</option>
+                            </select>
+                            <span asp-validation-for="InspectorId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Notes" class="form-label fw-bold">ملاحظات إضافية</label>
+                            <textarea asp-for="Notes" class="form-control" rows="2" placeholder="أي تفاصيل تود إضافتها..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a asp-action="Details" asp-route-id="@Model.PreviousInspectionId" class="btn btn-light px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-warning px-4 shadow-sm text-dark fw-bold">
+                                <i class="bi bi-arrow-repeat me-1"></i> فتح سجل إعادة الفحص وبدء القياسات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

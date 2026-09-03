@@ -1,0 +1,62 @@
+@model FactoryX.Application.DTOs.SupplierPriceHistoryReportDto
+@{
+    ViewData["Title"] = "تقرير سجل تطور أسعار الموردين";
+    ViewData["ShowSupplierFilter"] = true;
+    ViewData["ShowMaterialFilter"] = true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-graph-up-arrow text-warning me-2"></i>تقرير سجل تطور أسعار الموردين (Supplier Price History)</h2>
+        <p class="text-muted mb-0">تتبع تغيرات أسعار توريد الخامات ومواد التعبئة ونسب التغير لكل مورد</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">المورد</th>
+                        <th>المادة / الخامة</th>
+                        <th>تاريخ السريان</th>
+                        <th class="text-end">السعر السابق</th>
+                        <th class="text-end">السعر الجديد</th>
+                        <th class="text-center">نسبة التغير %</th>
+                        <th class="pe-3">ملاحظات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.PriceHistories.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">لا يوجد سجل لتغيرات الأسعار</td>
+                        </tr>
+                    }
+                    @foreach (var h in Model.PriceHistories)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-semibold">@h.SupplierName</td>
+                            <td class="fw-bold text-primary">@h.MaterialName</td>
+                            <td>@h.EffectiveDate.ToString("yyyy-MM-dd")</td>
+                            <td class="text-end font-monospace">@h.PreviousPrice.ToString("N2") EGP</td>
+                            <td class="text-end font-monospace fw-bold">@h.CurrentPrice.ToString("N2") EGP</td>
+                            <td class="text-center">
+                                <span class="badge @(h.PriceChangePercent > 0 ? "bg-danger" : (h.PriceChangePercent < 0 ? "bg-success" : "bg-secondary")) font-monospace">
+                                    @(h.PriceChangePercent > 0 ? "+" : "")@h.PriceChangePercent%
+                                </span>
+                            </td>
+                            <td class="pe-3 text-muted small">@(h.Notes ?? "-")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

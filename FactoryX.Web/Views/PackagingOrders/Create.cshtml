@@ -1,0 +1,237 @@
+@model FactoryX.Application.DTOs.CreatePackagingOrderRequest
+@{
+    ViewData["Title"] = "إنشاء أمر تعبئة وتغليف جديد";
+    var packagingBOMs = ViewBag.PackagingBOMs as IEnumerable<FactoryX.Application.DTOs.PackagingBOMDto> ?? Enumerable.Empty<FactoryX.Application.DTOs.PackagingBOMDto>();
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-cart-flatbed-boxes text-primary me-2"></i>إنشاء أمر تعبئة وتغليف جديد (Packaging Order)</h2>
+            <p class="text-muted mb-0">ربط دفعة الإنتاج المعتمدة من الجودة بمواصفة التعبئة والتأكد من توافر مواد التعبئة بالمستودع</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-1"></i> العودة للأوامر
+        </a>
+    </div>
+
+    <form asp-action="Create" method="post" id="orderForm">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="alert alert-danger shadow-sm mb-4" style="display: @(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+
+        <div class="row g-4">
+            <!-- Order Configuration Card -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-primary text-white py-3">
+                        <h5 class="card-title mb-0"><i class="fas fa-sliders me-2"></i>1. تحديد دفعة الإنتاج ومواصفة التعبئة</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Select Production Batch -->
+                        <div class="mb-3">
+                            <label asp-for="ProductionBatchId" class="form-label fw-bold">دفعة الإنتاج المستهدفة: <span class="text-danger">*</span></label>
+                            <select asp-for="ProductionBatchId" asp-items="ViewBag.Batches" class="form-select font-monospace" id="batchSelect" required onchange="onBatchSelected()">
+                                <option value="">-- اختر دفعة الإنتاج المكتملة --</option>
+                            </select>
+                            <span asp-validation-for="ProductionBatchId" class="text-danger small"></span>
+                        </div>
+
+                        <!-- QC Gate Status Card -->
+                        <div class="card mb-3 border" id="qcGateCard" style="display: none;">
+                            <div class="card-body p-3" id="qcGateBody">
+                                <!-- Dynamic QC Status injected by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Select Packaging BOM -->
+                        <div class="mb-3">
+                            <label asp-for="PackagingBOMId" class="form-label fw-bold">مواصفة التعبئة والتغليف (BOM): <span class="text-danger">*</span></label>
+                            <select asp-for="PackagingBOMId" class="form-select" id="bomSelect" required onchange="onBOMSelected()">
+                                <option value="">-- اختر مواصفة التعبئة والتغليف --</option>
+                                @foreach (var bom in packagingBOMs)
+                                {
+                                    <option value="@bom.Id" data-product-id="@bom.ProductId" data-pack-size="@bom.PackSize" data-pack-size-kg="@bom.PackSizeKg" data-pack-unit="@bom.PackUnit" data-cost="@bom.TotalPackagingMaterialCost" data-version="@bom.ActiveVersionNumber">
+                                        @bom.Name (@bom.Code) - عبوة @bom.PackSize.ToString("0.##") @bom.PackUnit
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="PackagingBOMId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="PlannedQuantity" class="form-label fw-bold">الكمية المخططة للتعبئة (عبوة): <span class="text-danger">*</span></label>
+                                <input asp-for="PlannedQuantity" class="form-control" type="number" step="1" min="1" id="plannedQtyInput" required oninput="onQuantityChanged()" />
+                                <small class="text-muted" id="maxPacksHint"></small>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="OperatorId" class="form-label fw-bold">المشغل المسؤول:</label>
+                                <select asp-for="OperatorId" asp-items="ViewBag.Operators" class="form-select">
+                                    <option value="">-- اختياري --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Notes" class="form-label fw-bold">ملاحظات وتعليمات التعبئة:</label>
+                            <textarea asp-for="Notes" class="form-control" rows="2" placeholder="أي تعليمات تشغيل خاصة بأمر التعبئة..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Material Requirements & Availability Card -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0"><i class="fas fa-boxes-stacked me-2"></i>2. فحص متطلبات وتوافر مواد التعبئة بالمستودع</h5>
+                        <span class="badge bg-secondary" id="availabilityBadge">بانتظار الاختيار</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="reqTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">مادة التعبئة</th>
+                                        <th>الكمية المطلوبة</th>
+                                        <th>الرصيد المتاح</th>
+                                        <th>العجز</th>
+                                        <th class="pe-3">الحالة</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reqTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center py-5 text-muted">
+                                            يرجى اختيار دفعة الإنتاج ومواصفة التعبئة لعرض المتطلبات وتوافر الرصيد.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="p-3 bg-light border-top text-end">
+                            <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm" id="btnSubmitOrder">
+                                <i class="fas fa-check-circle me-1"></i> حفظ وتأكيد أمر التعبئة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        async function onBatchSelected() {
+            const batchId = document.getElementById('batchSelect').value;
+            if (!batchId) {
+                document.getElementById('qcGateCard').style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/PackagingOrders/GetBatchInfo?batchId=${batchId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const qcGateCard = document.getElementById('qcGateCard');
+                    const qcGateBody = document.getElementById('qcGateBody');
+                    qcGateCard.style.display = 'block';
+
+                    if (data.qcGate.isAllowed) {
+                        qcGateCard.className = 'card mb-3 border-success bg-success bg-opacity-10';
+                        qcGateBody.innerHTML = `
+                            <div class="d-flex align-items-center text-success">
+                                <i class="fas fa-shield-check fa-2x me-3"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-0">بوابة الجودة (QC Gate): معتمد ومتاح للإفراج والتعبئة</h6>
+                                    <small class="text-muted">${data.qcGate.reason}</small>
+                                </div>
+                            </div>
+                        `;
+                        document.getElementById('btnSubmitOrder').disabled = false;
+                    } else {
+                        qcGateCard.className = 'card mb-3 border-danger bg-danger bg-opacity-10';
+                        qcGateBody.innerHTML = `
+                            <div class="d-flex align-items-center text-danger">
+                                <i class="fas fa-shield-xmark fa-2x me-3"></i>
+                                <div>
+                                    <h6 class="fw-bold mb-0">بوابة الجودة (QC Gate): محظور من التعبئة</h6>
+                                    <small class="text-dark">${data.qcGate.reason}</small>
+                                </div>
+                            </div>
+                        `;
+                        document.getElementById('btnSubmitOrder').disabled = true;
+                    }
+
+                    // Filter applicable BOMs
+                    const bomSelect = document.getElementById('bomSelect');
+                    if (data.applicableBOMs && data.applicableBOMs.length > 0) {
+                        bomSelect.value = data.applicableBOMs[0].id;
+                        document.getElementById('plannedQtyInput').value = data.applicableBOMs[0].maxPacks || 100;
+                        document.getElementById('maxPacksHint').innerText = `الحد الأقصى النظري: ${data.applicableBOMs[0].maxPacks} عبوة (ناتج ${data.batch.outputKg} كجم)`;
+                        onBOMSelected();
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function onBOMSelected() {
+            const bomId = document.getElementById('bomSelect').value;
+            const qty = document.getElementById('plannedQtyInput').value || 1;
+
+            if (!bomId || qty <= 0) return;
+
+            try {
+                const response = await fetch(`/PackagingOrders/GetRequirements?bomId=${bomId}&quantity=${qty}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const tbody = document.getElementById('reqTableBody');
+                    tbody.innerHTML = '';
+
+                    data.requirements.forEach(r => {
+                        const tr = document.createElement('tr');
+                        const statusBadge = r.isSufficient
+                            ? '<span class="badge bg-success"><i class="fas fa-check me-1"></i>متوفر</span>'
+                            : '<span class="badge bg-danger"><i class="fas fa-exclamation-triangle me-1"></i>عجز</span>';
+
+                        tr.innerHTML = `
+                            <td class="ps-3 fw-bold">${r.materialName} <small class="text-muted font-monospace">(${r.materialCode})</small></td>
+                            <td><span class="fw-bold text-primary">${r.requiredQuantity}</span> ${r.unit}</td>
+                            <td><span class="fw-bold">${r.availableQuantity}</span> ${r.unit}</td>
+                            <td><span class="${r.shortageQuantity > 0 ? 'fw-bold text-danger' : 'text-muted'}">${r.shortageQuantity}</span> ${r.unit}</td>
+                            <td class="pe-3">${statusBadge}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    const badge = document.getElementById('availabilityBadge');
+                    if (data.allSufficient) {
+                        badge.className = 'badge bg-success';
+                        badge.innerText = 'جميع المواد متوفرة';
+                    } else {
+                        badge.className = 'badge bg-danger';
+                        badge.innerText = 'يوجد عجز في المواد';
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function onQuantityChanged() {
+            onBOMSelected();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const batchSelect = document.getElementById('batchSelect');
+            if (batchSelect.value) {
+                onBatchSelected();
+            }
+        });
+    </script>
+}

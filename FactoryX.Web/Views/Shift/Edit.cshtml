@@ -1,0 +1,47 @@
+@model FactoryX.Application.DTOs.Responses.ShiftResponses.GetShiftResponse
+@{
+    ViewData["Title"] = "Vardiya Düzenle";
+}
+
+<partial name="_Alert" />
+
+<h2 class="fw-bold mb-4">Vardiya Düzenle</h2>
+
+<form asp-action="Edit" method="post" class="glass-card p-4 shadow-sm" autocomplete="off">
+    <input type="hidden" asp-for="Id" />
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label">Vardiya Adı</label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="StartTime" class="form-label">Başlangıç Saati</label>
+        <input asp-for="StartTime" type="time" class="form-control" />
+        <span asp-validation-for="StartTime" class="text-danger small"></span>
+    </div>
+    <div class="mb-3">
+        <label asp-for="EndTime" class="form-label">Bitiş Saati</label>
+        <input asp-for="EndTime" type="time" class="form-control" />
+        <span asp-validation-for="EndTime" class="text-danger small"></span>
+    </div>
+    <button type="submit" class="btn btn-primary rounded-pill px-4">Kaydet</button>
+    <a asp-action="Index" class="btn btn-outline-secondary ms-2">İptal</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 1rem;
+        backdrop-filter: blur(6px);
+        max-width: 500px;
+        margin: auto;
+    }
+
+    [data-bs-theme="dark"] .glass-card {
+        background: rgba(30, 30, 40, 0.7);
+    }
+</style>

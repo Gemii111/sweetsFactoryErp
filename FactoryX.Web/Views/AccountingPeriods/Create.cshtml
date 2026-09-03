@@ -1,0 +1,55 @@
+@model FactoryX.Application.DTOs.AccountingPeriodCreateDto
+@{
+    ViewData["Title"] = "فتح فترة مالية جديدة";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-calendar-plus text-primary me-2"></i>فتح فترة مالية جديدة</h5>
+                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-right me-1"></i>العودة للفترات
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="PeriodName" class="form-label fw-bold">اسم / كود الفترة المالية <span class="text-danger">*</span></label>
+                        <input asp-for="PeriodName" class="form-control font-monospace" placeholder="مثال: FY2026-M09 أو FY2026" required />
+                        <span asp-validation-for="PeriodName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="StartDate" class="form-label fw-bold">تاريخ البداية <span class="text-danger">*</span></label>
+                            <input asp-for="StartDate" type="date" class="form-control" required />
+                            <span asp-validation-for="StartDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="EndDate" class="form-label fw-bold">تاريخ النهاية <span class="text-danger">*</span></label>
+                            <input asp-for="EndDate" type="date" class="form-control" required />
+                            <span asp-validation-for="EndDate" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Notes" class="form-label fw-bold">ملاحظات</label>
+                        <textarea asp-for="Notes" class="form-control" rows="2" placeholder="ملاحظات حول الفترة المالية..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i>فتح الفترة</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,181 @@
+@model FactoryX.Application.DTOs.CreatePaymentRequest
+@{
+    ViewData["Title"] = "تسجيل سند قبض وسداد";
+    var payableInvoices = ViewBag.Invoices as IEnumerable<FactoryX.Application.DTOs.InvoiceDto> ?? Enumerable.Empty<FactoryX.Application.DTOs.InvoiceDto>();
+    var selectedInvoice = ViewBag.SelectedInvoice as FactoryX.Application.DTOs.InvoiceDto;
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-hand-holding-usd text-success me-2"></i>تسجيل سند قبض وسداد (Payment Receipt)</h2>
+            <p class="text-muted mb-0">تسجيل تحصيل المبالغ المستحقة على فواتير المبيعات وتحديث رصيد الفاتورة والعميل</p>
+        </div>
+        <div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-1"></i> العودة لقائمة السندات
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0 text-success"><i class="fas fa-receipt me-2"></i>بيانات سند القبض والفاتورة المستحقة</h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post" id="paymentForm">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Invoice Selection -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">الفاتورة المستحقة للتحصيل <span class="text-danger">*</span></label>
+                            <select id="invoiceSelect" asp-for="InvoiceId" class="form-select" required>
+                                <option value="">-- اختر الفاتورة المراد سدادها --</option>
+                                @foreach (var inv in payableInvoices)
+                                {
+                                    <option value="@inv.Id"
+                                            data-customer-id="@inv.CustomerId"
+                                            data-customer-name="@inv.CustomerName"
+                                            data-customer-code="@inv.CustomerCode"
+                                            data-total-amount="@inv.TotalAmount"
+                                            data-remaining-amount="@inv.RemainingAmount"
+                                            data-currency="@inv.Currency"
+                                            selected="@(inv.Id == Model.InvoiceId)">
+                                        @inv.InvoiceNumber — @inv.CustomerName (المتبقي: @inv.RemainingAmount.ToString("N2") @inv.Currency)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Customer Info (Auto Loaded) -->
+                        <input type="hidden" id="customerIdHidden" asp-for="CustomerId" />
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">العميل</label>
+                                <input type="text" id="customerDisplayName" class="form-control bg-light" readonly placeholder="سيتم تحديده من الفاتورة" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold">إجمالي الفاتورة</label>
+                                <input type="text" id="invoiceTotalDisplay" class="form-control bg-light font-monospace" readonly placeholder="0.00 EGP" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-danger">المتبقي على الفاتورة</label>
+                                <input type="text" id="invoiceRemainingDisplay" class="form-control bg-light text-danger fw-bold font-monospace" readonly placeholder="0.00 EGP" />
+                            </div>
+                        </div>
+
+                        <!-- Payment Details -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">مبلغ السداد المحصل <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" min="0.01" asp-for="Amount" id="paymentAmountInput" class="form-control font-monospace fs-5 fw-bold" required />
+                                    <span class="input-group-text font-monospace" id="currencySpan">EGP</span>
+                                </div>
+                                <small class="text-muted" id="maxAmountHint">الحد الأقصى للسداد هو الرصيد المتبقي على الفاتورة.</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">تاريخ القبض / السداد <span class="text-danger">*</span></label>
+                                <input type="date" asp-for="PaymentDate" class="form-control" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">طريقة السداد <span class="text-danger">*</span></label>
+                                <select asp-for="PaymentMethod" class="form-select" required>
+                                    <option value="1">نقداً (Cash)</option>
+                                    <option value="2">تحويل بنكي (Bank Transfer)</option>
+                                    <option value="3">بطاقة / POS (Card)</option>
+                                    <option value="4">شيك بنكي (Cheque)</option>
+                                    <option value="5">أخرى (Other)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">الرقم المرجعي / رقم الشيك أو التحويل</label>
+                                <input type="text" asp-for="ReferenceNumber" class="form-control" placeholder="مثال: رقم الشيك، رقم إشعار التحويل..." />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">ملاحظات وبيان السند</label>
+                                <textarea asp-for="Notes" class="form-control" rows="2" placeholder="أي تفاصيل أو ملاحظات إضافية حول عملية التحصيل..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="text-end pt-3 border-top">
+                            <a asp-action="Index" class="btn btn-secondary me-2">إلغاء</a>
+                            <button type="submit" class="btn btn-success px-4" id="submitBtn">
+                                <i class="fas fa-check-circle me-1"></i> حفظ وتثبيت سند القبض
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const invoiceSelect = document.getElementById('invoiceSelect');
+            const customerIdHidden = document.getElementById('customerIdHidden');
+            const customerDisplayName = document.getElementById('customerDisplayName');
+            const invoiceTotalDisplay = document.getElementById('invoiceTotalDisplay');
+            const invoiceRemainingDisplay = document.getElementById('invoiceRemainingDisplay');
+            const paymentAmountInput = document.getElementById('paymentAmountInput');
+            const currencySpan = document.getElementById('currencySpan');
+            const maxAmountHint = document.getElementById('maxAmountHint');
+            const submitBtn = document.getElementById('submitBtn');
+
+            function updateFromInvoice() {
+                const selectedOption = invoiceSelect.options[invoiceSelect.selectedIndex];
+                if (!invoiceSelect.value) {
+                    customerIdHidden.value = '';
+                    customerDisplayName.value = '';
+                    invoiceTotalDisplay.value = '';
+                    invoiceRemainingDisplay.value = '';
+                    paymentAmountInput.value = '';
+                    paymentAmountInput.removeAttribute('max');
+                    submitBtn.disabled = true;
+                    return;
+                }
+
+                const custId = selectedOption.getAttribute('data-customer-id');
+                const custName = selectedOption.getAttribute('data-customer-name');
+                const custCode = selectedOption.getAttribute('data-customer-code');
+                const total = parseFloat(selectedOption.getAttribute('data-total-amount')) || 0;
+                const remaining = parseFloat(selectedOption.getAttribute('data-remaining-amount')) || 0;
+                const curr = selectedOption.getAttribute('data-currency') || 'EGP';
+
+                customerIdHidden.value = custId;
+                customerDisplayName.value = custName + ' (' + custCode + ')';
+                invoiceTotalDisplay.value = total.toFixed(2) + ' ' + curr;
+                invoiceRemainingDisplay.value = remaining.toFixed(2) + ' ' + curr;
+                currencySpan.textContent = curr;
+
+                paymentAmountInput.setAttribute('max', remaining.toFixed(2));
+                if (!paymentAmountInput.value || parseFloat(paymentAmountInput.value) <= 0 || parseFloat(paymentAmountInput.value) > remaining) {
+                    paymentAmountInput.value = remaining.toFixed(2);
+                }
+
+                maxAmountHint.textContent = `الحد الأقصى للسداد المتبقي: ${remaining.toFixed(2)} ${curr}`;
+                submitBtn.disabled = false;
+            }
+
+            invoiceSelect.addEventListener('change', updateFromInvoice);
+
+            if (invoiceSelect.value) {
+                updateFromInvoice();
+            }
+        });
+    </script>
+}

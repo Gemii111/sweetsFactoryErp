@@ -1,0 +1,165 @@
+@model FactoryX.Application.DTOs.PurchaseReceiptDto
+@{
+    ViewData["Title"] = $"سند إدخال مخزني {Model.ReceiptNumber}";
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom d-print-none">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success font-monospace fs-6">@Model.ReceiptNumber</span>
+                <h2 class="fw-bold mb-0">محضر وسند استلام وإدخال مخزني (GRN)</h2>
+                @switch (Model.Status)
+                {
+                    case FactoryX.Domain.Entities.PurchaseReceiptStatus.Draft:
+                        <span class="badge bg-secondary fs-6">مسودة</span>
+                        break;
+                    case FactoryX.Domain.Entities.PurchaseReceiptStatus.Posted:
+                        <span class="badge bg-success fs-6"><i class="fas fa-check-circle me-1"></i>مرحل للمخزون (Posted)</span>
+                        break;
+                    case FactoryX.Domain.Entities.PurchaseReceiptStatus.Cancelled:
+                        <span class="badge bg-danger fs-6">ملغي</span>
+                        break;
+                }
+            </div>
+            <p class="text-muted mb-0">المورد: <strong>@Model.SupplierName</strong> (@Model.SupplierCode) | أمر الشراء المرجعي: <strong>@Model.PurchaseOrderNumber</strong></p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-dark shadow-sm" onclick="window.print();">
+                <i class="fas fa-print me-1"></i> طباعة السند
+            </button>
+            <a asp-controller="PurchaseOrders" asp-action="Details" asp-route-id="@Model.PurchaseOrderId" class="btn btn-outline-primary shadow-sm">
+                <i class="fas fa-file-invoice-dollar me-1"></i> أمر الشراء المرجعي
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary shadow-sm">
+                <i class="fas fa-arrow-left me-1"></i> العودة للسندات
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm d-print-none" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Official Certificate Card for Print/View -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light py-3 border-bottom">
+            <div class="row align-items-center">
+                <div class="col-6">
+                    <h5 class="fw-bold mb-0 text-success"><i class="fas fa-file-circle-check me-2"></i>محضر فحص واستلام شحنة واردة</h5>
+                    <small class="text-muted">مصنع حلويات المولد النبوي الشريف — قسم إدارة المشتريات والمخازن</small>
+                </div>
+                <div class="col-6 text-end">
+                    <span class="text-muted small d-block">رقم السند المخزني:</span>
+                    <span class="h5 fw-bold font-monospace text-dark mb-0">@Model.ReceiptNumber</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-4">
+            <!-- Details Grid -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <span class="text-muted small d-block">المورد:</span>
+                    <span class="fw-bold">@Model.SupplierName</span>
+                    <small class="text-muted font-monospace d-block">@Model.SupplierCode</small>
+                </div>
+                <div class="col-md-3">
+                    <span class="text-muted small d-block">أمر الشراء المرجعي:</span>
+                    <span class="fw-bold font-monospace">@Model.PurchaseOrderNumber</span>
+                </div>
+                <div class="col-md-3">
+                    <span class="text-muted small d-block">المستودع الرئيسي:</span>
+                    <span class="fw-bold">@Model.WarehouseName</span>
+                </div>
+                <div class="col-md-3">
+                    <span class="text-muted small d-block">تاريخ وساعة الاستلام:</span>
+                    <span class="fw-bold">@Model.ReceiptDate.ToString("yyyy-MM-dd")</span>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Notes))
+            {
+                <div class="p-3 bg-light rounded mb-4">
+                    <span class="fw-bold text-secondary me-2"><i class="fas fa-clipboard-check me-1"></i>ملاحظات الفحص والاستلام:</span>
+                    <span>@Model.Notes</span>
+                </div>
+            }
+
+            <!-- Items Table -->
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3">#</th>
+                            <th>كود المادة</th>
+                            <th>اسم المادة الخام</th>
+                            <th>الكمية المستلمة</th>
+                            <th>الكمية المقبولة</th>
+                            <th>الكمية المرفوضة</th>
+                            <th>رقم التشغيلة / الدفعة</th>
+                            <th>تاريخ انتهاء الصلاحية</th>
+                            <th>سعر الوحدة</th>
+                            <th class="text-end pe-3">إجمالي التكلفة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Items.Count; i++)
+                        {
+                            var item = Model.Items[i];
+                            <tr>
+                                <td class="ps-3 text-muted">@(i + 1)</td>
+                                <td><span class="badge bg-secondary font-monospace">@item.MaterialCode</span></td>
+                                <td class="fw-bold">@item.MaterialName</td>
+                                <td class="font-monospace">@item.ReceivedQuantity.ToString("N2") @item.Unit</td>
+                                <td class="fw-bold text-success font-monospace">@item.AcceptedQuantity.ToString("N2") @item.Unit</td>
+                                <td class="fw-bold @(item.RejectedQuantity > 0 ? "text-danger" : "text-muted") font-monospace">
+                                    @item.RejectedQuantity.ToString("N2") @item.Unit
+                                </td>
+                                <td>
+                                    <div><span class="fw-bold font-monospace">@(string.IsNullOrEmpty(item.SupplierBatchNumber) ? item.InternalBatchNumber : item.SupplierBatchNumber)</span></div>
+                                    @if (!string.IsNullOrEmpty(item.SupplierBatchNumber))
+                                    {
+                                        <small class="text-muted font-monospace d-block">داخلي: @item.InternalBatchNumber</small>
+                                    }
+                                </td>
+                                <td>@(item.ExpiryDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                <td class="font-monospace">@item.UnitPrice.ToString("N2") ج.م</td>
+                                <td class="text-end pe-3 fw-bold text-success font-monospace">@item.TotalCost.ToString("N2") ج.م</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr class="fw-bold">
+                            <td colspan="4" class="text-end">إجمالي الكميات المقبولة:</td>
+                            <td class="text-success font-monospace">@Model.TotalAcceptedQuantity.ToString("N2")</td>
+                            <td class="text-danger font-monospace">@Model.TotalRejectedQuantity.ToString("N2")</td>
+                            <td colspan="3" class="text-end">إجمالي تكلفة الشحنة المضافة للمخزون:</td>
+                            <td class="text-end pe-3 fs-5 text-success font-monospace">@Model.TotalCost.ToString("N2") ج.م</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Signatures Section -->
+            <div class="row pt-4 mt-4 border-top">
+                <div class="col-4 text-center">
+                    <span class="text-muted small d-block mb-4">أمين المستودع المستلم:</span>
+                    <span class="fw-bold border-top border-secondary pt-2 px-4 d-inline-block">@(Model.ReceivedByName ?? "المسؤول")</span>
+                </div>
+                <div class="col-4 text-center">
+                    <span class="text-muted small d-block mb-4">مسؤول فحص الجودة:</span>
+                    <span class="fw-bold border-top border-secondary pt-2 px-4 d-inline-block">فحص واعتماد الجودة</span>
+                </div>
+                <div class="col-4 text-center">
+                    <span class="text-muted small d-block mb-4">مدير المشتريات والمخازن:</span>
+                    <span class="fw-bold border-top border-secondary pt-2 px-4 d-inline-block">الاعتماد النهائي</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

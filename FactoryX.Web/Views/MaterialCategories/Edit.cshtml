@@ -1,0 +1,67 @@
+@model FactoryX.Application.DTOs.UpdateMaterialCategoryRequest
+@{
+    ViewData["Title"] = "تعديل تصنيف المواد الخام";
+}
+
+<div class="container py-4">
+    @await Html.PartialAsync("_Alert")
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="bg-warning-subtle text-warning p-3 rounded-circle d-inline-block mb-3">
+                            <i class="bi bi-pencil-square fs-2"></i>
+                        </div>
+                        <h3 class="fw-bold text-dark">تعديل تصنيف المواد الخام</h3>
+                        <p class="text-muted small">تحديث بيانات التصنيف وحالة التنشيط</p>
+                    </div>
+
+                    <form asp-action="Edit" asp-route-id="@Model.Id" method="post" autocomplete="off" novalidate>
+                        <input type="hidden" asp-for="Id" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3" role="alert"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Code" class="form-label fw-semibold">رمز / كود التصنيف <span class="text-danger">*</span></label>
+                            <input asp-for="Code" class="form-control form-control-lg" />
+                            <span asp-validation-for="Code" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold">اسم التصنيف <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control form-control-lg" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label fw-semibold">الوصف والملاحظات</label>
+                            <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch fs-5">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" id="isActiveSwitch">
+                                <label class="form-check-label fs-6 fw-semibold" for="isActiveSwitch">التصنيف نشط ومتاح للاستخدام</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill">
+                                <i class="bi bi-arrow-right me-1"></i> إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-warning px-5 rounded-pill shadow-sm">
+                                <i class="bi bi-check-lg me-1"></i> حفظ التعديلات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

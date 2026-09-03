@@ -1,0 +1,65 @@
+@model IEnumerable<FactoryX.Application.DTOs.ProductionRecordDto>
+@{
+    ViewData["Title"] = "سجلات الإنتاج اليومية";
+}
+
+<partial name="_Alert" />
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-clipboard-data text-danger me-2"></i>سجلات الإنتاج اليومية</h2>
+        <p class="text-muted mb-0">توثيق كميات حلويات المولد المصنعة فعلياً بواسطة العمال والماكينات.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm"><i class="bi bi-plus-lg me-1"></i> تسجيل إنتاج جديد</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info rounded-4 p-4 text-center shadow-sm">
+        <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+        لا توجد سجلات إنتاج مسجلة حالياً.
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var rec in Model)
+        {
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card glass-card h-100 shadow-sm border-0 bg-white">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title fw-bold text-dark mb-0">سجل #@rec.Id</h5>
+                            <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1">@rec.WorkOrderName</span>
+                        </div>
+                        <p class="card-text mb-1 text-muted"><strong class="text-dark">المشغل / العامل:</strong> @rec.OperatorName</p>
+                        <p class="card-text mb-1 text-muted"><strong class="text-dark">الكمية المنتجة:</strong> <span class="fw-bold text-success fs-5">@rec.QuantityProduced</span></p>
+                        <p class="card-text mb-3 text-muted"><strong class="text-dark">الوقت والتاريخ:</strong> @rec.Timestamp.ToString("yyyy-MM-dd HH:mm")</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 d-flex justify-content-end gap-2 pb-3 px-4">
+                        <a asp-action="Details" asp-route-id="@rec.Id" class="btn btn-outline-secondary btn-sm rounded-pill px-3">تفاصيل</a>
+                        <a asp-action="Edit" asp-route-id="@rec.Id" class="btn btn-outline-primary btn-sm rounded-pill px-3">تعديل</a>
+                        <a asp-action="Delete" asp-route-id="@rec.Id" class="btn btn-outline-danger btn-sm rounded-pill px-3">حذف</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 1rem;
+        backdrop-filter: blur(6px);
+        transition: box-shadow 0.2s;
+    }
+
+    .glass-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 123, 255, 0.15);
+    }
+
+    [data-bs-theme="dark"] .glass-card {
+        background: rgba(30, 34, 54, 0.85);
+    }
+</style>

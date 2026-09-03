@@ -1,0 +1,148 @@
+@model IEnumerable<FactoryX.Application.DTOs.PackagingBOMDto>
+@{
+    ViewData["Title"] = "مواصفات التعبئة والتغليف (Packaging BOM)";
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-boxes-packing text-primary me-2"></i>مواصفات التعبئة والتغليف (Packaging BOM)</h2>
+            <p class="text-muted mb-0">إدارة قوائم مواد وتكوينات تعبئة وتغليف المنتجات التامة (علب، أكياس، ملصقات، شرائط، كراتين)</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus me-1"></i> إضافة مواصفة تعبئة جديدة
+            </a>
+            <a asp-controller="PackagingOrders" asp-action="Index" class="btn btn-outline-info shadow-sm">
+                <i class="fas fa-dolly-flatbed me-1"></i> أوامر التعبئة والتنفيذ
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold small text-muted">تصفية حسب المنتج التام:</label>
+                    <select name="productId" asp-items="ViewBag.Products" class="form-select">
+                        <option value="">-- جميع المنتجات التامة --</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" name="onlyActive" value="true" id="onlyActiveCheck" @(ViewBag.OnlyActive == true ? "checked" : "")>
+                        <label class="form-check-label fw-bold" for="onlyActiveCheck">
+                            عرض المواصفات النشطة فقط
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i> تصفية</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- BOMs Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark text-nowrap">
+                        <tr>
+                            <th class="ps-3">كود المواصفة</th>
+                            <th>اسم مواصفة التعبئة</th>
+                            <th>المنتج المرتبط</th>
+                            <th>حجم العبوة</th>
+                            <th>الإصدار النشط</th>
+                            <th>تكلفة مواد التعبئة للعبوة</th>
+                            <th>الحالة</th>
+                            <th class="text-center pe-3">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var bom in Model)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <span class="badge bg-primary fs-6 font-monospace">@bom.Code</span>
+                                    </td>
+                                    <td class="fw-bold text-dark">
+                                        <a asp-action="Details" asp-route-id="@bom.Id" class="text-decoration-none text-dark">
+                                            @bom.Name
+                                        </a>
+                                        @if (!string.IsNullOrEmpty(bom.Description))
+                                        {
+                                            <div class="text-muted small">@bom.Description</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@bom.ProductName</span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-primary">@bom.PackSize.ToString("0.##")</span> @bom.PackUnit
+                                        <span class="text-muted small">(@bom.PackSizeKg.ToString("0.###") كجم)</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info text-dark">v@(bom.ActiveVersionNumber > 0 ? bom.ActiveVersionNumber : 1)</span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-success">@bom.TotalPackagingMaterialCost.ToString("C2")</span>
+                                    </td>
+                                    <td>
+                                        @if (bom.IsActive)
+                                        {
+                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>نشط</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>معطل</span>
+                                        }
+                                    </td>
+                                    <td class="text-center pe-3 text-nowrap">
+                                        <a asp-action="Details" asp-route-id="@bom.Id" class="btn btn-sm btn-outline-info" title="عرض التفاصيل والتكلفة">
+                                            <i class="fas fa-eye me-1"></i>التفاصيل
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@bom.Id" class="btn btn-sm btn-outline-primary" title="تعديل">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="fas fa-boxes-packing fa-3x mb-3 text-secondary d-block"></i>
+                                    لا توجد مواصفات تعبئة وتغليف مطابقة.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

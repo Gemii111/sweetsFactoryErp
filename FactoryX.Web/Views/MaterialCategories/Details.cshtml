@@ -1,0 +1,127 @@
+@model FactoryX.Application.DTOs.MaterialCategoryDto
+@{
+    ViewData["Title"] = "تفاصيل تصنيف المواد الخام";
+    var materials = ViewBag.Materials as IEnumerable<FactoryX.Application.DTOs.MaterialDto> ?? Enumerable.Empty<FactoryX.Application.DTOs.MaterialDto>();
+}
+
+<div class="container-fluid py-4">
+    @await Html.PartialAsync("_Alert")
+
+    <div class="row g-4">
+        <!-- Category Details Card -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 rounded-4 bg-white sticky-top" style="top: 20px;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1">@Model.Code</span>
+                        <span class="badge bg-@(Model.IsActive ? "success-subtle text-success" : "secondary-subtle text-secondary") rounded-pill px-3 py-1">
+                            @(Model.IsActive ? "نشط" : "معطل")
+                        </span>
+                    </div>
+
+                    <h3 class="fw-bold text-dark mb-2">@Model.Name</h3>
+                    <p class="text-muted small mb-4">@(string.IsNullOrWhiteSpace(Model.Description) ? "لا يوجد وصف مدون." : Model.Description)</p>
+
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">عدد الخامات التابعة:</span>
+                            <span class="fw-bold text-primary">@materials.Count()</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">تاريخ الإنشاء:</span>
+                            <span>@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between px-0">
+                            <span class="text-muted">آخر تحديث:</span>
+                            <span>@Model.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                        </li>
+                    </ul>
+
+                    <div class="d-grid gap-2">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning rounded-pill">
+                            <i class="bi bi-pencil me-1"></i> تعديل بيانات التصنيف
+                        </a>
+                        <a asp-controller="Materials" asp-action="Create" class="btn btn-outline-primary rounded-pill">
+                            <i class="bi bi-plus-lg me-1"></i> إضافة خامة تابعة لهذا التصنيف
+                        </a>
+                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill">
+                            <i class="bi bi-arrow-right me-1"></i> العودة لقائمة التصنيفات
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Materials List in this Category -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-boxes text-primary me-2"></i>الخامات المندرجة تحت هذا التصنيف</h5>
+                    <span class="badge bg-light text-dark border">إجمالي: @materials.Count() صنف</span>
+                </div>
+                <div class="card-body p-4">
+                    @if (materials.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>الكود</th>
+                                        <th>اسم الخامة</th>
+                                        <th>وحدة التخزين</th>
+                                        <th>الرصيد الحالي</th>
+                                        <th>حالة المخزون</th>
+                                        <th>الإجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var m in materials)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold"><code>@m.Code</code></td>
+                                            <td>
+                                                <div class="fw-semibold text-dark">@m.Name</div>
+                                                @if (!string.IsNullOrEmpty(m.ArabicName) && m.ArabicName != m.Name)
+                                                {
+                                                    <small class="text-muted">@m.ArabicName</small>
+                                                }
+                                            </td>
+                                            <td><span class="badge bg-light text-dark border">@m.Unit</span></td>
+                                            <td class="fw-bold">@m.CurrentStock</td>
+                                            <td>
+                                                <span class="badge bg-@(m.StockStatus switch {
+                                                    FactoryX.Application.DTOs.MaterialStockStatus.OUT_OF_STOCK => "danger",
+                                                    FactoryX.Application.DTOs.MaterialStockStatus.LOW_STOCK => "warning text-dark",
+                                                    FactoryX.Application.DTOs.MaterialStockStatus.REORDER_REQUIRED => "info text-dark",
+                                                    FactoryX.Application.DTOs.MaterialStockStatus.NORMAL => "success",
+                                                    _ => "secondary"
+                                                }) rounded-pill px-2 py-1">
+                                                    @m.StockStatusName
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a asp-controller="Materials" asp-action="Details" asp-route-id="@m.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                    عرض
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light text-center py-5 rounded-4">
+                            <i class="bi bi-inbox fs-2 text-muted d-block mb-2"></i>
+                            <p class="text-muted mb-3">لا توجد خامات مضافة لهذا التصنيف حتى الآن.</p>
+                            <a asp-controller="Materials" asp-action="Create" class="btn btn-primary btn-sm rounded-pill px-4">
+                                <i class="bi bi-plus-lg me-1"></i> إضافة خامة جديدة
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

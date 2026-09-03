@@ -1,0 +1,307 @@
+@model FactoryX.Application.DTOs.PackagingOrderDto
+@{
+    ViewData["Title"] = $"تفاصيل أمر التعبئة والتغليف - {Model.OrderNumber}";
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary fs-5 font-monospace">@Model.OrderNumber</span>
+                <h2 class="fw-bold mb-0">أمر تعبئة وتغليف</h2>
+                @if (Model.Status == FactoryX.Domain.Entities.PackagingOrderStatus.Completed)
+                {
+                    <span class="badge bg-success fs-6 status-completed" data-status="Completed"><i class="fas fa-check-double me-1"></i>مكتمل (Completed)</span>
+                }
+                else if (Model.Status == FactoryX.Domain.Entities.PackagingOrderStatus.InProgress)
+                {
+                    <span class="badge bg-primary fs-6 status-inprogress" data-status="InProgress"><i class="fas fa-spinner fa-spin me-1"></i>قيد التنفيذ (In Progress)</span>
+                }
+                else if (Model.Status == FactoryX.Domain.Entities.PackagingOrderStatus.Planned)
+                {
+                    <span class="badge bg-info text-dark fs-6 status-planned" data-status="Planned"><i class="fas fa-clock me-1"></i>مخطط (Planned)</span>
+                }
+                else if (Model.Status == FactoryX.Domain.Entities.PackagingOrderStatus.Paused)
+                {
+                    <span class="badge bg-warning text-dark fs-6 status-paused" data-status="Paused"><i class="fas fa-pause me-1"></i>متوقف مؤقتاً (Paused)</span>
+                }
+                else if (Model.Status == FactoryX.Domain.Entities.PackagingOrderStatus.Cancelled)
+                {
+                    <span class="badge bg-danger fs-6 status-cancelled" data-status="Cancelled"><i class="fas fa-times me-1"></i>ملغي (Cancelled)</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary fs-6 status-draft" data-status="Draft">مسودة (Draft)</span>
+                }
+            </div>
+            <p class="text-muted mb-0">المنتج: <strong>@Model.ProductName</strong> | دفعة الإنتاج: <strong>@Model.BatchNumber</strong> | تاريخ الإنشاء: @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</p>
+        </div>
+        <div class="d-flex gap-2">
+            @if (Model.Status == FactoryX.Domain.Entities.PackagingOrderStatus.Planned || Model.Status == FactoryX.Domain.Entities.PackagingOrderStatus.Draft)
+            {
+                <form asp-action="Start" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-play me-1"></i> بدء التنفيذ
+                    </button>
+                </form>
+            }
+            @if (Model.Status == FactoryX.Domain.Entities.PackagingOrderStatus.InProgress)
+            {
+                <button type="button" class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#pauseModal">
+                    <i class="fas fa-pause me-1"></i> إيقاف مؤقت
+                </button>
+            }
+            @if (Model.Status == FactoryX.Domain.Entities.PackagingOrderStatus.Paused)
+            {
+                <form asp-action="Resume" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-play me-1"></i> استئناف
+                    </button>
+                </form>
+            }
+            @if (Model.Status != FactoryX.Domain.Entities.PackagingOrderStatus.Completed && Model.Status != FactoryX.Domain.Entities.PackagingOrderStatus.Cancelled)
+            {
+                <a asp-action="Execute" asp-route-id="@Model.Id" class="btn btn-success">
+                    <i class="fas fa-boxes-packing me-1"></i> تنفيذ وصرف مواد التعبئة
+                </a>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                    <i class="fas fa-times me-1"></i> إلغاء الأمر
+                </button>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-1"></i> العودة للأوامر
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Metric Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body p-3">
+                    <span class="text-muted small d-block">الكمية المخططة للتعبئة:</span>
+                    <h3 class="fw-bold mb-0 text-primary">@Model.PlannedQuantity.ToString("N0") <small class="fs-6 text-muted">@Model.PackUnit</small></h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body p-3">
+                    <span class="text-muted small d-block">الكمية المعبأة الفعلية:</span>
+                    <h3 class="fw-bold mb-0 @(Model.ActualQuantity > 0 ? "text-success" : "text-muted")">
+                        @(Model.ActualQuantity > 0 ? Model.ActualQuantity.ToString("N0") : "-") <small class="fs-6 text-muted">@Model.PackUnit</small>
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body p-3">
+                    <span class="text-muted small d-block">الحد الأقصى النظري للدفعة:</span>
+                    <h3 class="fw-bold mb-0 text-dark">@Model.TheoreticalMaxPacks.ToString("N0") <small class="fs-6 text-muted">@Model.PackUnit</small></h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body p-3">
+                    <span class="text-muted small d-block">إجمالي تكلفة مواد التعبئة:</span>
+                    <h3 class="fw-bold mb-0 text-success">@Model.PackagingMaterialCost.ToString("C2")</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Traceability & QC Gate Details -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-dark text-white py-3">
+                    <h5 class="card-title mb-0"><i class="fas fa-link me-2"></i>شجرة التتبع والربط الإنتاجي (Traceability)</h5>
+                </div>
+                <div class="card-body p-3">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-boxes me-2 text-primary"></i>دفعة الإنتاج (Batch):</span>
+                            <span class="font-monospace fw-bold">@Model.BatchNumber</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-tag me-2 text-success"></i>المنتج التام (Product):</span>
+                            <span class="fw-bold">@Model.ProductName (@Model.ProductCode)</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-boxes-packing me-2 text-info"></i>مواصفة التعبئة (BOM):</span>
+                            <span>@Model.PackagingBOMName <span class="badge bg-light text-dark border">v@Model.VersionNumber</span></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-weight-hanging me-2 text-warning"></i>وزن العبوة الصافي:</span>
+                            <span class="fw-bold">@Model.PackSizeKg.ToString("0.###") كجم</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span><i class="fas fa-user-gear me-2 text-secondary"></i>المشغل المسؤول:</span>
+                            <span>@(Model.OperatorName ?? "غير محدد")</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="card-title mb-0"><i class="fas fa-shield-check me-2"></i>حالة بوابة الجودة (QC Release Gate)</h5>
+                </div>
+                <div class="card-body p-4 d-flex flex-column justify-content-center">
+                    @if (Model.QCGateStatus != null && Model.QCGateStatus.IsAllowed)
+                    {
+                        <div class="text-center">
+                            <i class="fas fa-shield-check fa-4x text-success mb-3"></i>
+                            <h4 class="fw-bold text-success">معتمد ومصرح بالإفراج والتعبئة</h4>
+                            <p class="text-muted mb-0">@Model.QCGateStatus.Reason</p>
+                            @if (!string.IsNullOrEmpty(Model.QCGateStatus.InspectionNumber))
+                            {
+                                <div class="mt-2 font-monospace badge bg-light text-dark border">فحص الجودة: @Model.QCGateStatus.InspectionNumber</div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center">
+                            <i class="fas fa-shield-xmark fa-4x text-danger mb-3"></i>
+                            <h4 class="fw-bold text-danger">محظور من التعبئة</h4>
+                            <p class="text-muted mb-0">@(Model.QCGateStatus?.Reason ?? "لم يتم التحقق من الجودة بعد")</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consumptions Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0"><i class="fas fa-receipt me-2"></i>المواد المصروفة فعلياً لأمر التعبئة (Packaging Consumptions)</h5>
+            <span class="badge bg-light text-dark">حركات المخزون: @Model.Consumptions.Count</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">مادة التعبئة والتغليف</th>
+                            <th>كود المادة</th>
+                            <th>الكمية المخططة</th>
+                            <th>الكمية المصروفة فعلياً</th>
+                            <th>المستودع / الموقع</th>
+                            <th>تكلفة الوحدة</th>
+                            <th>إجمالي التكلفة</th>
+                            <th class="pe-3">حركة المخزون</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Consumptions != null && Model.Consumptions.Any())
+                        {
+                            @foreach (var c in Model.Consumptions)
+                            {
+                                <tr>
+                                    <td class="ps-3 fw-bold">@c.MaterialName</td>
+                                    <td><span class="badge bg-light text-dark border font-monospace">@c.MaterialCode</span></td>
+                                    <td>@c.PlannedQuantity.ToString("0.##") @c.Unit</td>
+                                    <td><span class="fw-bold text-primary">@c.ActualQuantity.ToString("0.##")</span> @c.Unit</td>
+                                    <td>@c.WarehouseName @(!string.IsNullOrEmpty(c.LocationName) ? $" / {c.LocationName}" : "")</td>
+                                    <td>@c.UnitCost.ToString("C2")</td>
+                                    <td class="fw-bold text-success">@c.TotalCost.ToString("C2")</td>
+                                    <td class="pe-3">
+                                        @if (c.InventoryTransactionId.HasValue)
+                                        {
+                                            <span class="badge bg-success font-monospace">TX-#@c.InventoryTransactionId.Value</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-4 text-muted">
+                                    لم يتم صرف مواد التعبئة بعد. يمكنك الضغط على "تنفيذ وصرف مواد التعبئة" لبدء الصرف وإكمال الأمر.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Pause Order -->
+<div class="modal fade" id="pauseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Pause" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="PackagingOrderId" value="@Model.Id" />
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title"><i class="fas fa-pause me-2"></i>إيقاف أمر التعبئة والتغليف مؤقتاً</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <label class="form-label fw-bold">سبب الإيقاف المؤقت:</label>
+                    <textarea name="Notes" class="form-control" rows="3" placeholder="مثال: تبديل بكرة الاستيكر أو صيانة ماكينة التغليف..." required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="submit" class="btn btn-warning text-dark px-4">تأكيد الإيقاف المؤقت</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Cancel Order -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Cancel" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="PackagingOrderId" value="@Model.Id" />
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-times me-2"></i>إلغاء أمر التعبئة والتغليف</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <label class="form-label fw-bold">سبب الإلغاء: <span class="text-danger">*</span></label>
+                    <textarea name="CancellationReason" class="form-control" rows="3" placeholder="أسباب إلغاء أمر التعبئة..." required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">تراجع</button>
+                    <button type="submit" class="btn btn-danger px-4">تأكيد الإلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,178 @@
+@model IEnumerable<FactoryX.Application.DTOs.SalesFulfillmentDto>
+@using FactoryX.Domain.Entities
+@{
+    ViewData["Title"] = "سندات تسليم وصرف المبيعات (Sales Fulfillments)";
+    var summary = ViewBag.Summary as FactoryX.Application.DTOs.SalesFulfillmentSummaryDto;
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-truck-loading text-success me-2"></i>سندات تسليم وصرف المبيعات (Sales Fulfillments)</h2>
+            <p class="text-muted mb-0">صرف وتسليم المنتجات التامة للعملاء بناءً على أوامر البيع المعتمدة وخصم الأرصدة آلياً بنظام FEFO</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-success shadow-sm">
+                <i class="fas fa-plus me-1"></i> تسليم شحنة مبيعات جديدة
+            </a>
+            <a asp-controller="SalesOrders" asp-action="Index" class="btn btn-outline-primary shadow-sm">
+                <i class="fas fa-shopping-cart me-1"></i> أوامر البيع
+            </a>
+            <a asp-controller="FinishedGoods" asp-action="Index" class="btn btn-outline-secondary shadow-sm">
+                <i class="fas fa-boxes-stacked me-1"></i> مخزون المنتجات التامة
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- KPI Summary -->
+    @if (summary != null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-primary text-white">
+                    <div class="card-body py-3">
+                        <span class="text-white-50 small d-block">إجمالي سندات الصرف والتسليم</span>
+                        <h3 class="fw-bold mb-0">@summary.TotalFulfillments</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-success text-white">
+                    <div class="card-body py-3">
+                        <span class="text-white-50 small d-block">إجمالي الكميات المسلمة</span>
+                        <h3 class="fw-bold mb-0 font-monospace">@summary.TotalShippedQuantity.ToString("N2") KG</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm bg-info text-white">
+                    <div class="card-body py-3">
+                        <span class="text-white-50 small d-block">إجمالي القيمة المسلمة</span>
+                        <h3 class="fw-bold mb-0 font-monospace">@summary.TotalShippedValue.ToString("N2") EGP</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filter Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">بحث برقم السند أو أمر البيع أو العميل</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
+                        <input type="text" name="searchTerm" class="form-control" placeholder="SF-..." value="@ViewBag.SearchTerm" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">العميل</label>
+                    <select name="customerId" class="form-select" asp-items="ViewBag.Customers">
+                        <option value="">-- كل العملاء --</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">المستودع</label>
+                    <select name="warehouseId" class="form-select" asp-items="ViewBag.Warehouses">
+                        <option value="">-- كل المستودعات --</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">من تاريخ</label>
+                    <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i> تصفية</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Fulfillments Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-0">
+            <h5 class="fw-bold mb-0"><i class="fas fa-list me-2 text-primary"></i>سجل شحنات التسليم (@Model.Count())</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم سند التسليم</th>
+                        <th>أمر البيع المرتبط</th>
+                        <th>العميل</th>
+                        <th>المستودع</th>
+                        <th>تاريخ الصرف</th>
+                        <th>إجمالي الكمية المصروفة</th>
+                        <th>القيمة الإجمالية</th>
+                        <th>المسؤول</th>
+                        <th>الحالة</th>
+                        <th class="text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center py-5 text-muted">
+                                <i class="fas fa-truck-loading fs-1 mb-2 d-block opacity-50"></i>
+                                لا توجد سندات تسليم وصرف مطابقة للبحث
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-primary border font-monospace fs-6">@item.FulfillmentNumber</span>
+                                </td>
+                                <td>
+                                    <a asp-controller="SalesOrders" asp-action="Details" asp-route-id="@item.SalesOrderId" class="font-monospace fw-bold text-decoration-none">
+                                        @item.SalesOrderNumber
+                                    </a>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">@item.CustomerName</div>
+                                    <small class="text-muted font-monospace">@item.CustomerCode</small>
+                                </td>
+                                <td>@item.WarehouseName</td>
+                                <td>@item.FulfillmentDate.ToString("yyyy-MM-dd")</td>
+                                <td class="font-monospace fw-bold text-success">@item.TotalQuantity.ToString("N2")</td>
+                                <td class="font-monospace fw-bold">@item.TotalPrice.ToString("N2") EGP</td>
+                                <td>@(item.ShippedByName ?? "—")</td>
+                                <td>
+                                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>تم الصرف والتسليم</span>
+                                </td>
+                                <td class="text-center">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="عرض السند والطباعة">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

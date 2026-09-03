@@ -1,0 +1,330 @@
+@model FactoryX.Application.DTOs.CreateRecipeVersionRequest
+@{
+    var recipe = ViewBag.Recipe as FactoryX.Application.DTOs.RecipeDto;
+    var materials = ViewBag.Materials as List<FactoryX.Application.DTOs.MaterialDto> ?? new List<FactoryX.Application.DTOs.MaterialDto>();
+    ViewData["Title"] = $"إضافة إصدار وقائمة مواد (BOM) للوصفة: {recipe?.Name}";
+}
+
+<div class="container-fluid py-4" dir="rtl">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 font-monospace fs-6">
+                    @recipe?.Code
+                </span>
+                <h3 class="fw-bold text-dark mb-0">إضافة إصدار وقائمة مواد (BOM) جديدة</h3>
+            </div>
+            <p class="text-muted mb-0">للوصفة المعيارية: <span class="fw-bold text-dark">@recipe?.Name</span> | المنتج المستهدف: <span class="badge bg-primary-subtle text-primary">@recipe?.ProductName</span></p>
+        </div>
+        <a asp-action="Details" asp-route-id="@recipe?.Id" class="btn btn-outline-secondary rounded-pill px-3">
+            <i class="bi bi-arrow-right me-1"></i> العودة للوصفة
+        </a>
+    </div>
+
+    <form asp-action="CreateVersion" asp-route-recipeId="@recipe?.Id" method="post" id="bomForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="RecipeId" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 mb-4"></div>
+
+        <div class="row g-4">
+            <!-- معلمات الإصدار وسريانه -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+                        <i class="bi bi-sliders text-danger me-2"></i>معايير الإصدار وفترة السريان
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="VersionNumber" class="form-label fw-semibold text-secondary">رقم الإصدار <span class="text-danger">*</span></label>
+                            <input asp-for="VersionNumber" class="form-control font-monospace rounded-3 py-2" placeholder="مثال: V1.0 أو V2.0" />
+                            <span asp-validation-for="VersionNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label asp-for="VersionName" class="form-label fw-semibold text-secondary">اسم / وصف الإصدار</label>
+                            <input asp-for="VersionName" class="form-control rounded-3 py-2" placeholder="مثال: الوصفة القياسية لموسم المولد" />
+                            <span asp-validation-for="VersionName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="EffectiveFrom" class="form-label fw-semibold text-secondary">تاريخ بدء السريان <span class="text-danger">*</span></label>
+                            <input asp-for="EffectiveFrom" type="date" class="form-control rounded-3 py-2" value="@DateTime.UtcNow.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="EffectiveFrom" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="EffectiveTo" class="form-label fw-semibold text-secondary">تاريخ انتهاء السريان (اختياري)</label>
+                            <input asp-for="EffectiveTo" type="date" class="form-control rounded-3 py-2" />
+                            <span asp-validation-for="EffectiveTo" class="text-danger small"></span>
+                            <small class="text-muted d-block mt-1">اتركه فارغاً إذا كان السريان مستمراً بدون موعد انتهاء محدد.</small>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="ExpectedOutput" class="form-label fw-semibold text-secondary">الكمية المستهدفة (Output) <span class="text-danger">*</span></label>
+                            <input asp-for="ExpectedOutput" type="number" step="0.01" class="form-control rounded-3 py-2 cost-trigger" id="expectedOutputInput" />
+                            <span asp-validation-for="ExpectedOutput" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="OutputUnit" class="form-label fw-semibold text-secondary">وحدة المخرجات</label>
+                            <input asp-for="OutputUnit" class="form-control rounded-3 py-2" id="outputUnitInput" />
+                            <span asp-validation-for="OutputUnit" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="ExpectedWastePercentage" class="form-label fw-semibold text-secondary">نسبة الهالك المتوقع (%)</label>
+                            <div class="input-group">
+                                <input asp-for="ExpectedWastePercentage" type="number" step="0.01" class="form-control rounded-start-3 py-2 cost-trigger" id="wastePercentageInput" placeholder="0" />
+                                <span class="input-group-text bg-light border-0 rounded-end-3">%</span>
+                            </div>
+                            <span asp-validation-for="ExpectedWastePercentage" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- تكاليف التشغيل الإضافية -->
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+                        <i class="bi bi-cash-coin text-success me-2"></i>تكاليف التشغيل التقديرية للدفعة (تشغيلة الوصفة)
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="LaborCost" class="form-label fw-semibold text-secondary">تكلفة العمالة التقديرية (ج.م)</label>
+                            <input asp-for="LaborCost" type="number" step="0.01" class="form-control rounded-3 py-2 cost-trigger" id="laborCostInput" placeholder="0.00" />
+                            <span asp-validation-for="LaborCost" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="MachineCost" class="form-label fw-semibold text-secondary">تكلفة تشغيل الماكينات (ج.م)</label>
+                            <input asp-for="MachineCost" type="number" step="0.01" class="form-control rounded-3 py-2 cost-trigger" id="machineCostInput" placeholder="0.00" />
+                            <span asp-validation-for="MachineCost" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="OverheadCost" class="form-label fw-semibold text-secondary">المصاريف غير المباشرة (ج.م)</label>
+                            <input asp-for="OverheadCost" type="number" step="0.01" class="form-control rounded-3 py-2 cost-trigger" id="overheadCostInput" placeholder="0.00" />
+                            <span asp-validation-for="OverheadCost" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- جدول قائمة المواد BOM Builder -->
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0">
+                                <i class="bi bi-card-checklist text-danger me-2"></i>قائمة المواد الخام والمكونات (BOM Items)
+                            </h5>
+                            <small class="text-muted">حدد كميات المواد الخام اللازمة لإنتاج الدفعة المعيارية.</small>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" id="addRowBtn">
+                            <i class="bi bi-plus-lg me-1"></i> إضافة مادة خام
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="itemsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 35%;">المادة الخام <span class="text-danger">*</span></th>
+                                    <th style="width: 20%;">الكمية <span class="text-danger">*</span></th>
+                                    <th style="width: 15%;">الوحدة</th>
+                                    <th style="width: 20%;" class="text-end">التكلفة التقديرية</th>
+                                    <th style="width: 10%;" class="text-center">حذف</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsTableBody">
+                                <!-- سيتم إضافة الصفوف ديناميكياً بواسطة JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info rounded-3 mt-3 d-flex align-items-center py-2">
+                        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                        <small>يتم استخدام وحدة المخزون المعيارية وسعر التكلفة الحالي المسجل في بطاقة كل مادة خام.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بطاقة المعاينة الحية للتكلفة -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-4 sticky-top" style="top: 20px;">
+                    <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+                        <i class="bi bi-calculator text-primary me-2"></i>معاينة التكاليف الفورية (Live Cost)
+                    </h5>
+
+                    <div class="d-flex flex-column gap-3 mb-4">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">تكلفة المواد الخام:</span>
+                            <span class="fw-bold text-dark" id="previewMaterialCost">0.00 ج.م</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">تكلفة العمالة:</span>
+                            <span class="fw-bold text-dark" id="previewLaborCost">0.00 ج.م</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">تكلفة الماكينات:</span>
+                            <span class="fw-bold text-dark" id="previewMachineCost">0.00 ج.م</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">المصاريف غير المباشرة:</span>
+                            <span class="fw-bold text-dark" id="previewOverheadCost">0.00 ج.م</span>
+                        </div>
+                        <div class="d-flex justify-content-between text-danger">
+                            <span>تكلفة الهالك المتوقع:</span>
+                            <span class="fw-bold" id="previewWasteCost">0.00 ج.م</span>
+                        </div>
+                        <hr class="my-1">
+                        <div class="d-flex justify-content-between fs-5 fw-bold text-dark">
+                            <span>إجمالي تكلفة التشغيلة:</span>
+                            <span class="text-danger" id="previewTotalCost">0.00 ج.م</span>
+                        </div>
+                        <div class="bg-success-subtle border border-success-subtle rounded-3 p-3 text-center">
+                            <span class="text-muted small d-block mb-1">تكلفة الوحدة الواحدة (<span id="previewUnitName">كجم</span>):</span>
+                            <h3 class="fw-bold text-success mb-0" id="previewCostPerUnit">0.00 ج.م</h3>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger rounded-pill py-2 fw-bold">
+                            <i class="bi bi-save me-1"></i> حفظ الإصدار كمسودة (Draft)
+                        </button>
+                        <a asp-action="Details" asp-route-id="@recipe?.Id" class="btn btn-light rounded-pill py-2">إلغاء</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    const materialsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(materials.Select(m => new {
+        id = m.Id,
+        code = m.Code,
+        name = m.Name,
+        unit = m.Unit,
+        cost = m.CurrentCost
+    })));
+
+    let rowIndex = 0;
+
+    function addRow(matId = '', qty = '', unit = '', notes = '') {
+        const tbody = document.getElementById('itemsTableBody');
+        const tr = document.createElement('tr');
+        tr.id = `row_${rowIndex}`;
+
+        let options = '<option value="">-- اختر الخامة --</option>';
+        materialsData.forEach(m => {
+            const selected = (m.id == matId) ? 'selected' : '';
+            options += `<option value="${m.id}" data-unit="${m.unit}" data-cost="${m.cost}" ${selected}>${m.name} (${m.code}) - ${m.cost.toFixed(2)} ج.م</option>`;
+        });
+
+        tr.innerHTML = `
+            <td>
+                <select name="Items[${rowIndex}].MaterialId" class="form-select rounded-3 material-select cost-trigger" required>
+                    ${options}
+                </select>
+                <input type="hidden" name="Items[${rowIndex}].Sequence" value="${rowIndex + 1}" />
+            </td>
+            <td>
+                <input type="number" step="0.0001" min="0.0001" name="Items[${rowIndex}].Quantity" class="form-control rounded-3 qty-input cost-trigger" value="${qty}" placeholder="0.00" required />
+            </td>
+            <td>
+                <input type="text" name="Items[${rowIndex}].Unit" class="form-control bg-light rounded-3 unit-input" value="${unit || 'KG'}" readonly />
+            </td>
+            <td class="text-end fw-semibold item-subtotal">0.00 ج.م</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm rounded-circle shadow-none remove-row-btn"><i class="bi bi-trash"></i></button>
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+
+        // Bind select change
+        const select = tr.querySelector('.material-select');
+        select.addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            const u = opt.getAttribute('data-unit') || 'KG';
+            tr.querySelector('.unit-input').value = u;
+            updateCosts();
+        });
+
+        // Bind remove
+        tr.querySelector('.remove-row-btn').addEventListener('click', function() {
+            tr.remove();
+            reindexRows();
+            updateCosts();
+        });
+
+        rowIndex++;
+        updateCosts();
+    }
+
+    function reindexRows() {
+        const rows = document.querySelectorAll('#itemsTableBody tr');
+        rows.forEach((r, idx) => {
+            r.querySelector('.material-select').name = `Items[${idx}].MaterialId`;
+            r.querySelector('input[type="hidden"]').name = `Items[${idx}].Sequence`;
+            r.querySelector('input[type="hidden"]').value = idx + 1;
+            r.querySelector('.qty-input').name = `Items[${idx}].Quantity`;
+            r.querySelector('.unit-input').name = `Items[${idx}].Unit`;
+        });
+        rowIndex = rows.length;
+    }
+
+    function updateCosts() {
+        let matCost = 0;
+        const rows = document.querySelectorAll('#itemsTableBody tr');
+
+        rows.forEach(r => {
+            const select = r.querySelector('.material-select');
+            const qtyInput = r.querySelector('.qty-input');
+            const subtotalElem = r.querySelector('.item-subtotal');
+
+            const opt = select.options[select.selectedIndex];
+            const cost = opt ? parseFloat(opt.getAttribute('data-cost') || 0) : 0;
+            const qty = parseFloat(qtyInput.value) || 0;
+
+            const sub = qty * cost;
+            subtotalElem.innerText = sub.toFixed(2) + ' ج.م';
+            matCost += sub;
+        });
+
+        const labor = parseFloat(document.getElementById('laborCostInput').value) || 0;
+        const machine = parseFloat(document.getElementById('machineCostInput').value) || 0;
+        const overhead = parseFloat(document.getElementById('overheadCostInput').value) || 0;
+        const wastePct = parseFloat(document.getElementById('wastePercentageInput').value) || 0;
+        const output = parseFloat(document.getElementById('expectedOutputInput').value) || 1;
+        const outUnit = document.getElementById('outputUnitInput').value || 'كجم';
+
+        const wasteCost = matCost * (wastePct / 100);
+        const total = matCost + labor + machine + overhead + wasteCost;
+        const costPerUnit = output > 0 ? (total / output) : 0;
+
+        document.getElementById('previewMaterialCost').innerText = matCost.toFixed(2) + ' ج.م';
+        document.getElementById('previewLaborCost').innerText = labor.toFixed(2) + ' ج.م';
+        document.getElementById('previewMachineCost').innerText = machine.toFixed(2) + ' ج.م';
+        document.getElementById('previewOverheadCost').innerText = overhead.toFixed(2) + ' ج.م';
+        document.getElementById('previewWasteCost').innerText = wasteCost.toFixed(2) + ' ج.م';
+        document.getElementById('previewTotalCost').innerText = total.toFixed(2) + ' ج.م';
+        document.getElementById('previewCostPerUnit').innerText = costPerUnit.toFixed(2) + ' ج.م';
+        document.getElementById('previewUnitName').innerText = outUnit;
+    }
+
+    document.getElementById('addRowBtn').addEventListener('click', () => addRow());
+
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('cost-trigger')) {
+            updateCosts();
+        }
+    });
+
+    // Add 4 initial rows if empty
+    window.addEventListener('DOMContentLoaded', () => {
+        addRow();
+        addRow();
+        addRow();
+        addRow();
+    });
+</script>
+}

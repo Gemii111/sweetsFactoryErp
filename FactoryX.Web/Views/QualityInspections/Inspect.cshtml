@@ -1,0 +1,293 @@
+@model FactoryX.Application.DTOs.QualityInspectionDto
+@using FactoryX.Domain.Entities
+
+@{
+    ViewData["Title"] = "تسجيل وقياس جودة الدفعة - " + Model.InspectionNumber;
+    var allRequiredPassed = Model.Items.Any() && Model.Items.Where(i => i.IsRequired).All(i => i.Result == ItemEvaluationResult.Pass);
+    var hasFailingRequired = Model.Items.Any(i => i.IsRequired && i.Result == ItemEvaluationResult.Fail);
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="bi bi-arrow-right"></i>
+            </a>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <h2 class="fw-bold mb-0 text-primary font-monospace">@Model.InspectionNumber</h2>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fs-6">
+                        <i class="bi bi-clipboard2-check me-1"></i> تسجيل القياسات المعملية
+                    </span>
+                </div>
+                <small class="text-muted">
+                    دفعة: <strong class="text-dark">@Model.ProductionBatchNumber</strong> | 
+                    المنتج: <strong class="text-dark">@Model.ProductName</strong> | 
+                    المواصفة: <span class="badge bg-light text-dark border">@Model.QualityTemplateName</span>
+                </small>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                <i class="bi bi-eye me-1"></i> عرض التقرير
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @Html.Raw(TempData["ErrorMessage"])
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Live Evaluation Recommendation Bar -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 @(allRequiredPassed ? "bg-success-subtle border border-success-subtle" : (hasFailingRequired ? "bg-danger-subtle border border-danger-subtle" : "bg-light border"))">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center">
+                    @if (allRequiredPassed)
+                    {
+                        <i class="bi bi-check-circle-fill text-success fs-2 me-3"></i>
+                        <div>
+                            <h5 class="fw-bold text-success mb-0">التوصية الآلية: مطابق للمواصفات (APPROVED)</h5>
+                            <small class="text-success-emphasis">كافة المعايير الإلزامية اجتازت الفحص القياسي بنجاح ومؤهلة للإفراج</small>
+                        </div>
+                    }
+                    else if (hasFailingRequired)
+                    {
+                        <i class="bi bi-x-octagon-fill text-danger fs-2 me-3"></i>
+                        <div>
+                            <h5 class="fw-bold text-danger mb-0">التوصية الآلية: غير مطابق (REJECTED)</h5>
+                            <small class="text-danger-emphasis">يوجد معيار جودة إلزامي أو أكثر راسب (FAIL) ولا يمكن الإفراج عن الدفعة</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <i class="bi bi-hourglass-split text-primary fs-2 me-3"></i>
+                        <div>
+                            <h5 class="fw-bold text-primary mb-0">حالة التقييم: جاري تسجيل القياسات (IN PROGRESS)</h5>
+                            <small class="text-muted">يرجى استكمال نتائج القياسات لجميع المعايير الإلزامية</small>
+                        </div>
+                    }
+                </div>
+
+                <!-- Final Decision Quick Actions -->
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#holdModal">
+                        <i class="bi bi-pause-circle me-1"></i> احتجاز (Hold)
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                        <i class="bi bi-x-circle me-1"></i> رفض الدفعة (Reject)
+                    </button>
+                    <form asp-action="Approve" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="InspectionId" value="@Model.Id" />
+                        <button type="submit" class="btn btn-success shadow-sm" @(!allRequiredPassed ? "disabled" : "") onclick="return confirm('تأكيد اعتماد مطابقة دفعة الإنتاج للإفراج النهائي؟');">
+                            <i class="bi bi-check-circle-fill me-1"></i> اعتماد ومطابقة (Approve)
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Measurements Form Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-transparent py-3 border-0">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-sliders me-2 text-primary"></i> تسجيل النتائج والقياسات الفعلية
+            </h5>
+        </div>
+        <div class="card-body pt-0">
+            <form asp-action="RecordMeasurements" method="post" id="measurementsForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="InspectionId" value="@Model.Id" />
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40px;" class="text-center">#</th>
+                                <th>اسم المعيار / المواصفة القياسية</th>
+                                <th style="width: 140px;">الحدود والتفاوت المسموح</th>
+                                <th style="width: 220px;">النتيجة / القياس الفعلي</th>
+                                <th style="width: 140px;" class="text-center">تقييم المعيار</th>
+                                <th>ملاحظات المفتش</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Items.Count; i++)
+                            {
+                                var item = Model.Items[i];
+                                <tr class="measurement-row @(item.Result == ItemEvaluationResult.Pass ? "table-success" : (item.Result == ItemEvaluationResult.Fail ? "table-danger" : ""))">
+                                    <td class="text-center fw-bold">
+                                        @item.Sequence
+                                        <input type="hidden" name="Measurements[@i].ItemId" value="@item.Id" />
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@item.SpecificationName</div>
+                                        @if (item.IsRequired)
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-0 small">إلزامي</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-0 small">اختياري</span>
+                                        }
+                                    </td>
+                                    <td class="small">
+                                        @if (item.DataType == InspectionDataType.Number)
+                                        {
+                                            <div>الحد الأدنى: <strong>@(item.MinValue?.ToString("N2") ?? "-")</strong></div>
+                                            <div>الحد الأقصى: <strong>@(item.MaxValue?.ToString("N2") ?? "-")</strong></div>
+                                            @if (item.TargetValue.HasValue)
+                                            {
+                                                <div class="text-primary">المستهدف: <strong>@item.TargetValue.Value.ToString("N2") @item.Unit</strong></div>
+                                            }
+                                        }
+                                        else if (item.DataType == InspectionDataType.PassFail)
+                                        {
+                                            <span class="badge bg-light text-dark border">PASS / FAIL</span>
+                                        }
+                                        else if (item.DataType == InspectionDataType.Boolean)
+                                        {
+                                            <span class="badge bg-light text-dark border">نعم / لا</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">@(item.AllowedTextValues ?? "نصي حر")</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (item.DataType == InspectionDataType.Number)
+                                        {
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" step="0.0001" name="Measurements[@i].ActualNumericValue" value="@item.ActualNumericValue" class="form-control fw-bold text-primary numeric-input" placeholder="أدخل القيمة" />
+                                                <span class="input-group-text">@item.Unit</span>
+                                            </div>
+                                        }
+                                        else if (item.DataType == InspectionDataType.PassFail)
+                                        {
+                                            <select name="Measurements[@i].ActualPassFailValue" class="form-select form-select-sm fw-bold">
+                                                <option value="">-- اختر النتيجة --</option>
+                                                <option value="PASS" selected="@(item.ActualPassFailValue == "PASS")">مطابق (PASS)</option>
+                                                <option value="FAIL" selected="@(item.ActualPassFailValue == "FAIL")">راسب (FAIL)</option>
+                                            </select>
+                                        }
+                                        else if (item.DataType == InspectionDataType.Boolean)
+                                        {
+                                            <select name="Measurements[@i].ActualBooleanValue" class="form-select form-select-sm fw-bold">
+                                                <option value="">-- اختر --</option>
+                                                <option value="true" selected="@(item.ActualBooleanValue == true)">نعم (مطابق)</option>
+                                                <option value="false" selected="@(item.ActualBooleanValue == false)">لا (راسب)</option>
+                                            </select>
+                                        }
+                                        else
+                                        {
+                                            <input type="text" name="Measurements[@i].ActualTextValue" value="@item.ActualTextValue" class="form-control form-control-sm" placeholder="النتيجة النصية..." />
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.Result == ItemEvaluationResult.Pass)
+                                        {
+                                            <span class="badge bg-success rounded-pill px-3 py-1 fs-6">
+                                                <i class="bi bi-check-circle me-1"></i> PASS
+                                            </span>
+                                        }
+                                        else if (item.Result == ItemEvaluationResult.Fail)
+                                        {
+                                            <span class="badge bg-danger rounded-pill px-3 py-1 fs-6">
+                                                <i class="bi bi-x-circle me-1"></i> FAIL
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-1">
+                                                PENDING
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <input type="text" name="Measurements[@i].InspectorNotes" value="@item.InspectorNotes" class="form-control form-control-sm" placeholder="ملاحظة المعيار..." />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                        <i class="bi bi-calculator me-1"></i> حفظ وتقييم النتائج آلياً
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Reject" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="InspectionId" value="@Model.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-octagon me-2"></i> قرار رفض دفعة الإنتاج</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>سيؤدي رفض الفحص إلى حظر الدفعة <strong>@Model.ProductionBatchNumber</strong> من الإفراج المخزني.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">سبب الرفض وعدم المطابقة <span class="text-danger">*</span></label>
+                        <textarea name="RejectionReason" class="form-control" rows="3" placeholder="توضيح أسباب عدم المطابقة والعيوب الفنية..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">تراجع</button>
+                    <button type="submit" class="btn btn-danger">تأكيد الرفض</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Hold Modal -->
+<div class="modal fade" id="holdModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Hold" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="InspectionId" value="@Model.Id" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-warning"><i class="bi bi-pause-circle me-2"></i> قرار احتجاز الدفعة (Hold)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>سيتم تعليق دفعة الإنتاج <strong>@Model.ProductionBatchNumber</strong> لحين إجراء فحوصات إضافية.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">سبب الاحتجاز والفحص الإضافي <span class="text-danger">*</span></label>
+                        <textarea name="HoldReason" class="form-control" rows="3" placeholder="توضيح الاختبارات المعملية الإضافية المطلوبة..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">تراجع</button>
+                    <button type="submit" class="btn btn-warning">تأكيد الاحتجاز</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,224 @@
+@model FactoryX.Application.DTOs.RecipeDto
+@{
+    ViewData["Title"] = $"تفاصيل الوصفة: {Model.Name}";
+}
+
+<div class="container-fluid py-4" dir="rtl">
+    @await Html.PartialAsync("_Alert")
+
+    <!-- رأس الصفحة -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 font-monospace fs-6">
+                    @Model.Code
+                </span>
+                <h2 class="fw-bold text-dark mb-0">@Model.Name</h2>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.ArabicName))
+            {
+                <p class="text-muted mb-0 fs-6">@Model.ArabicName</p>
+            }
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3">
+                <i class="bi bi-arrow-right me-1"></i> قائمة الوصفات
+            </a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-warning rounded-pill px-3">
+                <i class="bi bi-pencil me-1"></i> تعديل الوصفة
+            </a>
+            <a asp-action="CreateVersion" asp-route-recipeId="@Model.Id" class="btn btn-danger rounded-pill px-4 shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i> إضافة إصدار وقائمة مواد (BOM)
+            </a>
+        </div>
+    </div>
+
+    <!-- بطاقات المعلومات الرئيسية -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+                <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+                    <i class="bi bi-info-circle text-danger me-2"></i>بيانات الوصفة المعيارية
+                </h5>
+                <div class="d-flex flex-column gap-3">
+                    <div>
+                        <span class="text-muted small d-block">المنتج التام المستهدف</span>
+                        <span class="fw-bold text-primary fs-5">
+                            <i class="bi bi-box-seam me-1"></i> @Model.ProductName
+                        </span>
+                        <span class="text-muted small d-block font-monospace">كود المنتج: @Model.ProductCode | SKU: @Model.ProductSKU</span>
+                    </div>
+                    <div>
+                        <span class="text-muted small d-block">كمية التشغيلة المعيارية</span>
+                        <span class="fw-bold text-dark fs-5">@Model.BaseOutputQuantity.ToString("N0") @Model.Unit</span>
+                    </div>
+                    <div>
+                        <span class="text-muted small d-block">حالة الوصفة الرئيسية</span>
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">نشط ومتاح للاستخدام</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">معطل</span>
+                        }
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div>
+                            <span class="text-muted small d-block">الوصف والملاحظات الفنية</span>
+                            <p class="text-secondary small mb-0 bg-light p-3 rounded-3">@Model.Description</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                    <h5 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-layers text-danger me-2"></i>إصدارات الوصفة وقوائم المواد (Recipe Versions & BOM)
+                    </h5>
+                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">@Model.VersionCount إصدارات</span>
+                </div>
+
+                @if (Model.Versions == null || !Model.Versions.Any())
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-layers-half fs-1 text-secondary d-block mb-3"></i>
+                        <h6 class="fw-bold text-dark">لا توجد إصدارات مسجلة لهذه الوصفة بعد</h6>
+                        <p class="text-muted small mb-3">قم بإضافة أول إصدار لتحديد نسب الخامات (BOM) واحتساب تكاليف التشغيل.</p>
+                        <a asp-action="CreateVersion" asp-route-recipeId="@Model.Id" class="btn btn-danger rounded-pill px-4">
+                            <i class="bi bi-plus-circle me-1"></i> إنشاء الإصدار الأول
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-secondary">رقم الإصدار</th>
+                                    <th class="text-secondary">اسم الإصدار</th>
+                                    <th class="text-secondary">فترة السريان</th>
+                                    <th class="text-secondary text-center">الكمية المستهدفة</th>
+                                    <th class="text-secondary text-end">التكلفة / كجم</th>
+                                    <th class="text-secondary text-center">الحالة</th>
+                                    <th class="text-secondary text-center">الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var v in Model.Versions)
+                                {
+                                    <tr>
+                                        <td class="fw-bold font-monospace text-danger">@v.VersionNumber</td>
+                                        <td>
+                                            <span class="fw-semibold text-dark d-block">@(string.IsNullOrEmpty(v.VersionName) ? "إصدار قياسي" : v.VersionName)</span>
+                                            <span class="text-muted small">(@(v.Items?.Count ?? 0) خامات في BOM)</span>
+                                        </td>
+                                        <td class="small">
+                                            <div><span class="text-muted">من:</span> @v.EffectiveFrom.ToString("yyyy-MM-dd")</div>
+                                            @if (v.EffectiveTo.HasValue)
+                                            {
+                                                <div><span class="text-muted">إلى:</span> @v.EffectiveTo.Value.ToString("yyyy-MM-dd")</div>
+                                            }
+                                            else
+                                            {
+                                                <div><span class="text-muted">إلى:</span> <span class="badge bg-light text-muted border">مستمر</span></div>
+                                            }
+                                        </td>
+                                        <td class="text-center fw-semibold text-dark">
+                                            @v.ExpectedOutput.ToString("N0") @v.OutputUnit
+                                        </td>
+                                        <td class="text-end fw-bold text-success">
+                                            @if (v.CostBreakdown != null)
+                                            {
+                                                <span>@v.CostBreakdown.CostPerOutputUnit.ToString("N2") ج.م</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">-</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @switch (v.Status)
+                                            {
+                                                case FactoryX.Domain.Entities.RecipeStatus.Active:
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                                                        <i class="bi bi-check-circle me-1"></i> نشط ومعتمد
+                                                    </span>
+                                                    break;
+                                                case FactoryX.Domain.Entities.RecipeStatus.Draft:
+                                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill px-3 py-1">
+                                                        <i class="bi bi-pencil me-1"></i> مسودة (Draft)
+                                                    </span>
+                                                    break;
+                                                case FactoryX.Domain.Entities.RecipeStatus.Inactive:
+                                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1">
+                                                        <i class="bi bi-dash-circle me-1"></i> معطل
+                                                    </span>
+                                                    break;
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="dropdown">
+                                                <button class="btn btn-light btn-sm rounded-circle shadow-none" type="button" data-bs-toggle="dropdown">
+                                                    <i class="bi bi-three-dots-vertical"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                                    <li>
+                                                        <a class="dropdown-item py-2" asp-action="DetailsVersion" asp-route-versionId="@v.Id">
+                                                            <i class="bi bi-eye text-primary me-2"></i> تفاصيل الإصدار وقائمة المواد (BOM)
+                                                        </a>
+                                                    </li>
+                                                    @if (v.Status == FactoryX.Domain.Entities.RecipeStatus.Draft)
+                                                    {
+                                                        <li>
+                                                            <a class="dropdown-item py-2" asp-action="EditVersion" asp-route-versionId="@v.Id">
+                                                                <i class="bi bi-pencil text-warning me-2"></i> تعديل المسودة وقائمة المواد
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <form asp-action="ActivateVersion" asp-route-versionId="@v.Id" method="post">
+                                                                @Html.AntiForgeryToken()
+                                                                <button type="submit" class="dropdown-item py-2 text-success">
+                                                                    <i class="bi bi-check2-circle me-2"></i> اعتماد وتنشيط الإصدار
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    }
+                                                    else if (v.Status == FactoryX.Domain.Entities.RecipeStatus.Active)
+                                                    {
+                                                        <li>
+                                                            <form asp-action="DeactivateVersion" asp-route-versionId="@v.Id" method="post">
+                                                                @Html.AntiForgeryToken()
+                                                                <button type="submit" class="dropdown-item py-2 text-secondary">
+                                                                    <i class="bi bi-slash-circle me-2"></i> إيقاف تنشيط الإصدار
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    }
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <form asp-action="DeleteVersion" asp-route-versionId="@v.Id" asp-route-recipeId="@Model.Id" method="post" onsubmit="return confirm('هل أنت متأكد من حذف هذا الإصدار؟');">
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="dropdown-item py-2 text-danger">
+                                                                <i class="bi bi-trash me-2"></i> حذف الإصدار
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

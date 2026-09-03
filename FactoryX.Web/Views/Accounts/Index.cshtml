@@ -1,0 +1,119 @@
+@model IEnumerable<FactoryX.Application.DTOs.AccountTreeNodeDto>
+@{
+    ViewData["Title"] = "دليل وشجرة الحسابات (Chart of Accounts)";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-diagram-3-fill text-primary me-2"></i>دليل وشجرة الحسابات المالية</h2>
+        <p class="text-muted mb-0">عرض الهيكل المحاسبي الشجري، الأرصدة الحالية، والحسابات التجميعية والفرعية</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="List" class="btn btn-outline-secondary">
+            <i class="bi bi-list-ul me-1"></i>العرض الجدولي
+        </a>
+        <a asp-action="Settings" class="btn btn-outline-info">
+            <i class="bi bi-gear-fill me-1"></i>ربط الحسابات التلقائي
+        </a>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>إضافة حساب جديد
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white py-3">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-folder2-open text-warning me-2"></i>الهيكل المحاسبي العام</h5>
+            </div>
+            <div class="col-md-6 text-end">
+                <button class="btn btn-sm btn-outline-secondary" onclick="expandAll()"><i class="bi bi-arrows-expand me-1"></i>توسيع الكل</button>
+                <button class="btn btn-sm btn-outline-secondary ms-1" onclick="collapseAll()"><i class="bi bi-arrows-collapse me-1"></i>طي الكل</button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="account-tree">
+            @foreach (var root in Model)
+            {
+                @await Html.PartialAsync("_AccountTreeNode", root)
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleNode(element) {
+        var subList = element.parentElement.querySelector('.sub-accounts');
+        var icon = element.querySelector('.tree-toggle-icon');
+        if (subList) {
+            if (subList.style.display === 'none' || subList.style.display === '') {
+                subList.style.display = 'block';
+                icon.classList.remove('bi-chevron-left');
+                icon.classList.add('bi-chevron-down');
+            } else {
+                subList.style.display = 'none';
+                icon.classList.remove('bi-chevron-down');
+                icon.classList.add('bi-chevron-left');
+            }
+        }
+    }
+
+    function expandAll() {
+        document.querySelectorAll('.sub-accounts').forEach(el => el.style.display = 'block');
+        document.querySelectorAll('.tree-toggle-icon').forEach(el => {
+            el.classList.remove('bi-chevron-left');
+            el.classList.add('bi-chevron-down');
+        });
+    }
+
+    function collapseAll() {
+        document.querySelectorAll('.sub-accounts').forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.tree-toggle-icon').forEach(el => {
+            el.classList.remove('bi-chevron-down');
+            el.classList.add('bi-chevron-left');
+        });
+    }
+</script>
+
+<style>
+    .account-tree ul {
+        list-style-type: none;
+        padding-right: 25px;
+    }
+    .account-tree > ul {
+        padding-right: 0;
+    }
+    .account-node {
+        padding: 8px 12px;
+        margin-bottom: 6px;
+        border-radius: 6px;
+        background: #fdfdfd;
+        border: 1px solid #eef2f5;
+        transition: all 0.2s ease;
+    }
+    .account-node:hover {
+        background: #f4f8fb;
+        border-color: #cbdbe8;
+    }
+    .account-node.is-control {
+        background: #f8fafc;
+        font-weight: bold;
+    }
+</style>

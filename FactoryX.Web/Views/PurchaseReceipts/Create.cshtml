@@ -1,0 +1,247 @@
+@model FactoryX.Application.DTOs.CreatePurchaseReceiptRequest
+@{
+    ViewData["Title"] = "استلام شحنة واردة - محضر وسند إدخال مخزني (GRN)";
+    var warehouses = ViewBag.Warehouses as IEnumerable<FactoryX.Domain.Entities.Warehouse>;
+    var locations = ViewBag.Locations as IEnumerable<FactoryX.Application.DTOs.WarehouseLocationDto>;
+}
+
+<div class="container-fluid py-3">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-success text-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="fas fa-dolly me-2"></i>استلام شحنة واردة وسند إدخال مخزني (Goods Receipt Note - GRN)</h5>
+        </div>
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post" id="receiptForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="SupplierId" id="supplierIdInput" />
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm"></div>
+
+                <!-- Header Info -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label asp-for="PurchaseOrderId" class="form-label fw-bold">أمر الشراء المرجعي <span class="text-danger">*</span></label>
+                        <select asp-for="PurchaseOrderId" class="form-select font-monospace" asp-items="ViewBag.PurchaseOrders" id="poSelect" required>
+                            <option value="">-- اختر أمر الشراء المعتمد --</option>
+                        </select>
+                        <span asp-validation-for="PurchaseOrderId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="WarehouseId" class="form-label fw-bold">المستودع الرئيسي للاستلام <span class="text-danger">*</span></label>
+                        <select asp-for="WarehouseId" class="form-select" id="whSelect" required>
+                            @if (warehouses != null)
+                            {
+                                @foreach (var wh in warehouses)
+                                {
+                                    <option value="@wh.Id" selected="@(Model.WarehouseId == wh.Id)">@wh.Name (@wh.Code) - @wh.Type</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="ReceiptDate" class="form-label fw-bold">تاريخ الاستلام الفعلي <span class="text-danger">*</span></label>
+                        <input asp-for="ReceiptDate" type="date" class="form-control" />
+                        <span asp-validation-for="ReceiptDate" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Notes" class="form-label fw-bold">ملاحظات الفحص والاستلام ومطابقة الشحنة</label>
+                        <input asp-for="Notes" class="form-control" placeholder="ملاحظات أمين المستودع وفحص الجودة الظاهري للشحنة..." />
+                    </div>
+                </div>
+
+                <!-- Alert Notice -->
+                <div class="alert alert-info border-0 shadow-sm d-flex align-items-center mb-4">
+                    <i class="fas fa-info-circle fa-2x me-3 text-primary"></i>
+                    <div>
+                        <strong>ملاحظة هامة لنظام إدارة المخزون:</strong>
+                        <span class="d-block small">فقط <strong>الكمية المقبولة (Accepted Quantity)</strong> هي التي تضاف إلى رصيد المخزون الفعلي. الكميات المرفوضة تسجل في محضر الاستلام لأغراض المتابعة والمطابقة المالية.</span>
+                    </div>
+                </div>
+
+                <!-- Items Section -->
+                <h6 class="fw-bold mb-3"><i class="fas fa-list-check text-success me-2"></i>فحص وتفاصيل استلام بنود الشحنة</h6>
+
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle" id="itemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 25%;">المادة الخام</th>
+                                <th style="width: 12%;">الكمية المستلمة</th>
+                                <th style="width: 12%;">الكمية المقبولة <span class="text-danger">*</span></th>
+                                <th style="width: 10%;">الكمية المرفوضة</th>
+                                <th style="width: 15%;">رقم تشغيلة المورد (Lot/Batch)</th>
+                                <th style="width: 13%;">تاريخ انتهاء الصلاحية <span class="text-danger">*</span></th>
+                                <th style="width: 13%;">مكان التخزين (Location)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsBody">
+                            @if (Model.Items != null && Model.Items.Any())
+                            {
+                                @for (int i = 0; i < Model.Items.Count; i++)
+                                {
+                                    var item = Model.Items[i];
+                                    <tr>
+                                        <td>
+                                            <input type="hidden" name="Items[@i].PurchaseOrderItemId" value="@item.PurchaseOrderItemId" />
+                                            <input type="hidden" name="Items[@i].MaterialId" value="@item.MaterialId" />
+                                            <input type="hidden" name="Items[@i].OrderedQuantity" value="@item.OrderedQuantity" />
+                                            <input type="hidden" name="Items[@i].UnitPrice" value="@item.UnitPrice" />
+                                            <input type="hidden" name="Items[@i].Unit" value="@item.Unit" />
+                                            <input type="hidden" name="Items[@i].WarehouseId" value="@(item.WarehouseId > 0 ? item.WarehouseId : Model.WarehouseId)" />
+
+                                            <div class="fw-bold">@item.MaterialId (كود الخامة)</div>
+                                            <small class="text-muted">الكمية بأمر الشراء: @item.OrderedQuantity @item.Unit | سعر الوحدة: @item.UnitPrice.ToString("N2")</small>
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" min="0" name="Items[@i].ReceivedQuantity" class="form-control font-monospace item-received" value="@item.ReceivedQuantity" required />
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" min="0" name="Items[@i].AcceptedQuantity" class="form-control font-monospace text-success fw-bold item-accepted" value="@item.AcceptedQuantity" required />
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" min="0" name="Items[@i].RejectedQuantity" class="form-control font-monospace text-danger item-rejected" value="@item.RejectedQuantity" />
+                                        </td>
+                                        <td>
+                                            <input type="text" name="Items[@i].SupplierBatchNumber" class="form-control font-monospace" value="@item.SupplierBatchNumber" placeholder="LOT-..." />
+                                        </td>
+                                        <td>
+                                            <input type="date" name="Items[@i].ExpiryDate" class="form-control" value="@(item.ExpiryDate?.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.Date.AddMonths(12).ToString("yyyy-MM-dd"))" required />
+                                        </td>
+                                        <td>
+                                            <select name="Items[@i].LocationId" class="form-select">
+                                                <option value="">-- بدون مكان محدد --</option>
+                                                @if (locations != null)
+                                                {
+                                                    @foreach (var loc in locations)
+                                                    {
+                                                        <option value="@loc.Id" selected="@(item.LocationId == loc.Id)">@loc.Name (@loc.Code)</option>
+                                                    }
+                                                }
+                                            </select>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr id="noItemsRow">
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        يرجى اختيار أمر الشراء أعلاه لعرض بنود الاستلام والكميات المتبقية
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a asp-action="Index" class="btn btn-outline-secondary px-4">إلغاء</a>
+                    <button type="submit" class="btn btn-success px-4"><i class="fas fa-check-circle me-1"></i> ترحيل الاستلام وإدخال المخزون (Post GRN)</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const poSelect = document.getElementById('poSelect');
+        const supplierIdInput = document.getElementById('supplierIdInput');
+        const whSelect = document.getElementById('whSelect');
+        const itemsBody = document.getElementById('itemsBody');
+
+        poSelect.addEventListener('change', async function() {
+            const poId = poSelect.value;
+            if (!poId) return;
+
+            try {
+                const response = await fetch(`/PurchaseOrders/GetReceivingInfo/${poId}`);
+                if (!response.ok) throw new Error('فشل جلب بيانات أمر الشراء');
+
+                const data = await response.json();
+                supplierIdInput.value = data.supplierId;
+                if (data.warehouseId) {
+                    whSelect.value = data.warehouseId;
+                }
+
+                renderItems(data.items, data.warehouseId || whSelect.value);
+            } catch (err) {
+                console.error(err);
+                alert('حدث خطأ أثناء تحميل بيانات بنود أمر الشراء.');
+            }
+        });
+
+        function renderItems(items, defaultWhId) {
+            if (!items || items.length === 0) {
+                itemsBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">لا توجد بنود قابلة للاستلام في أمر الشراء المحدد.</td></tr>';
+                return;
+            }
+
+            const expiryDefault = new Date();
+            expiryDefault.setMonth(expiryDefault.getMonth() + 12);
+            const expDateStr = expiryDefault.toISOString().split('T')[0];
+
+            itemsBody.innerHTML = '';
+            items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <input type="hidden" name="Items[${index}].PurchaseOrderItemId" value="${item.purchaseOrderItemId}" />
+                        <input type="hidden" name="Items[${index}].MaterialId" value="${item.materialId}" />
+                        <input type="hidden" name="Items[${index}].OrderedQuantity" value="${item.orderedQuantity}" />
+                        <input type="hidden" name="Items[${index}].UnitPrice" value="${item.unitPrice}" />
+                        <input type="hidden" name="Items[${index}].Unit" value="${item.unit}" />
+                        <input type="hidden" name="Items[${index}].WarehouseId" value="${defaultWhId}" />
+
+                        <div class="fw-bold">${item.materialName} <span class="badge bg-secondary font-monospace">${item.materialCode}</span></div>
+                        <small class="text-muted">المطلوب: ${item.orderedQuantity} ${item.unit} | المستلم سابقاً: ${item.alreadyReceivedQuantity} | المتبقي: <strong>${item.remainingQuantity}</strong> ${item.unit}</small>
+                    </td>
+                    <td>
+                        <input type="number" step="0.01" min="0" name="Items[${index}].ReceivedQuantity" class="form-control font-monospace item-received" value="${item.remainingQuantity}" required />
+                    </td>
+                    <td>
+                        <input type="number" step="0.01" min="0" name="Items[${index}].AcceptedQuantity" class="form-control font-monospace text-success fw-bold item-accepted" value="${item.remainingQuantity}" required />
+                    </td>
+                    <td>
+                        <input type="number" step="0.01" min="0" name="Items[${index}].RejectedQuantity" class="form-control font-monospace text-danger item-rejected" value="0" />
+                    </td>
+                    <td>
+                        <input type="text" name="Items[${index}].SupplierBatchNumber" class="form-control font-monospace" placeholder="رقم تشغيلة المورد..." />
+                    </td>
+                    <td>
+                        <input type="date" name="Items[${index}].ExpiryDate" class="form-control" value="${expDateStr}" required />
+                    </td>
+                    <td>
+                        <select name="Items[${index}].LocationId" class="form-select">
+                            <option value="">-- بدون مكان محدد --</option>
+                        </select>
+                    </td>
+                `;
+
+                // Bind automatic balance calculation
+                const receivedInput = tr.querySelector('.item-received');
+                const acceptedInput = tr.querySelector('.item-accepted');
+                const rejectedInput = tr.querySelector('.item-rejected');
+
+                receivedInput.addEventListener('input', function() {
+                    const rVal = parseFloat(receivedInput.value) || 0;
+                    const rejVal = parseFloat(rejectedInput.value) || 0;
+                    acceptedInput.value = Math.max(0, rVal - rejVal);
+                });
+
+                rejectedInput.addEventListener('input', function() {
+                    const rVal = parseFloat(receivedInput.value) || 0;
+                    const rejVal = parseFloat(rejectedInput.value) || 0;
+                    acceptedInput.value = Math.max(0, rVal - rejVal);
+                });
+
+                itemsBody.appendChild(tr);
+            });
+        }
+    });
+</script>
+}

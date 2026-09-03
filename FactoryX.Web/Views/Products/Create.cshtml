@@ -1,0 +1,234 @@
+@model FactoryX.Application.DTOs.CreateProductRequest
+@{
+    ViewData["Title"] = "إضافة منتج تام جديد";
+    var categories = ViewBag.Categories as SelectList;
+}
+
+<div class="container py-4" dir="rtl">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-sm rounded-4 bg-white">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold text-dark mb-1">
+                                <i class="bi bi-box-seam-fill text-success me-2"></i>تعريف منتج تام جديد (حلويات المولد)
+                            </h4>
+                            <p class="text-muted small mb-0">إدخال البيانات الأساسية، الأوزان، فئات التسعير، التكلفة، ومدة الصلاحية للصنف التام.</p>
+                        </div>
+                        <a asp-action="Index" class="btn btn-light rounded-pill px-3">
+                            <i class="bi bi-arrow-right me-1"></i> عودة لقائمة المنتجات
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 small"></div>
+
+                        <!-- القسم 1: البيانات الأساسية والتصنيف -->
+                        <div class="mb-4">
+                            <h5 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-1-circle-fill me-1"></i> البيانات الأساسية والتصنيف
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label asp-for="Code" class="form-label fw-semibold text-secondary">كود المنتج (Product Code) <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-qr-code text-muted"></i></span>
+                                        <input asp-for="Code" class="form-control font-monospace" placeholder="مثال: PRD-SES-500" required />
+                                    </div>
+                                    <span asp-validation-for="Code" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label asp-for="SKU" class="form-label fw-semibold text-secondary">رمز الصنف المخزني (SKU) <span class="text-danger">*</span></label>
+                                    <input asp-for="SKU" class="form-control font-monospace" placeholder="مثال: SES-500, BOX-MIX-1000" required />
+                                    <span asp-validation-for="SKU" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label asp-for="Barcode" class="form-label fw-semibold text-secondary">الباركود الدولي (اختياري)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-upc-scan text-muted"></i></span>
+                                        <input asp-for="Barcode" class="form-control font-monospace" placeholder="مثال: 6223001234567" />
+                                    </div>
+                                    <span asp-validation-for="Barcode" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="Name" class="form-label fw-semibold text-secondary">اسم المنتج (English / الأساسي) <span class="text-danger">*</span></label>
+                                    <input asp-for="Name" class="form-control" placeholder="مثال: Sesame Sweets Bar 500g" required />
+                                    <span asp-validation-for="Name" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="ArabicName" class="form-label fw-semibold text-secondary">الاسم العربي للصنف</label>
+                                    <input asp-for="ArabicName" class="form-control" placeholder="مثال: سمسمية فاخرة علبة 500 جرام" />
+                                    <span asp-validation-for="ArabicName" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="ProductCategoryId" class="form-label fw-semibold text-secondary">تصنيف المنتج <span class="text-danger">*</span></label>
+                                    <select asp-for="ProductCategoryId" class="form-select" asp-items="categories" required>
+                                        <option value="">-- اختر التصنيف --</option>
+                                    </select>
+                                    <span asp-validation-for="ProductCategoryId" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="ProductType" class="form-label fw-semibold text-secondary">نوع المنتج (Classification) <span class="text-danger">*</span></label>
+                                    <select asp-for="ProductType" class="form-select">
+                                        <option value="1">منتج تام الصنع (Finished Product)</option>
+                                        <option value="2">منتج نصف مصنع / وسيط (Semi-Finished)</option>
+                                        <option value="3">مادة تعبئة / علبة مجمعة (Packaging Item)</option>
+                                        <option value="4">علبة مشكلة (Assorted Box)</option>
+                                    </select>
+                                    <span asp-validation-for="ProductType" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-12">
+                                    <label asp-for="Description" class="form-label fw-semibold text-secondary">وصف الصنف وملاحظات الإنتاج</label>
+                                    <textarea asp-for="Description" rows="2" class="form-control" placeholder="تفاصيل المكونات أو العبوة..."></textarea>
+                                    <span asp-validation-for="Description" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- القسم 2: الأوزان والتعبئة -->
+                        <div class="mb-4">
+                            <h5 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-2-circle-fill me-1"></i> الأوزان ووحدات التعبئة
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label asp-for="Weight" class="form-label fw-semibold text-secondary">الوزن الصافي للعبوة <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input asp-for="Weight" type="number" step="0.01" min="0.01" class="form-control" value="500" required />
+                                        <span class="input-group-text bg-light">قيمة عددية</span>
+                                    </div>
+                                    <span asp-validation-for="Weight" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label asp-for="WeightUnit" class="form-label fw-semibold text-secondary">وحدة قياس الوزن</label>
+                                    <select asp-for="WeightUnit" class="form-select">
+                                        <option value="GRAM">جرام (GRAM)</option>
+                                        <option value="KG">كيلوجرام (KG)</option>
+                                        <option value="PIECE">قطعة (PIECE)</option>
+                                    </select>
+                                    <span asp-validation-for="WeightUnit" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label asp-for="Unit" class="form-label fw-semibold text-secondary">وحدة الصرف / العبوة الأساسية</label>
+                                    <select asp-for="Unit" class="form-select">
+                                        <option value="علبة">علبة</option>
+                                        <option value="قطعة">قطعة</option>
+                                        <option value="كرتونة">كرتونة</option>
+                                        <option value="كجم">كجم</option>
+                                        <option value="طبق">طبق</option>
+                                    </select>
+                                    <span asp-validation-for="Unit" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- القسم 3: شرائح التسعير والتكلفة المعيارية -->
+                        <div class="mb-4">
+                            <h5 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-3-circle-fill me-1"></i> شرائح الأسعار والتكلفة المعيارية
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label asp-for="SellingPrice" class="form-label fw-semibold text-secondary">سعر البيع للمستهلك (Retail) <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input asp-for="SellingPrice" type="number" step="0.01" min="0" class="form-control fw-bold text-success" placeholder="0.00" required />
+                                        <span class="input-group-text bg-light">ج.م</span>
+                                    </div>
+                                    <span asp-validation-for="SellingPrice" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label asp-for="WholesalePrice" class="form-label fw-semibold text-secondary">سعر الجملة (Wholesale)</label>
+                                    <div class="input-group">
+                                        <input asp-for="WholesalePrice" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                                        <span class="input-group-text bg-light">ج.م</span>
+                                    </div>
+                                    <span asp-validation-for="WholesalePrice" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label asp-for="DistributorPrice" class="form-label fw-semibold text-secondary">سعر الموزع / الوكلاء</label>
+                                    <div class="input-group">
+                                        <input asp-for="DistributorPrice" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                                        <span class="input-group-text bg-light">ج.م</span>
+                                    </div>
+                                    <span asp-validation-for="DistributorPrice" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="StandardCost" class="form-label fw-semibold text-secondary">التكلفة المعيارية التقديرية (Standard Cost)</label>
+                                    <div class="input-group">
+                                        <input asp-for="StandardCost" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                                        <span class="input-group-text bg-light">ج.م</span>
+                                    </div>
+                                    <span asp-validation-for="StandardCost" class="text-danger small"></span>
+                                    <small class="text-muted">قيمة تقديرية أولية، سيتم حساب التكلفة الفعلية آلياً في مرحلة Recipe/BOM لاحقاً.</small>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="MinimumStock" class="form-label fw-semibold text-secondary">الحد الأدنى لمخزون الأمان (Min Stock)</label>
+                                    <div class="input-group">
+                                        <input asp-for="MinimumStock" type="number" step="0.01" min="0" class="form-control" value="0" />
+                                        <span class="input-group-text bg-light">عبوة</span>
+                                    </div>
+                                    <span asp-validation-for="MinimumStock" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- القسم 4: الصلاحية وفترة الحفظ -->
+                        <div class="mb-4">
+                            <h5 class="fw-bold text-primary border-bottom pb-2 mb-3">
+                                <i class="bi bi-4-circle-fill me-1"></i> مدة الصلاحية وفترة الحفظ
+                            </h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="ExpiryPeriod" class="form-label fw-semibold text-secondary">مدة الصلاحية <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input asp-for="ExpiryPeriod" type="number" min="1" class="form-control" value="180" required />
+                                        <span class="input-group-text bg-light"><i class="bi bi-calendar-event text-muted"></i></span>
+                                    </div>
+                                    <span asp-validation-for="ExpiryPeriod" class="text-danger small"></span>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label asp-for="ExpiryUnit" class="form-label fw-semibold text-secondary">وحدة الصلاحية</label>
+                                    <select asp-for="ExpiryUnit" class="form-select">
+                                        <option value="Days">أيام (Days)</option>
+                                        <option value="Months">شهور (Months)</option>
+                                    </select>
+                                    <span asp-validation-for="ExpiryUnit" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4 text-muted" />
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-success rounded-pill px-5 shadow-sm fw-semibold">
+                                <i class="bi bi-check-lg me-1"></i> حفظ وتعريف المنتج
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

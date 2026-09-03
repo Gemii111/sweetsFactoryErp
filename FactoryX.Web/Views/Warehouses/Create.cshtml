@@ -1,0 +1,63 @@
+@model FactoryX.Application.DTOs.CreateWarehouseRequest
+
+@{
+    ViewData["Title"] = "إضافة مستودع جديد";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+        <div class="d-flex align-items-center mb-4">
+            <a asp-action="Index" class="btn btn-light rounded-circle ms-3"><i class="bi bi-arrow-right"></i></a>
+            <div>
+                <h2 class="fw-bold mb-0">إضافة مستودع جديد</h2>
+                <small class="text-muted">تعريف مخزن أو مستودع جديد في مصنع حلويات المولد.</small>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Code" class="form-label fw-semibold">كود المستودع</label>
+                            <input asp-for="Code" class="form-control" placeholder="مثال: WH-RAW-01" required />
+                            <span asp-validation-for="Code" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Type" class="form-label fw-semibold">نوع المستودع</label>
+                            <select asp-for="Type" class="form-select" required>
+                                <option value="1">مخزن مواد خام (RawMaterial)</option>
+                                <option value="2">مخزن مواد تعبئة وتغليف (Packaging)</option>
+                                <option value="3">مخزن تحت التشغيل والإنتاج (Production)</option>
+                                <option value="4">مخزن منتج تام وجاهز (FinishedGoods)</option>
+                                <option value="5">مخزن هالك وتوالف (Waste)</option>
+                            </select>
+                            <span asp-validation-for="Type" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold">اسم المستودع</label>
+                        <input asp-for="Name" class="form-control" placeholder="مثال: مخزن المواد الخام الرئيسي" required />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Description" class="form-label fw-semibold">الوصف / ملاحظات الموقع</label>
+                        <textarea asp-for="Description" class="form-control" rows="3" placeholder="ملاحظات تفصيلية أو موقع المستودع في المصنع..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="bi bi-save me-1"></i>حفظ المستودع</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

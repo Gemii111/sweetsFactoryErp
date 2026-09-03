@@ -1,0 +1,231 @@
+@model IEnumerable<FactoryX.Application.DTOs.PurchaseOrderDto>
+@{
+    ViewData["Title"] = "أوامر الشراء (Purchase Orders)";
+    var summary = ViewBag.Summary as FactoryX.Application.DTOs.PurchaseOrderSummaryDto;
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-file-invoice-dollar text-primary me-2"></i>أوامر الشراء (Purchase Orders)</h2>
+            <p class="text-muted mb-0">إصدار ومتابعة أوامر شراء المواد الخام ومواد التعبئة واعتمادها ومتابعة نسب الاستلام المخزني</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus me-1"></i> إنشاء أمر شراء جديد
+            </a>
+            <a asp-controller="PurchaseReceipts" asp-action="Create" class="btn btn-success shadow-sm">
+                <i class="fas fa-boxes-packing me-1"></i> استلام شحنة واردة (GRN)
+            </a>
+            <a asp-controller="Suppliers" asp-action="Index" class="btn btn-outline-secondary shadow-sm">
+                <i class="fas fa-truck me-1"></i> سجل الموردين
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Summary KPI Cards -->
+    @if (summary != null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-md-2">
+                <div class="card border-0 shadow-sm bg-primary text-white">
+                    <div class="card-body py-3">
+                        <span class="text-white-50 small d-block">إجمالي الأوامر</span>
+                        <h3 class="fw-bold mb-0">@summary.TotalOrders</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card border-0 shadow-sm bg-secondary text-white">
+                    <div class="card-body py-3">
+                        <span class="text-white-50 small d-block">مسودات</span>
+                        <h3 class="fw-bold mb-0">@summary.DraftOrders</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card border-0 shadow-sm bg-info text-white">
+                    <div class="card-body py-3">
+                        <span class="text-white-50 small d-block">معتمدة جاهزة للاستلام</span>
+                        <h3 class="fw-bold mb-0">@summary.ApprovedOrders</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-warning text-dark">
+                    <div class="card-body py-3">
+                        <span class="text-black-50 small d-block">مستلمة جزئياً</span>
+                        <h3 class="fw-bold mb-0">@summary.PartiallyReceivedOrders</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-success text-white">
+                    <div class="card-body py-3">
+                        <span class="text-white-50 small d-block">مستلمة بالكامل</span>
+                        <h3 class="fw-bold mb-0">@summary.FullyReceivedOrders</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">حالة الأمر:</label>
+                    <select name="status" class="form-select">
+                        <option value="">-- جميع الحالات --</option>
+                        <option value="1" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 1)">مسودة (Draft)</option>
+                        <option value="2" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 2)">مقدم (Submitted)</option>
+                        <option value="3" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 3)">معتمد (Approved)</option>
+                        <option value="4" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 4)">مستلم جزئياً (Partially Received)</option>
+                        <option value="5" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 5)">مستلم بالكامل (Fully Received)</option>
+                        <option value="6" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 6)">ملغي (Cancelled)</option>
+                        <option value="7" selected="@(ViewBag.SelectedStatus != null && (int)ViewBag.SelectedStatus == 7)">مغلق (Closed)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">المورد:</label>
+                    <select name="supplierId" class="form-select" asp-items="ViewBag.Suppliers">
+                        <option value="">-- جميع الموردين --</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold small text-muted">بحث بالرقم:</label>
+                    <input type="text" name="searchTerm" class="form-control" placeholder="PO-..." value="@ViewBag.SearchTerm" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold small text-muted">من تاريخ:</label>
+                    <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i> تصفية</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="ps-3">رقم أمر الشراء</th>
+                            <th>المورد</th>
+                            <th>تاريخ الأمر</th>
+                            <th>تاريخ التوريد المتوقع</th>
+                            <th>المستودع</th>
+                            <th>إجمالي القيمة</th>
+                            <th>نسبة الاستلام</th>
+                            <th>الحالة</th>
+                            <th class="text-end pe-3">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center py-5 text-muted">
+                                    <i class="fas fa-file-invoice-dollar fa-3x mb-3 text-secondary d-block"></i>
+                                    لا توجد أوامر شراء مطابقة للبحث
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model)
+                            {
+                                var pct = item.TotalOrderedQuantity > 0 ? (item.TotalReceivedQuantity / item.TotalOrderedQuantity) * 100 : 0;
+                                <tr>
+                                    <td class="ps-3 fw-bold">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="text-decoration-none font-monospace">
+                                            @item.OrderNumber
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">@item.SupplierName</div>
+                                        <small class="text-muted font-monospace">@item.SupplierCode</small>
+                                    </td>
+                                    <td>@item.OrderDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@(item.ExpectedDeliveryDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                                    <td><span class="badge bg-light text-dark border">@item.WarehouseName</span></td>
+                                    <td class="fw-bold text-success font-monospace">@item.TotalAmount.ToString("N2") @item.Currency</td>
+                                    <td style="width: 150px;">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress flex-grow-1" style="height: 6px;">
+                                                <div class="progress-bar @(pct >= 100 ? "bg-success" : (pct > 0 ? "bg-warning" : "bg-secondary"))" style="width: @pct%;"></div>
+                                            </div>
+                                            <small class="text-muted font-monospace">@pct.ToString("F0")%</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @switch (item.Status)
+                                        {
+                                            case FactoryX.Domain.Entities.PurchaseOrderStatus.Draft:
+                                                <span class="badge bg-secondary">مسودة</span>
+                                                break;
+                                            case FactoryX.Domain.Entities.PurchaseOrderStatus.Submitted:
+                                                <span class="badge bg-primary">مقدم للاعتماد</span>
+                                                break;
+                                            case FactoryX.Domain.Entities.PurchaseOrderStatus.Approved:
+                                                <span class="badge bg-info text-dark">معتمد (جاهز للاستلام)</span>
+                                                break;
+                                            case FactoryX.Domain.Entities.PurchaseOrderStatus.PartiallyReceived:
+                                                <span class="badge bg-warning text-dark"><i class="fas fa-spinner fa-spin me-1"></i>مستلم جزئياً</span>
+                                                break;
+                                            case FactoryX.Domain.Entities.PurchaseOrderStatus.FullyReceived:
+                                                <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>مستلم بالكامل</span>
+                                                break;
+                                            case FactoryX.Domain.Entities.PurchaseOrderStatus.Cancelled:
+                                                <span class="badge bg-danger">ملغي</span>
+                                                break;
+                                            case FactoryX.Domain.Entities.PurchaseOrderStatus.Closed:
+                                                <span class="badge bg-dark">مغلق</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary" title="عرض التفاصيل">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            @if (item.Status == FactoryX.Domain.Entities.PurchaseOrderStatus.Approved || item.Status == FactoryX.Domain.Entities.PurchaseOrderStatus.PartiallyReceived)
+                                            {
+                                                <a asp-controller="PurchaseReceipts" asp-action="Create" asp-route-purchaseOrderId="@item.Id" class="btn btn-success" title="استلام شحنة واردة">
+                                                    <i class="fas fa-dolly"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

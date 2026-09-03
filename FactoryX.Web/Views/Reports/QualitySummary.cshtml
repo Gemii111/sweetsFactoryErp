@@ -1,0 +1,89 @@
+@model FactoryX.Application.DTOs.QualitySummaryReportDto
+@{
+    ViewData["Title"] = "تقرير ملخص ونسب قبول فحوصات الجودة";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-shield-check text-success me-2"></i>تقرير ملخص ونسب قبول فحوصات الجودة (QC Summary)</h2>
+        <p class="text-muted mb-0">متابعة دقة وفحوصات الجودة للإنتاج ومعدل القبول والرفض وإعادة الفحص</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">إجمالي الفحوصات المعملية</small>
+            <h4 class="fw-bold text-dark font-monospace mb-0">@Model.TotalInspectionsCount <small class="fs-6">فحص</small></h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-success-subtle p-3">
+            <small class="text-success fw-bold">الفحوصات المقبولة (Approved)</small>
+            <h4 class="fw-bold text-success font-monospace mb-0">@Model.ApprovedCount</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-danger-subtle p-3">
+            <small class="text-danger fw-bold">الفحوصات المرفوضة (Rejected)</small>
+            <h4 class="fw-bold text-danger font-monospace mb-0">@Model.RejectedCount</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-primary-subtle p-3">
+            <small class="text-primary fw-bold">معدل اجتياز الجودة العام %</small>
+            <h4 class="fw-bold text-primary font-monospace mb-0">@Model.PassRate%</h4>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-bold">نتائج الجودة ونسب القبول حسب المنتج</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">اسم المنتج</th>
+                        <th class="text-center">إجمالي الفحوصات</th>
+                        <th class="text-center">المقبولة</th>
+                        <th class="text-center">المرفوضة</th>
+                        <th class="text-center">قيد التحفظ</th>
+                        <th class="text-center pe-3">نسبة القبول %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.ProductQualitySummaries.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">لا توجد فحوصات جودة مسجلة</td>
+                        </tr>
+                    }
+                    @foreach (var p in Model.ProductQualitySummaries)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-semibold">@p.ProductName</td>
+                            <td class="text-center"><span class="badge bg-light text-dark border">@p.TotalInspections</span></td>
+                            <td class="text-center font-monospace text-success fw-bold">@p.ApprovedCount</td>
+                            <td class="text-center font-monospace text-danger fw-bold">@p.RejectedCount</td>
+                            <td class="text-center font-monospace text-warning fw-bold">@p.HoldCount</td>
+                            <td class="text-center pe-3">
+                                <span class="badge @(p.ApprovedPercent >= 90 ? "bg-success" : (p.ApprovedPercent >= 70 ? "bg-warning text-dark" : "bg-danger")) font-monospace">
+                                    @p.ApprovedPercent%
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

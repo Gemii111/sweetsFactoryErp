@@ -1,0 +1,156 @@
+@model FactoryX.Application.DTOs.CustomerStatementDto
+@{
+    Layout = null;
+    ViewData["Title"] = $"كشف حساب عميل - {Model.CustomerName}";
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>كشف حساب عميل - @Model.CustomerName</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        body {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .statement-box {
+            max-width: 950px;
+            margin: 20px auto;
+            padding: 30px;
+            border: 1px solid #dee2e6;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+        @@media print {
+            body { background: transparent; }
+            .statement-box {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+                max-width: 100%;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-3">
+        <!-- Print Toolbar -->
+        <div class="no-print text-center mb-4">
+            <button onclick="window.print()" class="btn btn-info text-white px-4 shadow-sm">
+                <i class="fas fa-print me-1"></i> طباعة كشف الحساب (Print Statement)
+            </button>
+            <button onclick="window.close()" class="btn btn-outline-secondary px-3 ms-2">
+                إغلاق
+            </button>
+        </div>
+
+        <div class="statement-box">
+            <!-- Header -->
+            <div class="row align-items-center border-bottom pb-4 mb-4">
+                <div class="col-6">
+                    <h3 class="fw-bold mb-1 text-primary">مصنع حلاوة المولد النبوي الشريف</h3>
+                    <h6 class="text-muted mb-0">Mawlid Sweets Factory ERP — إدارة الحسابات والمبيعات</h6>
+                </div>
+                <div class="col-6 text-end">
+                    <h2 class="fw-bold mb-1 text-dark">كشف حساب عميل تشغيلي</h2>
+                    <div class="text-muted">
+                        الفترة: @(Model.FromDate?.ToString("yyyy/MM/dd") ?? "البداية") إلى @(Model.ToDate?.ToString("yyyy/MM/dd") ?? "تاريخ اليوم")
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Meta Box -->
+            <div class="bg-light p-3 rounded mb-4">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <span class="text-muted">اسم العميل:</span>
+                        <strong class="fs-5 ms-2">@Model.CustomerName</strong>
+                        <span class="text-muted font-monospace ms-2">(@Model.CustomerCode)</span>
+                    </div>
+                    <div class="col-6 text-end">
+                        <span class="text-muted">الرصيد الختامي المستحق:</span>
+                        <strong class="fs-4 ms-2 font-monospace @(Model.ClosingBalance > 0 ? "text-danger" : "text-success")">
+                            @Model.ClosingBalance.ToString("N2") EGP
+                        </strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operations Table -->
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 12%;">التاريخ</th>
+                            <th style="width: 15%;">نوع المستند</th>
+                            <th style="width: 15%;">رقم المستند</th>
+                            <th style="width: 25%;">البيان والتفاصيل</th>
+                            <th style="width: 11%;">مدين (+)</th>
+                            <th style="width: 11%;">دائن (-)</th>
+                            <th style="width: 11%;">الرصيد المتراكم</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.OpeningBalance != 0)
+                        {
+                            <tr class="table-secondary">
+                                <td colspan="4" class="fw-bold">الرصيد الافتتاحي ما قبل الفترة</td>
+                                <td>—</td>
+                                <td>—</td>
+                                <td class="fw-bold font-monospace">@Model.OpeningBalance.ToString("N2")</td>
+                            </tr>
+                        }
+                        @if (Model.Lines != null && Model.Lines.Any())
+                        {
+                            foreach (var line in Model.Lines)
+                            {
+                                <tr>
+                                    <td>@line.Date.ToString("yyyy/MM/dd")</td>
+                                    <td>@line.DocumentType</td>
+                                    <td class="font-monospace fw-bold">@line.DocumentNumber</td>
+                                    <td>@line.Description</td>
+                                    <td class="text-primary font-monospace">@(line.DebitAmount > 0 ? line.DebitAmount.ToString("N2") : "—")</td>
+                                    <td class="text-success font-monospace">@(line.CreditAmount > 0 ? line.CreditAmount.ToString("N2") : "—")</td>
+                                    <td class="fw-bold font-monospace @(line.RunningBalance > 0 ? "text-danger" : "text-muted")">
+                                        @line.RunningBalance.ToString("N2")
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th colspan="4" class="text-end">الإجماليات:</th>
+                            <th class="text-primary font-monospace">@Model.TotalInvoiced.ToString("N2")</th>
+                            <th class="text-success font-monospace">@Model.TotalPaid.ToString("N2")</th>
+                            <th class="fw-bold font-monospace fs-5 @(Model.ClosingBalance > 0 ? "text-danger" : "text-success")">
+                                @Model.ClosingBalance.ToString("N2") EGP
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <!-- Signatures -->
+            <div class="row pt-4 border-top mt-5">
+                <div class="col-6 text-center">
+                    <p class="fw-bold mb-4">إعداد الحسابات</p>
+                    <p class="text-muted">................................</p>
+                </div>
+                <div class="col-6 text-center">
+                    <p class="fw-bold mb-4">مصادقة وتوقيع العميل</p>
+                    <p class="text-muted">................................</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

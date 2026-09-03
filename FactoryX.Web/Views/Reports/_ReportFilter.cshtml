@@ -1,0 +1,105 @@
+@model FactoryX.Application.DTOs.ReportFilterDto
+@{
+    var warehouses = ViewBag.Warehouses as IEnumerable<FactoryX.Domain.Entities.Warehouse> ?? new List<FactoryX.Domain.Entities.Warehouse>();
+    var products = ViewBag.Products as IEnumerable<FactoryX.Application.DTOs.ProductDto> ?? new List<FactoryX.Application.DTOs.ProductDto>();
+    var materials = ViewBag.Materials as IEnumerable<FactoryX.Application.DTOs.MaterialDto> ?? new List<FactoryX.Application.DTOs.MaterialDto>();
+    var customers = ViewBag.Customers as IEnumerable<FactoryX.Application.DTOs.CustomerDto> ?? new List<FactoryX.Application.DTOs.CustomerDto>();
+    var suppliers = ViewBag.Suppliers as IEnumerable<FactoryX.Application.DTOs.SupplierDto> ?? new List<FactoryX.Application.DTOs.SupplierDto>();
+
+    var showWarehouse = ViewData["ShowWarehouseFilter"] as bool? ?? false;
+    var showProduct = ViewData["ShowProductFilter"] as bool? ?? false;
+    var showMaterial = ViewData["ShowMaterialFilter"] as bool? ?? false;
+    var showCustomer = ViewData["ShowCustomerFilter"] as bool? ?? false;
+    var showSupplier = ViewData["ShowSupplierFilter"] as bool? ?? false;
+}
+
+<div class="card shadow-sm border-0 mb-4 no-print">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label small fw-bold mb-1">من تاريخ</label>
+                <input type="date" name="FromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label small fw-bold mb-1">إلى تاريخ</label>
+                <input type="date" name="ToDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+            </div>
+
+            @if (showWarehouse)
+            {
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold mb-1">المستودع / المخزن</label>
+                    <select name="WarehouseId" class="form-select form-select-sm">
+                        <option value="">-- كافة المستودعات --</option>
+                        @foreach (var w in warehouses)
+                        {
+                            <option value="@w.Id" selected="@(w.Id == Model.WarehouseId)">@w.Name</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            @if (showProduct)
+            {
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold mb-1">المنتج التام</label>
+                    <select name="ProductId" class="form-select form-select-sm">
+                        <option value="">-- كافة المنتجات --</option>
+                        @foreach (var p in products)
+                        {
+                            <option value="@p.Id" selected="@(p.Id == Model.ProductId)">@p.Code - @p.ArabicName</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            @if (showMaterial)
+            {
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold mb-1">المادة الخام / التعبئة</label>
+                    <select name="MaterialId" class="form-select form-select-sm">
+                        <option value="">-- كافة الخامات --</option>
+                        @foreach (var m in materials)
+                        {
+                            <option value="@m.Id" selected="@(m.Id == Model.MaterialId)">@m.Code - @m.ArabicName</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            @if (showCustomer)
+            {
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold mb-1">العميل</label>
+                    <select name="CustomerId" class="form-select form-select-sm">
+                        <option value="">-- كافة العملاء --</option>
+                        @foreach (var c in customers)
+                        {
+                            <option value="@c.Id" selected="@(c.Id == Model.CustomerId)">@c.Code - @c.Name</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            @if (showSupplier)
+            {
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold mb-1">المورد</label>
+                    <select name="SupplierId" class="form-select form-select-sm">
+                        <option value="">-- كافة الموردين --</option>
+                        @foreach (var s in suppliers)
+                        {
+                            <option value="@s.Id" selected="@(s.Id == Model.SupplierId)">@s.Code - @s.Name</option>
+                        }
+                    </select>
+                </div>
+            }
+
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary flex-grow-1"><i class="bi bi-filter"></i> تصفية وتحديث</button>
+                <button type="button" onclick="window.print()" class="btn btn-sm btn-outline-dark"><i class="bi bi-printer"></i> طباعة</button>
+            </div>
+        </form>
+    </div>
+</div>

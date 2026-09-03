@@ -1,0 +1,232 @@
+@model IEnumerable<FactoryX.Application.DTOs.CustomerDto>
+@using FactoryX.Domain.Entities
+@{
+    ViewData["Title"] = "سجل العملاء (Customers Master)";
+    var summary = ViewBag.Summary as FactoryX.Application.DTOs.CustomerSummaryDto;
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-users text-primary me-2"></i>سجل العملاء (Customers Master)</h2>
+            <p class="text-muted mb-0">إدارة بيانات العملاء، جهات الاتصال، أنواع العملاء، ومتابعة أوامر البيع والتسليم</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus me-1"></i> إضافة عميل جديد
+            </a>
+            <a asp-controller="SalesOrders" asp-action="Index" class="btn btn-outline-secondary shadow-sm">
+                <i class="fas fa-shopping-cart me-1"></i> أوامر البيع
+            </a>
+            <a asp-controller="SalesFulfillments" asp-action="Index" class="btn btn-outline-success shadow-sm">
+                <i class="fas fa-truck-loading me-1"></i> تسليم المبيعات
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Summary KPI Cards -->
+    @if (summary != null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-primary text-white">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-white-50 mb-1">إجمالي العملاء</h6>
+                                <h3 class="fw-bold mb-0">@summary.TotalCustomers</h3>
+                            </div>
+                            <div class="fs-1 text-white-50"><i class="fas fa-users"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-success text-white">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-white-50 mb-1">عملاء نشطون</h6>
+                                <h3 class="fw-bold mb-0">@summary.ActiveCustomers</h3>
+                            </div>
+                            <div class="fs-1 text-white-50"><i class="fas fa-user-check"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-warning text-dark">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-black-50 mb-1">عملاء الجملة والموزعين</h6>
+                                <h3 class="fw-bold mb-0">@(summary.WholesaleCount + summary.DistributorCount)</h3>
+                            </div>
+                            <div class="fs-1 text-black-50"><i class="fas fa-store"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm bg-secondary text-white">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h6 class="text-white-50 mb-1">عملاء معطلون</h6>
+                                <h3 class="fw-bold mb-0">@summary.InactiveCustomers</h3>
+                            </div>
+                            <div class="fs-1 text-white-50"><i class="fas fa-user-slash"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filter Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">بحث بالاسم أو الكود أو الهاتف</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
+                        <input type="text" name="searchTerm" class="form-control" placeholder="اسم العميل أو الكود..." value="@ViewBag.SearchTerm" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">نوع العميل</label>
+                    <select name="type" class="form-select">
+                        <option value="">-- كل الأنواع --</option>
+                        @foreach (CustomerType t in Enum.GetValues(typeof(CustomerType)))
+                        {
+                            <option value="@t" selected="@(ViewBag.SelectedType != null && (CustomerType)ViewBag.SelectedType == t)">
+                                @t.ToString()
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">حالة التفعيل</label>
+                    <select name="isActive" class="form-select">
+                        <option value="">-- كل الحالات --</option>
+                        <option value="true" selected="@(ViewBag.SelectedIsActive == true)">نشط فقط</option>
+                        <option value="false" selected="@(ViewBag.SelectedIsActive == false)">معطل فقط</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter me-1"></i> تصفية</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customers Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-0">
+            <h5 class="fw-bold mb-0"><i class="fas fa-list me-2 text-primary"></i>قائمة العملاء (@Model.Count())</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>كود العميل</th>
+                        <th>اسم العميل</th>
+                        <th>نوع العميل</th>
+                        <th>مسؤول الاتصال</th>
+                        <th>الهاتف / الجوال</th>
+                        <th>أوامر البيع</th>
+                        <th>الحالة</th>
+                        <th class="text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="fas fa-users fs-1 mb-2 d-block opacity-50"></i>
+                                لا يوجد عملاء مسجلين يطابقون خيارات البحث
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-primary border font-monospace fs-6">@item.Code</span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">@item.Name</div>
+                                    @if (!string.IsNullOrWhiteSpace(item.ArabicName) && item.ArabicName != item.Name)
+                                    {
+                                        <small class="text-muted">@item.ArabicName</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25">
+                                        @item.TypeName
+                                    </span>
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(item.ContactPerson) ? "—" : item.ContactPerson)</td>
+                                <td>
+                                    <div>@(string.IsNullOrWhiteSpace(item.Phone) ? "—" : item.Phone)</div>
+                                    @if (!string.IsNullOrWhiteSpace(item.Mobile) && item.Mobile != item.Phone)
+                                    {
+                                        <small class="text-muted"><i class="fas fa-mobile-alt me-1"></i>@item.Mobile</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@item.SalesOrdersCount أمر</span>
+                                </td>
+                                <td>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>نشط</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger"><i class="fas fa-ban me-1"></i>معطل</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-info" title="عرض التفاصيل">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-warning" title="تعديل">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a asp-controller="SalesOrders" asp-action="Create" asp-route-customerId="@item.Id" class="btn btn-outline-primary" title="إنشاء أمر بيع">
+                                            <i class="fas fa-cart-plus"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,269 @@
+@model IEnumerable<FactoryX.Application.DTOs.MaterialDto>
+@{
+    ViewData["Title"] = "إدارة المواد الخام (Master Data)";
+    var summary = ViewBag.Summary as FactoryX.Application.DTOs.MaterialStockSummaryDto;
+    var currentSearch = ViewBag.Search as string;
+    var currentCategoryId = ViewBag.CategoryId as int?;
+    var currentIsActive = ViewBag.IsActive as bool?;
+    var currentStockStatus = ViewBag.StockStatus as FactoryX.Application.DTOs.MaterialStockStatus?;
+    var currentExpiryStatus = ViewBag.ExpiryStatus as string;
+}
+
+<div class="container-fluid py-4">
+    @await Html.PartialAsync("_Alert")
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-box-seam-fill text-primary me-2"></i>إدارة المواد الخام</h2>
+            <p class="text-muted mb-0">بيانات المواد الخام ومدخلات الإنتاج لمصنع حلويات المولد (السكر، السمسم، الفول السوداني، الحمص، المكسرات، الجلوكوز...).</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="MaterialCategories" asp-action="Index" class="btn btn-outline-primary px-3 py-2 rounded-pill shadow-sm">
+                <i class="bi bi-tags me-1"></i> تصنيفات المواد
+            </a>
+            <a asp-action="Create" class="btn btn-primary px-4 py-2 rounded-pill shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i> إضافة خامة جديدة
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    @if (summary != null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-3 h-100 border-start border-primary border-4">
+                    <small class="text-muted d-block">إجمالي الخامات</small>
+                    <h3 class="fw-bold text-dark mb-0">@summary.TotalMaterials</h3>
+                    <small class="text-success"><i class="bi bi-check-circle me-1"></i>@summary.ActiveMaterials نشط</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-3 h-100 border-start border-danger border-4">
+                    <small class="text-muted d-block">نفد من المخزون</small>
+                    <h3 class="fw-bold text-danger mb-0">@summary.OutOfStockCount</h3>
+                    <small class="text-muted">رصيد 0</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-3 h-100 border-start border-warning border-4">
+                    <small class="text-muted d-block">مخزون منخفض</small>
+                    <h3 class="fw-bold text-warning mb-0">@summary.LowStockCount</h3>
+                    <small class="text-muted">&lt; الحد الأدنى</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-3 h-100 border-start border-info border-4">
+                    <small class="text-muted d-block">إعادة الطلب</small>
+                    <h3 class="fw-bold text-info mb-0">@summary.ReorderRequiredCount</h3>
+                    <small class="text-muted">&le; نقطة الطلب</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-3 h-100 border-start border-danger border-4">
+                    <small class="text-muted d-block">منتهية الصلاحية</small>
+                    <h3 class="fw-bold text-danger mb-0">@summary.ExpiredCount</h3>
+                    <small class="text-danger"><i class="bi bi-exclamation-triangle"></i> منتهية</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card shadow-sm border-0 rounded-4 bg-white p-3 h-100 border-start border-secondary border-4">
+                    <small class="text-muted d-block">قرب انتهاء الصلاحية</small>
+                    <h3 class="fw-bold text-secondary mb-0">@summary.ExpiringSoonCount</h3>
+                    <small class="text-muted">خلال 30 يوم</small>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filters Section -->
+    <div class="card shadow-sm border-0 rounded-4 mb-4 bg-white">
+        <div class="card-body p-3">
+            <form method="get" class="row g-2 align-items-center">
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0 bg-light" placeholder="بحث بالاسم، الكود، أو SKU..." value="@currentSearch" />
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select name="categoryId" class="form-select bg-light" asp-items="ViewBag.Categories">
+                        <option value="">-- جميع التصنيفات --</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="stockStatus" class="form-select bg-light">
+                        <option value="">-- حالة المخزون --</option>
+                        <option value="0" selected="@(currentStockStatus == FactoryX.Application.DTOs.MaterialStockStatus.OUT_OF_STOCK ? "selected" : null)">نفد المخزون (Out of Stock)</option>
+                        <option value="1" selected="@(currentStockStatus == FactoryX.Application.DTOs.MaterialStockStatus.LOW_STOCK ? "selected" : null)">مخزون حرج (Low Stock)</option>
+                        <option value="2" selected="@(currentStockStatus == FactoryX.Application.DTOs.MaterialStockStatus.REORDER_REQUIRED ? "selected" : null)">يتطلب إعادة الطلب (Reorder)</option>
+                        <option value="3" selected="@(currentStockStatus == FactoryX.Application.DTOs.MaterialStockStatus.NORMAL ? "selected" : null)">طبيعي (Normal)</option>
+                        <option value="4" selected="@(currentStockStatus == FactoryX.Application.DTOs.MaterialStockStatus.OVERSTOCKED ? "selected" : null)">مخزون زائد (Overstocked)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="expiryStatus" class="form-select bg-light">
+                        <option value="">-- حالة الصلاحية --</option>
+                        <option value="expired" selected="@(currentExpiryStatus == "expired" ? "selected" : null)">منتهي الصلاحية</option>
+                        <option value="expiring_soon" selected="@(currentExpiryStatus == "expiring_soon" ? "selected" : null)">قريب الانتهاء (30 يوم)</option>
+                        <option value="valid" selected="@(currentExpiryStatus == "valid" ? "selected" : null)">ساري الصلاحية</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <select name="isActive" class="form-select bg-light">
+                        <option value="">الحالة</option>
+                        <option value="true" selected="@(currentIsActive == true ? "selected" : null)">نشط</option>
+                        <option value="false" selected="@(currentIsActive == false ? "selected" : null)">معطل</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1 rounded-pill"><i class="bi bi-funnel-fill me-1"></i> تصفية</button>
+                    @if (!string.IsNullOrEmpty(currentSearch) || currentCategoryId.HasValue || currentIsActive.HasValue || currentStockStatus.HasValue || !string.IsNullOrEmpty(currentExpiryStatus))
+                    {
+                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill" title="مسح التصفية"><i class="bi bi-x-circle"></i></a>
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Materials Table -->
+    <div class="card shadow-sm border-0 rounded-4 bg-white overflow-hidden">
+        <div class="card-body p-0">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">الكود / SKU</th>
+                                <th>اسم الخامة</th>
+                                <th>التصنيف</th>
+                                <th>الوحدة (مخزون / شراء)</th>
+                                <th>معامل التحويل</th>
+                                <th>التكلفة الحالية</th>
+                                <th>الرصيد الفعلي</th>
+                                <th>حدود المخزون (أدنى / طلب / أقصى)</th>
+                                <th>حالة المخزون</th>
+                                <th>الصلاحية</th>
+                                <th>الحالة</th>
+                                <th class="pe-4 text-center">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var m in Model)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold"><code>@m.Code</code></div>
+                                        <small class="text-muted">SKU: @m.SKU</small>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@m.Name</div>
+                                        @if (!string.IsNullOrEmpty(m.ArabicName) && m.ArabicName != m.Name)
+                                        {
+                                            <small class="text-muted">@m.ArabicName</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">
+                                            @(string.IsNullOrEmpty(m.CategoryName) ? "بدون تصنيف" : m.CategoryName)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary-subtle text-primary border">@m.Unit</span>
+                                        @if (!string.IsNullOrEmpty(m.PurchaseUnit) && m.PurchaseUnit != m.Unit)
+                                        {
+                                            <small class="text-muted d-block">شراء: @m.PurchaseUnit</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (m.ConversionFactor > 0 && m.ConversionFactor != 1)
+                                        {
+                                            <span class="small fw-semibold text-secondary">1 @m.PurchaseUnit = @m.ConversionFactor @m.Unit</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">1 : 1</span>
+                                        }
+                                    </td>
+                                    <td class="fw-bold text-dark">
+                                        @m.CurrentCost.ToString("N2") <small class="text-muted">ج.م</small>
+                                    </td>
+                                    <td>
+                                        <span class="fs-6 fw-bold @(m.CurrentStock <= 0 ? "text-danger" : m.CurrentStock < m.MinimumStock ? "text-warning" : "text-success")">
+                                            @m.CurrentStock.ToString("N2")
+                                        </span>
+                                        <small class="text-muted">@m.Unit</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted d-block">أدنى: <b class="text-dark">@m.MinimumStock</b></small>
+                                        <small class="text-muted d-block">طلب: <b class="text-primary">@m.ReorderLevel</b></small>
+                                        <small class="text-muted d-block">أقصى: <b class="text-dark">@m.MaximumStock</b></small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-@(m.StockStatus switch {
+                                            FactoryX.Application.DTOs.MaterialStockStatus.OUT_OF_STOCK => "danger",
+                                            FactoryX.Application.DTOs.MaterialStockStatus.LOW_STOCK => "warning text-dark",
+                                            FactoryX.Application.DTOs.MaterialStockStatus.REORDER_REQUIRED => "info text-dark",
+                                            FactoryX.Application.DTOs.MaterialStockStatus.NORMAL => "success",
+                                            _ => "secondary"
+                                        }) rounded-pill px-2 py-1">
+                                            @m.StockStatusName
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (m.ExpiryDate.HasValue)
+                                        {
+                                            @if (m.IsExpired)
+                                            {
+                                                <span class="badge bg-danger rounded-pill px-2 py-1"><i class="bi bi-x-circle me-1"></i>منتهية (@m.ExpiryDate.Value.ToString("yyyy-MM-dd"))</span>
+                                            }
+                                            else if (m.IsExpiringSoon)
+                                            {
+                                                <span class="badge bg-warning text-dark rounded-pill px-2 py-1"><i class="bi bi-exclamation-triangle me-1"></i>قريبة (@m.ExpiryDate.Value.ToString("yyyy-MM-dd"))</span>
+                                            }
+                                            else
+                                            {
+                                                <small class="text-muted">@m.ExpiryDate.Value.ToString("yyyy-MM-dd")</small>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">-</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-@(m.IsActive ? "success-subtle text-success" : "secondary-subtle text-secondary") rounded-pill px-2 py-1">
+                                            @(m.IsActive ? "نشط" : "معطل")
+                                        </span>
+                                    </td>
+                                    <td class="pe-4 text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="Details" asp-route-id="@m.Id" class="btn btn-outline-primary" title="عرض التفاصيل"><i class="bi bi-eye"></i></a>
+                                            <a asp-action="Edit" asp-route-id="@m.Id" class="btn btn-outline-warning" title="تعديل"><i class="bi bi-pencil"></i></a>
+                                            <form asp-action="ToggleActive" asp-route-id="@m.Id" method="post" class="d-inline">
+                                                <button type="submit" class="btn btn-outline-@(m.IsActive ? "secondary" : "success")" title="@(m.IsActive ? "تعطيل المادة" : "تفعيل المادة")">
+                                                    <i class="bi bi-@(m.IsActive ? "slash-circle" : "check-circle")"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info m-4 text-center rounded-4 p-5">
+                    <i class="bi bi-inbox fs-1 text-primary d-block mb-3"></i>
+                    <h5 class="fw-bold">لم يتم العثور على خامات مطابقة</h5>
+                    <p class="text-muted mb-3">حاول تعديل شروط البحث والتصفية أو قم بإضافة خامة جديدة.</p>
+                    <a asp-action="Create" class="btn btn-primary px-4 rounded-pill"><i class="bi bi-plus-lg me-1"></i> إضافة خامة جديدة</a>
+                </div>
+            }
+        </div>
+    </div>
+</div>

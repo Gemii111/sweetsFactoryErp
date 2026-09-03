@@ -1,0 +1,65 @@
+@model FactoryX.Application.DTOs.CustomerSalesReportDto
+@{
+    ViewData["Title"] = "تقرير مبيعات العملاء والمديونيات";
+    ViewData["ShowCustomerFilter"] = true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-person-lines-fill text-primary me-2"></i>تقرير مبيعات العملاء والمديونيات (Customer Sales)</h2>
+        <p class="text-muted mb-0">تحليل مسحوبات العملاء، المبالغ المفوترة، التحصيلات، والرصيد المتبقي</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">كود العميل</th>
+                        <th>اسم العميل</th>
+                        <th>التصنيف</th>
+                        <th class="text-center">عدد الأوامر</th>
+                        <th class="text-end">قيمة الطلبات</th>
+                        <th class="text-end">المفوتر</th>
+                        <th class="text-end">المحصل</th>
+                        <th class="text-end pe-3">المديونية المتبقية</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Customers.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">لا توجد بيانات عملاء مسجلة</td>
+                        </tr>
+                    }
+                    @foreach (var c in Model.Customers)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">@c.CustomerCode</td>
+                            <td class="fw-semibold">
+                                <a asp-controller="CustomerLedger" asp-action="Index" asp-route-customerId="@c.CustomerId" class="text-decoration-none">
+                                    @c.CustomerName
+                                </a>
+                            </td>
+                            <td><span class="badge bg-light text-dark border">@c.CustomerType</span></td>
+                            <td class="text-center"><span class="badge bg-primary-subtle text-primary">@c.TotalOrders</span></td>
+                            <td class="text-end font-monospace">@c.OrderedValue.ToString("N2")</td>
+                            <td class="text-end font-monospace text-primary">@c.InvoicedValue.ToString("N2")</td>
+                            <td class="text-end font-monospace text-success">@c.PaidValue.ToString("N2")</td>
+                            <td class="text-end font-monospace pe-3 fw-bold @(c.OutstandingReceivable > 0 ? "text-danger" : "text-dark")">
+                                @c.OutstandingReceivable.ToString("N2") EGP
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

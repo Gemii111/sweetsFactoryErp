@@ -1,0 +1,85 @@
+@model FactoryX.Application.DTOs.StockAdjustmentRequest
+
+@{
+    ViewData["Title"] = "تسوية وجرد المخزون";
+    var warehouses = ViewBag.Warehouses as IEnumerable<FactoryX.Application.DTOs.WarehouseDto> ?? new List<FactoryX.Application.DTOs.WarehouseDto>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex align-items-center mb-4">
+            <a asp-action="Stock" class="btn btn-light rounded-circle ms-3"><i class="bi bi-arrow-right"></i></a>
+            <div>
+                <h2 class="fw-bold mb-0"><i class="bi bi-sliders text-primary me-2"></i>تسوية وجرد المخزون</h2>
+                <small class="text-muted">تعديل رصيد المخزون الدفتري في النظام ليتطابق مع الجرد الفعلي على أرض الواقع.</small>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <form asp-action="Adjust" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4" role="alert"></div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="WarehouseId" class="form-label fw-semibold">المستودع <span class="text-danger">*</span></label>
+                            <select asp-for="WarehouseId" class="form-select" required>
+                                <option value="">-- اختر المستودع --</option>
+                                @foreach (var wh in warehouses)
+                                {
+                                    <option value="@wh.Id">@wh.Name (@wh.Code)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="MaterialId" class="form-label fw-semibold">المادة الخام (Raw Material)</label>
+                            <select asp-for="MaterialId" class="form-select">
+                                <option value="">-- اختياري: اختر المادة الخام --</option>
+                                @if (ViewBag.Materials is IEnumerable<FactoryX.Application.DTOs.MaterialDto> mats)
+                                {
+                                    var selMatId = ViewBag.SelectedMaterialId as int?;
+                                    foreach (var m in mats)
+                                    {
+                                        <option value="@m.Id" selected="@(selMatId == m.Id ? "selected" : null)">@m.Name (@m.Code) - @m.Unit</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="BatchNumber" class="form-label fw-semibold">رقم التشغيلة (Batch Number)</label>
+                            <input asp-for="BatchNumber" class="form-control" placeholder="مثال: SM-2026-0001" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="ActualQuantity" class="form-label fw-semibold">الكمية الفعلية بالجرد</label>
+                            <input asp-for="ActualQuantity" class="form-control" type="number" step="0.01" min="0" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Unit" class="form-label fw-semibold">الوحدة</label>
+                            <input asp-for="Unit" class="form-control" placeholder="كجم / كرتونة" value="كجم" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Reason" class="form-label fw-semibold">سبب التسوية / الفارق</label>
+                        <input asp-for="Reason" class="form-control" placeholder="مثال: فارق جرد سنوي / كسر / هالك رطوبة" required />
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label fw-semibold">ملاحظات إضافية</label>
+                        <textarea asp-for="Notes" class="form-control" rows="2" placeholder="تفاصيل المحضر أو توقيع لجنة الجرد..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Stock" class="btn btn-light px-4">إلغاء</a>
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="bi bi-check-circle me-1"></i>حفظ تسوية الجرد</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

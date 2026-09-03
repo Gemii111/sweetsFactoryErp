@@ -1,0 +1,304 @@
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var username = User.Identity?.Name;
+}
+
+<aside class="sidebar d-flex flex-column align-items-center py-3 px-2 w-auto min-vh-100 shadow-sm">
+    <!-- قائمة الروابط الرئيسية -->
+    <nav class="nav flex-column gap-2 flex-grow-1">
+        <a asp-controller="Home" asp-action="Dashboard"
+            class="nav-link sidebar-link p-2 @(currentController == "Home" ? "active" : "")" title="لوحة التحكم الرئيسية">
+            <i class="bi bi-speedometer2 fs-4"></i>
+        </a>
+
+        <hr class="my-1 text-muted w-100 opacity-25" />
+
+        <!-- المواد الخام (Phase 4 Raw Materials) -->
+        <a asp-controller="Materials" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Materials" ? "active" : "")" title="المواد الخام (Master Data)">
+            <i class="bi bi-box-seam-fill fs-4 text-primary"></i>
+        </a>
+        <a asp-controller="MaterialCategories" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "MaterialCategories" ? "active" : "")" title="تصنيفات المواد الخام">
+            <i class="bi bi-tags fs-4"></i>
+        </a>
+
+        <hr class="my-1 text-muted w-100 opacity-25" />
+
+        <!-- إدارة المستودعات والمخزون (Phase 3 Inventory Foundation) -->
+        <a asp-controller="Warehouses" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Warehouses" ? "active" : "")" title="المستودعات والمخازن">
+            <i class="bi bi-buildings fs-4"></i>
+        </a>
+        <a asp-controller="WarehouseLocations" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "WarehouseLocations" ? "active" : "")" title="أماكن التخزين والرفوف">
+            <i class="bi bi-geo-alt fs-4"></i>
+        </a>
+        <a asp-controller="Inventory" asp-action="Stock"
+            class="nav-link sidebar-link p-2 @(currentController == "Inventory" && currentAction == "Stock" ? "active" : "")" title="أرصدة المخزون">
+            <i class="bi bi-boxes fs-4"></i>
+        </a>
+        <a asp-controller="Inventory" asp-action="Transactions"
+            class="nav-link sidebar-link p-2 @(currentController == "Inventory" && currentAction == "Transactions" ? "active" : "")" title="حركة المخزون وسجل التدقيق">
+            <i class="bi bi-clock-history fs-4"></i>
+        </a>
+        <a asp-controller="Inventory" asp-action="Transfer"
+            class="nav-link sidebar-link p-2 @(currentController == "Inventory" && currentAction == "Transfer" ? "active" : "")" title="تحويل مخزني">
+            <i class="bi bi-arrow-left-right fs-4"></i>
+        </a>
+        <a asp-controller="Inventory" asp-action="Adjust"
+            class="nav-link sidebar-link p-2 @(currentController == "Inventory" && currentAction == "Adjust" ? "active" : "")" title="جرد وتسوية المخزون">
+            <i class="bi bi-sliders fs-4"></i>
+        </a>
+
+        <hr class="my-1 text-muted w-100 opacity-25" />
+
+        <!-- المنتجات التامة (Phase 5 Finished Products) -->
+        <a asp-controller="Products" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Products" ? "active" : "")" title="قائمة المنتجات التامة (Finished Products)">
+            <i class="bi bi-basket3-fill fs-4 text-success"></i>
+        </a>
+        <a asp-controller="ProductCategories" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "ProductCategories" ? "active" : "")" title="تصنيفات المنتجات التامة">
+            <i class="bi bi-tags-fill fs-4 text-success"></i>
+        </a>
+
+        <hr class="my-1 text-muted w-100 opacity-25" />
+
+        <!-- الوصفات وقوائم المواد المعيارية (Phase 6 Recipes & BOM) -->
+        <a asp-controller="Recipes" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Recipes" ? "active" : "")" title="الوصفات وقوائم المواد المعيارية (Recipes / BOM)">
+            <i class="bi bi-journal-richtext fs-4 text-danger"></i>
+        </a>
+
+        <hr class="my-1 text-muted w-100 opacity-25" />
+
+        <!-- تخطيط وأوامر الإنتاج (Phase 7 Production Planning & Orders) -->
+        <a asp-controller="ProductionOrders" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "ProductionOrders" || currentController == "WorkOrder" ? "active" : "")" title="تخطيط وأوامر الإنتاج (Production Orders & Planning)">
+            <i class="bi bi-calendar2-range-fill fs-4 text-warning"></i>
+        </a>
+
+        <!-- دفعات وتشغيل الإنتاج (Phase 8 Production Batches & Execution) -->
+        <a asp-controller="ProductionBatches" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "ProductionBatches" ? "active" : "")" title="دفعات وتشغيل الإنتاج الفعلي (Production Batches & Execution)">
+            <i class="bi bi-gear-wide-connected fs-4 text-info"></i>
+        </a>
+
+        <!-- الهوالك والمرفوضات (Phase 9 Waste & Rejection Management) -->
+        <a asp-controller="Waste" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Waste" ? "active" : "")" title="سجل الهوالك ومرفوضات الإنتاج (Waste & Rejection)">
+            <i class="bi bi-trash3-fill fs-4 text-danger"></i>
+        </a>
+        <a asp-controller="WasteReasons" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "WasteReasons" ? "active" : "")" title="دليل أسباب الهالك (Waste Reasons)">
+            <i class="bi bi-tags-fill fs-4 text-secondary"></i>
+        </a>
+
+        <!-- رقابة الجودة والإفراج (Phase 10 Quality Control & Inspection) -->
+        <a asp-controller="QualityInspections" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "QualityInspections" ? "active" : "")" title="رقابة الجودة والإفراج عن الدفعات (Quality Control & Release Gate)">
+            <i class="bi bi-shield-check fs-4 text-primary"></i>
+        </a>
+        <a asp-controller="QualityTemplates" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "QualityTemplates" ? "active" : "")" title="قوالب ومعايير فحص الجودة (QC Templates)">
+            <i class="bi bi-card-checklist fs-4 text-info"></i>
+        </a>
+
+        <!-- التعبئة والتغليف (Phase 11 Packaging Management & Execution) -->
+        <a asp-controller="PackagingOrders" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "PackagingOrders" ? "active" : "")" title="أوامر وتنفيذ التعبئة والتغليف (Packaging Execution & Orders)">
+            <i class="bi bi-box-seam-fill fs-4 text-success"></i>
+        </a>
+        <a asp-controller="PackagingBOMs" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "PackagingBOMs" ? "active" : "")" title="مواصفات وقوائم مواد التعبئة (Packaging BOM)">
+            <i class="bi bi-boxes fs-4 text-warning"></i>
+        </a>
+
+        <!-- المنتجات التامة والإفراج (Phase 12 Finished Goods Inventory & Release) -->
+        <a asp-controller="FinishedGoods" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "FinishedGoods" ? "active" : "")" title="مخزون وتتبع المنتجات التامة (Finished Goods Stock)">
+            <i class="bi bi-boxes-stacked fs-4 text-info"></i>
+        </a>
+        <a asp-controller="FinishedGoodsReleases" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "FinishedGoodsReleases" ? "active" : "")" title="سندات إفراج المنتجات التامة (Finished Goods Releases)">
+            <i class="bi bi-file-earmark-check-fill fs-4 text-primary"></i>
+        </a>
+
+        <hr class="my-1 text-muted w-100 opacity-25" />
+
+        <!-- المشتريات والموردين (Phase 13 Purchasing & Supplier Management) -->
+        <a asp-controller="Suppliers" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Suppliers" ? "active" : "")" title="سجل الموردين (Suppliers Master)">
+            <i class="bi bi-truck fs-4 text-warning"></i>
+        </a>
+        <a asp-controller="PurchaseRequests" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "PurchaseRequests" ? "active" : "")" title="طلبات الشراء (Purchase Requests)">
+            <i class="bi bi-clipboard-check fs-4 text-info"></i>
+        </a>
+        <a asp-controller="PurchaseOrders" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "PurchaseOrders" ? "active" : "")" title="أوامر الشراء (Purchase Orders)">
+            <i class="bi bi-receipt fs-4 text-primary"></i>
+        </a>
+        <a asp-controller="PurchaseReceipts" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "PurchaseReceipts" ? "active" : "")" title="سندات الاستلام المخزني (Goods Receipt Notes - GRN)">
+            <i class="bi bi-box-arrow-in-down-right fs-4 text-success"></i>
+        </a>
+
+        <hr class="my-1 text-muted w-100 opacity-25" />
+
+        <!-- المبيعات والعملاء (Phase 14 Sales & Customer Management) -->
+        <a asp-controller="Customers" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Customers" ? "active" : "")" title="سجل العملاء (Customers Master)">
+            <i class="bi bi-people-fill fs-4 text-info"></i>
+        </a>
+        <a asp-controller="SalesOrders" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "SalesOrders" ? "active" : "")" title="أوامر البيع (Sales Orders)">
+            <i class="bi bi-cart-check-fill fs-4 text-primary"></i>
+        </a>
+        <a asp-controller="SalesFulfillments" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "SalesFulfillments" ? "active" : "")" title="تسليم وصرف المبيعات (Sales Fulfillments)">
+            <i class="bi bi-truck-flatbed fs-4 text-success"></i>
+        </a>
+
+        <!-- الفواتير والتحصيل (Phase 15 Invoicing & Payments) -->
+        <a asp-controller="Invoices" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Invoices" ? "active" : "")" title="فواتير المبيعات (Sales Invoices)">
+            <i class="bi bi-file-earmark-ruled-fill fs-4 text-warning"></i>
+        </a>
+        <a asp-controller="Payments" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Payments" ? "active" : "")" title="سندات القبض والتحصيل (Payment Receipts)">
+            <i class="bi bi-cash-stack fs-4 text-success"></i>
+        </a>
+        <a asp-controller="CustomerStatements" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "CustomerStatements" ? "active" : "")" title="كشوف حسابات العملاء (Customer Statements)">
+            <i class="bi bi-journal-text fs-4 text-info"></i>
+        </a>
+
+        <hr class="my-1 text-muted w-100 opacity-25" />
+
+        <!-- الحسابات العامة ودفتر الأستاذ (Phase 16 Accounting & General Ledger) -->
+        <a asp-controller="AccountingDashboard" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "AccountingDashboard" ? "active" : "")" title="لوحة المؤشرات المحاسبية (Accounting Dashboard)">
+            <i class="bi bi-graph-up-arrow fs-4 text-primary"></i>
+        </a>
+        <a asp-controller="Accounts" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Accounts" ? "active" : "")" title="شجرة الحسابات المالية (Chart of Accounts)">
+            <i class="bi bi-diagram-3-fill fs-4 text-info"></i>
+        </a>
+        <a asp-controller="JournalEntries" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "JournalEntries" ? "active" : "")" title="دفتر اليومية العامة والقيود (Journal Entries)">
+            <i class="bi bi-journal-bookmark-fill fs-4 text-warning"></i>
+        </a>
+        <a asp-controller="GeneralLedger" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "GeneralLedger" ? "active" : "")" title="دفتر الأستاذ العام (General Ledger)">
+            <i class="bi bi-journal-richtext fs-4 text-secondary"></i>
+        </a>
+        <a asp-controller="TrialBalance" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "TrialBalance" ? "active" : "")" title="ميزان المراجعة (Trial Balance)">
+            <i class="bi bi-scale fs-4 text-success"></i>
+        </a>
+        <a asp-controller="CustomerLedger" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "CustomerLedger" ? "active" : "")" title="كشف حساب عميل محاسبي (Customer Subledger)">
+            <i class="bi bi-person-lines-fill fs-4 text-info"></i>
+        </a>
+        <a asp-controller="SupplierLedger" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "SupplierLedger" ? "active" : "")" title="كشف حساب مورد محاسبي (Supplier Subledger)">
+            <i class="bi bi-truck-flatbed fs-4 text-warning"></i>
+        </a>
+        <a asp-controller="SupplierPayments" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "SupplierPayments" ? "active" : "")" title="سندات صرف وسداد الموردين (Supplier Payments)">
+            <i class="bi bi-wallet2 fs-4 text-danger"></i>
+        </a>
+        <a asp-controller="AccountingPeriods" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "AccountingPeriods" ? "active" : "")" title="الفترات المالية (Accounting Periods)">
+            <i class="bi bi-calendar3-range fs-4 text-primary"></i>
+        </a>
+
+        <hr class="my-1 text-muted w-100 opacity-25" />
+
+        <!-- التقارير والتحليلات الإدارية الشاملة (Phase 17 Reporting & Analytics) -->
+        <a asp-controller="Reports" asp-action="Dashboard"
+            class="nav-link sidebar-link p-2 @(currentController == "Reports" ? "active" : "")" title="لوحة التقارير والتحليلات الإدارية الشاملة (Management Reports & Analytics)">
+            <i class="bi bi-speedometer2 fs-4 text-danger"></i>
+        </a>
+        <a asp-controller="Reports" asp-action="Traceability"
+            class="nav-link sidebar-link p-2" title="شجرة تتبع مسار التشغيلة الشامل (End-to-End Traceability)">
+            <i class="bi bi-diagram-3-fill fs-4 text-info"></i>
+        </a>
+        <a asp-controller="Reports" asp-action="ProfitAndLoss"
+            class="nav-link sidebar-link p-2" title="قائمة الأرباح والخسائر (Profit & Loss Statement)">
+            <i class="bi bi-file-earmark-spreadsheet-fill fs-4 text-success"></i>
+        </a>
+        <a asp-controller="Reports" asp-action="Profitability"
+            class="nav-link sidebar-link p-2" title="تحليل ربحية المنتجات والعملاء (Profitability Analysis)">
+            <i class="bi bi-graph-up-arrow fs-4 text-warning"></i>
+        </a>
+
+        <hr class="my-1 text-muted w-100 opacity-25" />
+
+        <!-- إدارة النظام والأمان والتدقيق (Phase 18 Security, RBAC & Audit Trail) -->
+        <a asp-controller="Security" asp-action="Dashboard"
+            class="nav-link sidebar-link p-2 @(currentController == "Security" ? "active" : "")" title="لوحة الرقابة والأمان (Security Dashboard)">
+            <i class="bi bi-shield-check fs-4 text-success"></i>
+        </a>
+        <a asp-controller="Users" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Users" ? "active" : "")" title="إدارة المستخدمين والحسابات (User Management)">
+            <i class="bi bi-people-fill fs-4 text-primary"></i>
+        </a>
+        <a asp-controller="Roles" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Roles" ? "active" : "")" title="إدارة الأدوار ومصفوفة الصلاحيات (RBAC Roles)">
+            <i class="bi bi-shield-shaded fs-4 text-warning"></i>
+        </a>
+        <a asp-controller="Audit" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Audit" ? "active" : "")" title="سجل التدقيق وتتبع العمليات (Audit Trail)">
+            <i class="bi bi-clock-history fs-4 text-info"></i>
+        </a>
+
+        <hr class="my-1 text-muted w-100 opacity-25" />
+
+        <!-- إعدادات النظام والمعلمات المركزية (Phase 19 System Administration & Configuration) -->
+        <a asp-controller="Settings" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "Settings" ? "active" : "")" title="إعدادات النظام والمعلمات المركزية (Central Configuration & Settings)">
+            <i class="bi bi-sliders fs-4 text-primary"></i>
+        </a>
+        <a asp-controller="Settings" asp-action="Company"
+            class="nav-link sidebar-link p-2" title="الملف التعريفي للمصنع (Company Profile)">
+            <i class="bi bi-building fs-4 text-info"></i>
+        </a>
+        <a asp-controller="Settings" asp-action="Tax"
+            class="nav-link sidebar-link p-2" title="الإعدادات الضريبية (Tax Settings)">
+            <i class="bi bi-percent fs-4 text-success"></i>
+        </a>
+        <a asp-controller="Settings" asp-action="Numbering"
+            class="nav-link sidebar-link p-2" title="ترقيم المستندات (Document Numbering)">
+            <i class="bi bi-123 fs-4 text-secondary"></i>
+        </a>
+
+        <!-- صحة وجاهزية النظام (Phase 20 Production Readiness & Health) -->
+        <a asp-controller="SystemHealth" asp-action="Index"
+            class="nav-link sidebar-link p-2 @(currentController == "SystemHealth" ? "active" : "")" title="صحة وجاهزية النظام (System Health & Readiness)">
+            <i class="bi bi-heart-pulse fs-4 text-danger"></i>
+        </a>
+    </nav>
+
+
+
+    <!-- الملف الشخصي -->
+    <div class="mt-auto">
+        @if (isAuthenticated)
+        {
+            <a asp-controller="Account" asp-action="Profile" class="nav-link sidebar-link p-2" title="@username">
+                <i class="bi bi-person-circle fs-4"></i>
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Account" asp-action="Login" class="nav-link sidebar-link p-2" title="تسجيل الدخول">
+                <i class="bi bi-box-arrow-in-right fs-4"></i>
+            </a>
+        }
+    </div>
+</aside>

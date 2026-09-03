@@ -1,0 +1,86 @@
+@model FactoryX.Application.DTOs.CreateUserRequestDto
+@{
+    ViewData["Title"] = "إضافة مستخدم جديد";
+    var roles = ViewBag.Roles as List<FactoryX.Application.DTOs.RoleItemDto> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-person-plus-fill text-primary me-2"></i>إضافة مستخدم جديد</h2>
+        <p class="text-muted mb-0">إنشاء حساب جديد وتحديد الأدوار والصلاحيات</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>العودة لقائمة المستخدمين
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Username" class="form-label fw-bold">اسم المستخدم (Username) <span class="text-danger">*</span></label>
+                    <input asp-for="Username" class="form-control" required placeholder="e.g. ahmed.ali" />
+                    <span asp-validation-for="Username" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="FullName" class="form-label fw-bold">الاسم الكامل <span class="text-danger">*</span></label>
+                    <input asp-for="FullName" class="form-control" required placeholder="e.g. أحمد علي محمود" />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Email" class="form-label fw-bold">البريد الإلكتروني</label>
+                    <input asp-for="Email" type="email" class="form-control" placeholder="user@factoryx.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="Password" class="form-label fw-bold">كلمة المرور <span class="text-danger">*</span></label>
+                    <input asp-for="Password" type="password" class="form-control" required placeholder="••••••••" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-3">
+                    <label asp-for="ConfirmPassword" class="form-label fw-bold">تأكيد كلمة المرور <span class="text-danger">*</span></label>
+                    <input asp-for="ConfirmPassword" type="password" class="form-control" required placeholder="••••••••" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 mt-4">
+                    <h5 class="fw-bold text-primary mb-3"><i class="bi bi-shield-lock me-2"></i>الأدوار الوظيفية المخصصة (Roles)</h5>
+                    <div class="row g-2">
+                        @foreach (var r in roles)
+                        {
+                            <div class="col-md-4">
+                                <div class="form-check card p-2 h-100 border shadow-none">
+                                    <input class="form-check-input ms-2 me-2" type="checkbox" name="RoleIds" value="@r.Id" id="role_@r.Id" />
+                                    <label class="form-check-label fw-semibold" for="role_@r.Id">
+                                        @r.DisplayName
+                                        <small class="d-block text-muted">@r.Description</small>
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-12 mt-4">
+                    <h5 class="fw-bold text-primary mb-2"><i class="bi bi-building me-2"></i>صلاحية المستودعات</h5>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch" asp-for="IsAllWarehousesAllowed" id="allWarehousesSwitch" checked />
+                        <label class="form-check-label fw-bold" for="allWarehousesSwitch">السماح بالوصول لكافة المستودعات والمواقع (Global Warehouse Access)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a asp-action="Index" class="btn btn-outline-secondary">إلغاء</a>
+                <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>حفظ المستخدم</button>
+            </div>
+        </form>
+    </div>
+</div>

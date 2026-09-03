@@ -1,0 +1,65 @@
+@model FactoryX.Application.DTOs.PurchaseOrderStatusReportDto
+@{
+    ViewData["Title"] = "تقرير حالات ومتابعة أوامر الشراء";
+    ViewData["ShowSupplierFilter"] = true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-file-earmark-check text-warning me-2"></i>تقرير حالات ومتابعة أوامر الشراء (Purchase Orders Status)</h2>
+        <p class="text-muted mb-0">متابعة دقيقة لموقف توريد الخامات ومواد التعبئة والكميات المتبقية للتوريد</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">رقم أمر الشراء</th>
+                        <th>تاريخ الأمر</th>
+                        <th>المورد</th>
+                        <th class="text-end">الكمية المطلوبة</th>
+                        <th class="text-end">الكمية المستلمة</th>
+                        <th class="text-end">الكمية المتبقية</th>
+                        <th class="text-end">التكلفة الإجمالية</th>
+                        <th class="text-center pe-3">الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Orders.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">لا توجد أوامر شراء مسجلة</td>
+                        </tr>
+                    }
+                    @foreach (var o in Model.Orders)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">
+                                <a asp-controller="PurchaseOrders" asp-action="Details" asp-route-id="@o.OrderId" class="text-decoration-none">
+                                    @o.OrderNumber
+                                </a>
+                            </td>
+                            <td>@o.OrderDate.ToString("yyyy-MM-dd")</td>
+                            <td class="fw-semibold">@o.SupplierName</td>
+                            <td class="text-end font-monospace">@o.TotalOrderedQuantity.ToString("N2")</td>
+                            <td class="text-end font-monospace text-success fw-bold">@o.TotalReceivedQuantity.ToString("N2")</td>
+                            <td class="text-end font-monospace @(o.RemainingQuantity > 0 ? "text-danger fw-bold" : "text-muted")">
+                                @o.RemainingQuantity.ToString("N2")
+                            </td>
+                            <td class="text-end font-monospace fw-bold">@o.TotalCost.ToString("N2") EGP</td>
+                            <td class="text-center pe-3"><span class="badge bg-light text-dark border">@o.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

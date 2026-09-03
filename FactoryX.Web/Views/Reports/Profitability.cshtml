@@ -1,0 +1,132 @@
+@model FactoryX.Application.DTOs.ManagementProfitabilityReportDto
+@{
+    ViewData["Title"] = "تقرير تحليل ربحية المنتجات والعملاء الإدارية";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-graph-up-arrow text-success me-2"></i>تقرير تحليل الربحية الإدارية (Management Profitability)</h2>
+        <p class="text-muted mb-0">تحليل هوامش الربح ومجمل العائد حسب كل صنف وعميل مع احتساب تكلفة البضاعة المباعة COGS</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">إجمالي إيراد المبيعات</small>
+            <h4 class="fw-bold text-dark font-monospace mb-0">@Model.TotalRevenue.ToString("N2") EGP</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">إجمالي تكلفة المبيعات (COGS)</small>
+            <h4 class="fw-bold text-muted font-monospace mb-0">@Model.TotalCOGS.ToString("N2") EGP</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">إجمالي مجمل الربح المحقق</small>
+            <h4 class="fw-bold text-primary font-monospace mb-0">@Model.TotalGrossProfit.ToString("N2") EGP</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-success-subtle p-3">
+            <small class="text-success fw-bold">متوسط هامش الربح الإجمالي %</small>
+            <h4 class="fw-bold text-success font-monospace mb-0">@Model.OverallGrossMarginPercent%</h4>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- 1. Product Profitability Table -->
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-tag-fill text-primary me-2"></i>ربحية الأصناف والمنتجات</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">اسم المنتج</th>
+                                <th class="text-end">الإيراد</th>
+                                <th class="text-end">التكلفة COGS</th>
+                                <th class="text-end">مجمل الربح</th>
+                                <th class="text-center pe-3">الهامش %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.ProductProfitability.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-3 text-muted">لا توجد مبيعات منتجات مسجلة</td>
+                                </tr>
+                            }
+                            @foreach (var p in Model.ProductProfitability)
+                            {
+                                <tr>
+                                    <td class="ps-3 fw-semibold">@p.ProductName</td>
+                                    <td class="text-end font-monospace">@p.Revenue.ToString("N2")</td>
+                                    <td class="text-end font-monospace text-muted">@p.CostOfGoodsSold.ToString("N2")</td>
+                                    <td class="text-end font-monospace fw-bold text-primary">@p.GrossProfit.ToString("N2")</td>
+                                    <td class="text-center pe-3">
+                                        <span class="badge @(p.GrossMarginPercent >= 20 ? "bg-success" : (p.GrossMarginPercent >= 10 ? "bg-warning text-dark" : "bg-danger")) font-monospace">
+                                            @p.GrossMarginPercent%
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Customer Profitability Table -->
+    <div class="col-lg-5">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-people-fill text-info me-2"></i>ربحية العملاء</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">اسم العميل</th>
+                                <th class="text-end">المبيعات</th>
+                                <th class="text-end">مجمل الربح</th>
+                                <th class="text-center pe-3">الهامش %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.CustomerProfitability.Any())
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center py-3 text-muted">لا توجد بيانات عملاء مسجلة</td>
+                                </tr>
+                            }
+                            @foreach (var c in Model.CustomerProfitability)
+                            {
+                                <tr>
+                                    <td class="ps-3 fw-semibold">@c.CustomerName</td>
+                                    <td class="text-end font-monospace">@c.Revenue.ToString("N2")</td>
+                                    <td class="text-end font-monospace fw-bold text-success">@c.GrossProfit.ToString("N2")</td>
+                                    <td class="text-center pe-3">
+                                        <span class="badge bg-success-subtle text-success font-monospace">@c.GrossMarginPercent%</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

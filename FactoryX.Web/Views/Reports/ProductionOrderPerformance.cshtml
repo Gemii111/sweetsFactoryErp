@@ -1,0 +1,65 @@
+@model FactoryX.Application.DTOs.ProductionOrderPerformanceReportDto
+@{
+    ViewData["Title"] = "تقرير أداء أوامر الشغل والإنتاج";
+    ViewData["ShowProductFilter"] = true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-speedometer text-primary me-2"></i>تقرير أداء أوامر الشغل والإنتاج (Work Orders Performance)</h2>
+        <p class="text-muted mb-0">تحليل الفارق بين المخطط والفعلي لكل أمر إنتاج وتاريخ الإغلاق</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">رقم أمر الشغل</th>
+                        <th>المنتج</th>
+                        <th>تاريخ البدء المخطط</th>
+                        <th>تاريخ الإغلاق الفعلي</th>
+                        <th class="text-end">الكمية المخططة</th>
+                        <th class="text-end">الكمية الفعلية</th>
+                        <th class="text-end">فرق الكمية</th>
+                        <th class="text-center">نسبة الإنجاز</th>
+                        <th class="text-center pe-3">الحالة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in Model.Orders)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">
+                                <a asp-controller="ProductionOrders" asp-action="Details" asp-route-id="@o.OrderId" class="text-decoration-none">
+                                    @o.OrderNumber
+                                </a>
+                            </td>
+                            <td class="fw-semibold">@o.ProductName</td>
+                            <td>@o.PlannedDate.ToString("yyyy-MM-dd")</td>
+                            <td>@(o.CompletionDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                            <td class="text-end font-monospace">@o.PlannedQuantity.ToString("N2") KG</td>
+                            <td class="text-end font-monospace text-success fw-bold">@o.ActualQuantity.ToString("N2") KG</td>
+                            <td class="text-end font-monospace @(o.Variance >= 0 ? "text-success" : "text-danger")">
+                                @(o.Variance > 0 ? "+" : "")@o.Variance.ToString("N2")
+                            </td>
+                            <td class="text-center">
+                                <span class="badge @(o.AchievementPercent >= 100 ? "bg-success" : (o.AchievementPercent >= 80 ? "bg-primary" : "bg-warning text-dark")) font-monospace">
+                                    @o.AchievementPercent%
+                                </span>
+                            </td>
+                            <td class="text-center pe-3"><span class="badge bg-light text-dark border">@o.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

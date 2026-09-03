@@ -1,0 +1,132 @@
+@model FactoryX.Application.DTOs.TrialBalanceDto
+@{
+    ViewData["Title"] = "ميزان المراجعة بالأرصدة والمجاميع (Trial Balance)";
+    var query = ViewBag.Query as FactoryX.Application.DTOs.TrialBalanceQueryDto ?? new FactoryX.Application.DTOs.TrialBalanceQueryDto();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-scale text-primary me-2"></i>ميزان المراجعة (Trial Balance)</h2>
+        <p class="text-muted mb-0">تقرير ميزان المراجعة بالمجاميع والأرصدة للتحقق من التوازن المحاسبي العام</p>
+    </div>
+    <div>
+        @if (Model.IsBalanced)
+        {
+            <span class="badge bg-success fs-6 p-2"><i class="bi bi-check-circle-fill me-1"></i>الميزان متوازن تماماً</span>
+        }
+        else
+        {
+            <span class="badge bg-danger fs-6 p-2"><i class="bi bi-exclamation-triangle-fill me-1"></i>يوجد خلل في التوازن</span>
+        }
+    </div>
+</div>
+
+<!-- Filters Card -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold mb-1">حتى تاريخ (As of Date)</label>
+                <input type="date" name="AsOfDate" value="@query.AsOfDate?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label small fw-bold mb-1">من تاريخ (لحركات الفترة)</label>
+                <input type="date" name="FromDate" value="@query.FromDate?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label small fw-bold mb-1">تصنيف الحساب</label>
+                <select name="AccountType" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<FactoryX.Domain.Entities.AccountType>()">
+                    <option value="">-- كافة التصنيفات --</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-filter"></i> تحديث ميزان المراجعة</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Table Card -->
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle mb-0">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th rowspan="2" class="align-middle">رمز الحساب</th>
+                        <th rowspan="2" class="align-middle">اسم الحساب المالي</th>
+                        <th rowspan="2" class="align-middle">نوع الحساب</th>
+                        <th colspan="2" class="bg-secondary-subtle">الأرصدة الافتتاحية</th>
+                        <th colspan="2" class="bg-info-subtle">حركات الفترة</th>
+                        <th colspan="2" class="bg-primary-subtle">الأرصدة الختامية</th>
+                    </tr>
+                    <tr>
+                        <th class="bg-secondary-subtle">مدين</th>
+                        <th class="bg-secondary-subtle">دائن</th>
+                        <th class="bg-info-subtle">مدين</th>
+                        <th class="bg-info-subtle">دائن</th>
+                        <th class="bg-primary-subtle">مدين</th>
+                        <th class="bg-primary-subtle">دائن</th>
+                    </tr>
+                </thead>
+                <tbody class="font-monospace">
+                    @if (!Model.Rows.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted font-sans-serif">
+                                لا توجد حسابات بأرصدة حتى التاريخ المحدد
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr>
+                            <td class="fw-bold text-center">@row.AccountCode</td>
+                            <td class="font-sans-serif">
+                                <a asp-controller="GeneralLedger" asp-action="Index" asp-route-AccountId="@row.AccountId" class="text-decoration-none fw-semibold">
+                                    @row.AccountNameAr
+                                </a>
+                                <div class="small text-muted font-sans-serif">@row.AccountName</div>
+                            </td>
+                            <td class="text-center font-sans-serif">
+                                <span class="badge bg-light text-dark border">@row.AccountType</span>
+                            </td>
+                            <td class="text-end @(row.OpeningDebit > 0 ? "text-success" : "text-muted")">
+                                @(row.OpeningDebit > 0 ? row.OpeningDebit.ToString("N2") : "-")
+                            </td>
+                            <td class="text-end @(row.OpeningCredit > 0 ? "text-danger" : "text-muted")">
+                                @(row.OpeningCredit > 0 ? row.OpeningCredit.ToString("N2") : "-")
+                            </td>
+                            <td class="text-end @(row.PeriodDebit > 0 ? "text-success" : "text-muted")">
+                                @(row.PeriodDebit > 0 ? row.PeriodDebit.ToString("N2") : "-")
+                            </td>
+                            <td class="text-end @(row.PeriodCredit > 0 ? "text-danger" : "text-muted")">
+                                @(row.PeriodCredit > 0 ? row.PeriodCredit.ToString("N2") : "-")
+                            </td>
+                            <td class="text-end fw-bold @(row.ClosingDebit > 0 ? "text-success" : "text-muted")">
+                                @(row.ClosingDebit > 0 ? row.ClosingDebit.ToString("N2") : "-")
+                            </td>
+                            <td class="text-end fw-bold @(row.ClosingCredit > 0 ? "text-danger" : "text-muted")">
+                                @(row.ClosingCredit > 0 ? row.ClosingCredit.ToString("N2") : "-")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-light fw-bold font-monospace text-end">
+                    <tr>
+                        <td colspan="3" class="text-center font-sans-serif">المجموع العام:</td>
+                        <td class="text-success">@Model.TotalOpeningDebit.ToString("N2")</td>
+                        <td class="text-danger">@Model.TotalOpeningCredit.ToString("N2")</td>
+                        <td class="text-success">@Model.TotalPeriodDebit.ToString("N2")</td>
+                        <td class="text-danger">@Model.TotalPeriodCredit.ToString("N2")</td>
+                        <td class="text-success fs-6">@Model.TotalClosingDebit.ToString("N2")</td>
+                        <td class="text-danger fs-6">@Model.TotalClosingCredit.ToString("N2")</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>

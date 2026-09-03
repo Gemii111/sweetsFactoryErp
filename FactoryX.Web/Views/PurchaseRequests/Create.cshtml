@@ -1,0 +1,165 @@
+@model FactoryX.Application.DTOs.CreatePurchaseRequest
+@{
+    ViewData["Title"] = "إنشاء طلب شراء جديد";
+    var materials = ViewBag.Materials as IEnumerable<FactoryX.Application.DTOs.MaterialDto>;
+}
+
+<div class="container-fluid py-3">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold"><i class="fas fa-clipboard-plus me-2"></i>إصدار طلب شراء خامات ومواد (Purchase Request)</h5>
+        </div>
+        <div class="card-body p-4">
+            <form asp-action="Create" method="post" id="prForm">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger shadow-sm"></div>
+
+                <!-- Header Info -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label asp-for="RequestDate" class="form-label fw-bold">تاريخ الطلب <span class="text-danger">*</span></label>
+                        <input asp-for="RequestDate" type="date" class="form-control" />
+                        <span asp-validation-for="RequestDate" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="RequiredDate" class="form-label fw-bold">تاريخ الاحتياج المطلوب</label>
+                        <input asp-for="RequiredDate" type="date" class="form-control" />
+                        <span asp-validation-for="RequiredDate" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Priority" class="form-label fw-bold">الأولوية</label>
+                        <select asp-for="Priority" class="form-select">
+                            <option value="Normal">عادي (Normal)</option>
+                            <option value="High">مرتفع (High)</option>
+                            <option value="Urgent">عاجل جداً (Urgent)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Notes" class="form-label fw-bold">ملاحظات وسبب الطلب</label>
+                        <textarea asp-for="Notes" class="form-control" rows="2" placeholder="مبررات الشراء أو رقم خطة الإنتاج..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Items Section -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-cubes text-primary me-2"></i>بنود المواد الخام المطلوبة</h6>
+                    <button type="button" class="btn btn-sm btn-outline-success" id="btnAddItem">
+                        <i class="fas fa-plus me-1"></i> إضافة مادة أخرى
+                    </button>
+                </div>
+
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle" id="itemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40%;">المادة الخام <span class="text-danger">*</span></th>
+                                <th style="width: 20%;">الكمية المطلوبة <span class="text-danger">*</span></th>
+                                <th style="width: 15%;">الوحدة</th>
+                                <th style="width: 20%;">السعر التقديري للوحدة</th>
+                                <th style="width: 5%;">حذف</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Items.Count; i++)
+                            {
+                                <tr>
+                                    <td>
+                                        <select name="Items[@i].MaterialId" class="form-select material-select" required>
+                                            <option value="">-- اختر المادة الخام --</option>
+                                            @if (materials != null)
+                                            {
+                                                @foreach (var m in materials)
+                                                {
+                                                    <option value="@m.Id" data-unit="@m.Unit" data-cost="@(m.CurrentCost > 0 ? m.CurrentCost : m.StandardCost)" selected="@(Model.Items[i].MaterialId == m.Id)">
+                                                        @m.Name (@m.Code) - وحدة: @m.Unit
+                                                    </option>
+                                                }
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.01" min="0.01" name="Items[@i].RequestedQuantity" class="form-control font-monospace item-qty" value="@Model.Items[i].RequestedQuantity" required />
+                                    </td>
+                                    <td>
+                                        <input type="text" name="Items[@i].Unit" class="form-control item-unit" value="@Model.Items[i].Unit" placeholder="كجم" required />
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.01" min="0" name="Items[@i].EstimatedUnitPrice" class="form-control font-monospace item-cost" value="@Model.Items[i].EstimatedUnitPrice" />
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-remove-item"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a asp-action="Index" class="btn btn-outline-secondary px-4">إلغاء</a>
+                    <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i> حفظ طلب الشراء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('itemsTable').getElementsByTagName('tbody')[0];
+        const btnAdd = document.getElementById('btnAddItem');
+
+        function bindRow(row) {
+            const select = row.querySelector('.material-select');
+            const unitInput = row.querySelector('.item-unit');
+            const costInput = row.querySelector('.item-cost');
+            const btnRemove = row.querySelector('.btn-remove-item');
+
+            select.addEventListener('change', function() {
+                const opt = select.selectedOptions[0];
+                if (opt && opt.dataset.unit) {
+                    unitInput.value = opt.dataset.unit;
+                    costInput.value = opt.dataset.cost || 0;
+                }
+            });
+
+            btnRemove.addEventListener('click', function() {
+                if (table.rows.length > 1) {
+                    row.remove();
+                    reindexRows();
+                } else {
+                    alert('يجب أن يحتوي طلب الشراء على بند واحد على الأقل.');
+                }
+            });
+        }
+
+        function reindexRows() {
+            Array.from(table.rows).forEach((row, index) => {
+                row.querySelector('.material-select').name = `Items[${index}].MaterialId`;
+                row.querySelector('.item-qty').name = `Items[${index}].RequestedQuantity`;
+                row.querySelector('.item-unit').name = `Items[${index}].Unit`;
+                row.querySelector('.item-cost').name = `Items[${index}].EstimatedUnitPrice`;
+            });
+        }
+
+        Array.from(table.rows).forEach(bindRow);
+
+        btnAdd.addEventListener('click', function() {
+            const index = table.rows.length;
+            const firstRow = table.rows[0];
+            const newRow = firstRow.cloneNode(true);
+            newRow.querySelector('.material-select').value = '';
+            newRow.querySelector('.item-qty').value = '100';
+            newRow.querySelector('.item-unit').value = '';
+            newRow.querySelector('.item-cost').value = '0';
+            table.appendChild(newRow);
+            bindRow(newRow);
+            reindexRows();
+        });
+    });
+</script>
+}

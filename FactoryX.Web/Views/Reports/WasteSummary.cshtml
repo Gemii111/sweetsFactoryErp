@@ -1,0 +1,75 @@
+@model FactoryX.Application.DTOs.WasteSummaryReportDto
+@{
+    ViewData["Title"] = "تقرير ملخص الهالك والتوالف المعتمدة";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-trash3-fill text-danger me-2"></i>تقرير ملخص الهالك والتوالف (Waste Summary)</h2>
+        <p class="text-muted mb-0">تحليل الهالك المعتمد محاسبياً وفنياً حسب النوع، السبب، والخسارة المالية الإجمالية</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">إجمالي كمية الهالك المعتمد</small>
+            <h3 class="fw-bold text-dark font-monospace mb-0">@Model.TotalWasteQuantity.ToString("N2") <small class="fs-6 text-muted">KG</small></h3>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 bg-danger-subtle p-3">
+            <small class="text-danger fw-bold">إجمالي الخسارة المالية للهالك</small>
+            <h3 class="fw-bold text-danger font-monospace mb-0">@Model.TotalWasteCost.ToString("N2") EGP</h3>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3">
+        <h6 class="mb-0 fw-bold">سجل أذونات الهالك والتوالف المعتمدة</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">رقم الإذن</th>
+                        <th>التاريخ</th>
+                        <th>نوع الهالك</th>
+                        <th>الصنف / المادة</th>
+                        <th>سبب الهالك</th>
+                        <th class="text-end">الكمية</th>
+                        <th class="text-end pe-3">التكلفة الإجمالية</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.WasteRecords.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">لا يوجد هالك مسجل</td>
+                        </tr>
+                    }
+                    @foreach (var w in Model.WasteRecords)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold text-danger">@w.WasteNumber</td>
+                            <td>@w.WasteDate.ToString("yyyy-MM-dd")</td>
+                            <td><span class="badge bg-light text-dark border">@w.WasteType</span></td>
+                            <td class="fw-semibold">@w.ItemName</td>
+                            <td class="text-muted">@w.ReasonDescription</td>
+                            <td class="text-end font-monospace">@w.Quantity.ToString("N2") @w.Unit</td>
+                            <td class="text-end font-monospace pe-3 fw-bold text-danger">@w.TotalCost.ToString("N2") EGP</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

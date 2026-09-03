@@ -1,0 +1,239 @@
+@model IEnumerable<FactoryX.Application.DTOs.PaymentDto>
+@{
+    ViewData["Title"] = "سندات القبض والتحصيل (Payment Receipts)";
+    var summary = ViewBag.Summary as FactoryX.Application.DTOs.PaymentSummaryDto;
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-money-bill-wave text-success me-2"></i>سندات القبض والتحصيل (Payment Receipts)</h2>
+            <p class="text-muted mb-0">سجل استلام المدفوعات النقدية والتحويلات والشيكات وربطها بالفواتير</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-success shadow-sm">
+                <i class="fas fa-plus-circle me-1"></i> تسجيل سند قبض جديد
+            </a>
+            <a asp-controller="Invoices" asp-action="Index" class="btn btn-outline-primary shadow-sm">
+                <i class="fas fa-file-invoice-dollar me-1"></i> فواتير المبيعات
+            </a>
+            <a asp-controller="CustomerStatements" asp-action="Index" class="btn btn-outline-info shadow-sm">
+                <i class="fas fa-address-book me-1"></i> كشوف حسابات العملاء
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Summary KPI Cards -->
+    @if (summary != null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm bg-gradient text-white" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-white-50">إجمالي المقبوضات المثبتة</small>
+                                <h3 class="fw-bold mb-0">@summary.TotalPayments <span class="fs-6 fw-normal">سند</span></h3>
+                                <small class="text-white-50 font-monospace">@summary.TotalRecordedAmount.ToString("N2") EGP</small>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                                <i class="fas fa-hand-holding-usd fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm bg-gradient text-white" style="background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-white-50">تحصيل نقدي (Cash)</small>
+                                <h3 class="fw-bold mb-0">@summary.CashAmount.ToString("N2")</h3>
+                                <small class="text-white-50">EGP</small>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                                <i class="fas fa-coins fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm bg-gradient text-white" style="background: linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%);">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-white-50">تحويلات بنكية وشيكات</small>
+                                <h3 class="fw-bold mb-0">@((summary.BankTransferAmount + summary.ChequeAmount + summary.CardAmount).ToString("N2"))</h3>
+                                <small class="text-white-50">EGP</small>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                                <i class="fas fa-university fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm bg-gradient text-white" style="background: linear-gradient(135deg, #cb2d3e 0%, #ef473a 100%);">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-white-50">سندات ملغاة / مستردة</small>
+                                <h3 class="fw-bold mb-0">@summary.TotalVoidedAmount.ToString("N2")</h3>
+                                <small class="text-white-50">EGP Voided</small>
+                            </div>
+                            <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                                <i class="fas fa-undo fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filters Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small text-muted">بحث (رقم السند، المرجع، العميل)</label>
+                    <input type="text" name="searchTerm" class="form-control" placeholder="اكتب للبحث..." value="@ViewBag.SearchTerm" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">العميل</label>
+                    <select name="customerId" class="form-select" asp-items="ViewBag.Customers">
+                        <option value="">-- كل العملاء --</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">طريقة الدفع</label>
+                    <select name="method" class="form-select">
+                        <option value="">-- كل الطرق --</option>
+                        <option value="1" selected="@(ViewBag.SelectedMethod?.ToString() == "Cash")">نقداً (Cash)</option>
+                        <option value="2" selected="@(ViewBag.SelectedMethod?.ToString() == "BankTransfer")">تحويل بنكي (Bank Transfer)</option>
+                        <option value="3" selected="@(ViewBag.SelectedMethod?.ToString() == "Card")">بطاقة / POS (Card)</option>
+                        <option value="4" selected="@(ViewBag.SelectedMethod?.ToString() == "Cheque")">شيك بنكي (Cheque)</option>
+                        <option value="5" selected="@(ViewBag.SelectedMethod?.ToString() == "Other")">أخرى (Other)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">الحالة</label>
+                    <select name="status" class="form-select">
+                        <option value="">-- كل الحالات --</option>
+                        <option value="1" selected="@(ViewBag.SelectedStatus?.ToString() == "Recorded")">مثبت (Recorded)</option>
+                        <option value="2" selected="@(ViewBag.SelectedStatus?.ToString() == "Voided")">ملغي (Voided)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small text-muted">من تاريخ</label>
+                    <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+                </div>
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-filter"></i></button>
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payments Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم السند</th>
+                        <th>تاريخ السداد</th>
+                        <th>العميل</th>
+                        <th>الفاتورة المرتبطة</th>
+                        <th>طريقة الدفع</th>
+                        <th>المرجع / الشيك</th>
+                        <th>المبلغ المسدد</th>
+                        <th>المستلم</th>
+                        <th>الحالة</th>
+                        <th class="text-center">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var p in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@p.Id" class="fw-bold font-monospace text-success text-decoration-none">
+                                        @p.PaymentNumber
+                                    </a>
+                                </td>
+                                <td>@p.PaymentDate.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    <div class="fw-bold">@p.CustomerName</div>
+                                    <small class="text-muted font-monospace">@p.CustomerCode</small>
+                                </td>
+                                <td>
+                                    <a asp-controller="Invoices" asp-action="Details" asp-route-id="@p.InvoiceId" class="font-monospace text-primary text-decoration-none">
+                                        @p.InvoiceNumber
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@p.PaymentMethodName</span>
+                                </td>
+                                <td class="font-monospace">@(p.ReferenceNumber ?? "—")</td>
+                                <td class="fw-bold font-monospace text-success">@p.Amount.ToString("N2") @p.Currency</td>
+                                <td>@(p.ReceivedByName ?? "المسؤول")</td>
+                                <td>
+                                    @if (p.Status == FactoryX.Domain.Entities.PaymentStatus.Recorded)
+                                    {
+                                        <span class="badge bg-success">مثبت</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">ملغي / مسترد</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-outline-primary" title="عرض السند">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a asp-action="Receipt" asp-route-id="@p.Id" target="_blank" class="btn btn-outline-secondary" title="طباعة الإيصال">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center py-5 text-muted">
+                                <i class="fas fa-receipt fs-1 d-block mb-3 opacity-25"></i>
+                                لا توجد سندات قبض مسجلة مطابقة لمعايير البحث.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

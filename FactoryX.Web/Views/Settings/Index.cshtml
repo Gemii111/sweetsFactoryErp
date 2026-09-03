@@ -1,0 +1,305 @@
+@{
+    ViewData["Title"] = "إعدادات النظام والمعلمات التشغيلية المركزية";
+    var company = ViewBag.Company as FactoryX.Application.DTOs.CompanyProfileDto;
+    var general = ViewBag.General as FactoryX.Application.DTOs.GeneralSettingsDto;
+    var tax = ViewBag.Tax as FactoryX.Application.DTOs.TaxSettingDto;
+    var docCount = (int)(ViewBag.DocSettingsCount ?? 0);
+    var operational = ViewBag.Operational as FactoryX.Application.DTOs.OperationalDefaultsDto;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-sliders text-primary me-2"></i>إعدادات النظام والمعلمات المركزية</h2>
+        <p class="text-muted mb-0">التحكم المركزي في هوية المصنع، الضرائب، قواعد الترقيم، ومحددات التشغيل لكافة الأقسام</p>
+    </div>
+    <div>
+        <a asp-action="History" class="btn btn-outline-secondary">
+            <i class="bi bi-clock-history me-1"></i>سجل تعديلات الإعدادات
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Summary KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-white-50">اسم المنشأة</div>
+                        <h6 class="fw-bold mb-0 mt-1">@(company?.CompanyName ?? "مصنع حلويات المولد")</h6>
+                    </div>
+                    <i class="bi bi-building fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-white-50">الضريبة الافتراضية</div>
+                        <h4 class="fw-bold mb-0 mt-1">@(tax?.Rate.ToString("N1") ?? "14.0")%</h4>
+                        <div class="small text-white-50">@(tax?.Name ?? "ضريبة القيمة المضافة")</div>
+                    </div>
+                    <i class="bi bi-receipt-cutoff fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-white-50">العملة والمنطقة الزمنية</div>
+                        <h5 class="fw-bold mb-0 mt-1">@(general?.CurrencyCode ?? "EGP") (@(general?.CurrencySymbol ?? "ج.م"))</h5>
+                        <div class="small text-white-50">@(general?.SystemTimeZone ?? "Egypt Standard Time")</div>
+                    </div>
+                    <i class="bi bi-globe fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-dark text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="small text-white-50">تسلسلات الترقيم</div>
+                        <h4 class="fw-bold mb-0 mt-1">@docCount نمط مستند</h4>
+                        <div class="small text-white-50">ترقيم ذري متسلسل تلقائي</div>
+                    </div>
+                    <i class="bi bi-hash fs-1 text-white-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Settings Navigation Grid -->
+<div class="row g-4">
+    <!-- Company Profile -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-3 bg-primary-subtle text-primary p-3 me-3">
+                        <i class="bi bi-building fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">بيانات المصنع والشركة</h5>
+                        <small class="text-muted">الاسم القانوني، السجل التجاري، الرقم الضريبي، الشعار</small>
+                    </div>
+                </div>
+                <p class="text-muted small flex-grow-1">
+                    إدارة الهوية الرسمية للمصنع والعناوين وأرقام التواصل والبيانات التي تظهر على كافة الفواتير والتقارير المطبوعة.
+                </p>
+                <a asp-action="Company" class="btn btn-outline-primary mt-2">
+                    <i class="bi bi-gear-fill me-1"></i>إدارة هوية الشركة
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- General & Regional -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-3 bg-info-subtle text-info p-3 me-3">
+                        <i class="bi bi-globe-americas fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">الإعدادات الإقليمية والعملات</h5>
+                        <small class="text-muted">العملة، الخانات العشرية، التواريخ، المنطقة الزمنية</small>
+                    </div>
+                </div>
+                <p class="text-muted small flex-grow-1">
+                    ضبط خيارات التنسيق الإقليمي للعملة الأساسية ورمزها، ودقة الأرقام العشرية، وتنسيق الوقت والتاريخ.
+                </p>
+                <a asp-action="General" class="btn btn-outline-info mt-2">
+                    <i class="bi bi-gear-fill me-1"></i>الإعدادات العامة
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tax Settings -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-3 bg-success-subtle text-success p-3 me-3">
+                        <i class="bi bi-percent fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">الإعدادات الضريبية (VAT)</h5>
+                        <small class="text-muted">نسب القيمة المضافة، تواريخ السريان، الإعفاءات</small>
+                    </div>
+                </div>
+                <p class="text-muted small flex-grow-1">
+                    تعريف وتفعيل نسب ضريبة القيمة المضافة وتحديد الضريبة الافتراضية المطبقة على أوامر البيع والمشتريات.
+                </p>
+                <a asp-action="Tax" class="btn btn-outline-success mt-2">
+                    <i class="bi bi-gear-fill me-1"></i>إدارة الضرائب
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Numbering -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-3 bg-dark-subtle text-dark p-3 me-3">
+                        <i class="bi bi-123 fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">ترقيم وتسلسل المستندات</h5>
+                        <small class="text-muted">بادئات الفواتير، الأوامر، التشغيلات، الدفعات</small>
+                    </div>
+                </div>
+                <p class="text-muted small flex-grow-1">
+                    تخصيص البادئات (Prefix) وتنسيق التواريخ وطول الخانات التسلسلية للترقيم التلقائي لجميع مستندات النظام.
+                </p>
+                <a asp-action="Numbering" class="btn btn-outline-dark mt-2">
+                    <i class="bi bi-gear-fill me-1"></i>صيغ الترقيم
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Settings -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-3 bg-warning-subtle text-warning p-3 me-3">
+                        <i class="bi bi-boxes fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">محددات وضوابط المخزون</h5>
+                        <small class="text-muted">المستودعات الافتراضية، التنبيهات، الصرف بالسالب</small>
+                    </div>
+                </div>
+                <p class="text-muted small flex-grow-1">
+                    تحديد مستودعات المواد الخام والتعبئة الافتراضية، وحدود انخفاض الرصيد، وأيام التنبيه بانتهاء الصلاحية.
+                </p>
+                <a asp-action="Inventory" class="btn btn-outline-warning mt-2">
+                    <i class="bi bi-gear-fill me-1"></i>ضوابط المخزون
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Production Settings -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-3 bg-danger-subtle text-danger p-3 me-3">
+                        <i class="bi bi-gear-wide-connected fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">ضوابط الإنتاج والهدر</h5>
+                        <small class="text-muted">نسب التسامح في الفاقد، مستودعات التشغيل، الاعتماد</small>
+                    </div>
+                </div>
+                <p class="text-muted small flex-grow-1">
+                    تحديد المستودعات الافتراضية للتشغيل وصالة الإنتاج، والحد الأقصى لنسب الهدر المسموحة وسياسات اعتماد الهوالك.
+                </p>
+                <a asp-action="Production" class="btn btn-outline-danger mt-2">
+                    <i class="bi bi-gear-fill me-1"></i>ضوابط الإنتاج
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchasing Settings -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-3 bg-secondary-subtle text-secondary p-3 me-3">
+                        <i class="bi bi-cart-check fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">محددات المشتريات والتوريد</h5>
+                        <small class="text-muted">خيارات استلام GRN، إلزامية الاعتماد</small>
+                    </div>
+                </div>
+                <p class="text-muted small flex-grow-1">
+                    ضبط مسارات الموافقة على أوامر الشراء ومستودعات الاستلام الافتراضية لطلبات الشراء وفحص الخامات.
+                </p>
+                <a asp-action="Purchasing" class="btn btn-outline-secondary mt-2">
+                    <i class="bi bi-gear-fill me-1"></i>ضوابط المشتريات
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Settings -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-3 bg-primary-subtle text-primary p-3 me-3">
+                        <i class="bi bi-bag-check fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">محددات المبيعات والصرف</h5>
+                        <small class="text-muted">فحص الائتمان، مستودع المنتجات التامة الافتراضي</small>
+                    </div>
+                </div>
+                <p class="text-muted small flex-grow-1">
+                    ضبط سياسات البيع والحد الائتماني للعملاء ومستودع صرف الحلوى والمنتجات التامة الافتراضي.
+                </p>
+                <a asp-action="Sales" class="btn btn-outline-primary mt-2">
+                    <i class="bi bi-gear-fill me-1"></i>ضوابط المبيعات
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accounting Mappings -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0 hover-card">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rounded-3 bg-success-subtle text-success p-3 me-3">
+                        <i class="bi bi-journal-bookmark fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">ربط الحسابات والدليل المالي</h5>
+                        <small class="text-muted">توجيه القيود، حسابات الإيراد والعملاء والمخزون</small>
+                    </div>
+                </div>
+                <p class="text-muted small flex-grow-1">
+                    ربط العمليات التشغيلية (فواتير، مقبوضات، مدفوعات، تقييم مخزون) بالحسابات الفرعية في شجرة الحسابات.
+                </p>
+                <a asp-action="Accounting" class="btn btn-outline-success mt-2">
+                    <i class="bi bi-gear-fill me-1"></i>ربط الحسابات المالية
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

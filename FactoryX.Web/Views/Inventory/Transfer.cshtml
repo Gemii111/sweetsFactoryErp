@@ -1,0 +1,92 @@
+@model FactoryX.Application.DTOs.StockTransferRequest
+
+@{
+    ViewData["Title"] = "تحويل مخزني بين المستودعات";
+    var warehouses = ViewBag.Warehouses as IEnumerable<FactoryX.Application.DTOs.WarehouseDto> ?? new List<FactoryX.Application.DTOs.WarehouseDto>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex align-items-center mb-4">
+            <a asp-action="Stock" class="btn btn-light rounded-circle ms-3"><i class="bi bi-arrow-right"></i></a>
+            <div>
+                <h2 class="fw-bold mb-0"><i class="bi bi-arrow-left-right text-primary me-2"></i>تحويل مخزني بين المستودعات</h2>
+                <small class="text-muted">نقل المواد الخام أو البضاعة التامة بين المستودعات بشكل آمن وفوري.</small>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <form asp-action="Transfer" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4" role="alert"></div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <h6 class="fw-bold text-danger mb-3"><i class="bi bi-box-arrow-up-left me-1"></i>المستودع المصدر (الصرف)</h6>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold">المستودع المحول منه</label>
+                                    <select asp-for="SourceWarehouseId" class="form-select" required>
+                                        <option value="">-- اختر المستودع المصدر --</option>
+                                        @foreach (var wh in warehouses)
+                                        {
+                                            <option value="@wh.Id">@wh.Name (@wh.Code)</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <h6 class="fw-bold text-success mb-3"><i class="bi bi-box-arrow-in-down-right me-1"></i>المستودع الوجهة (الإيداع)</h6>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold">المستودع المحول إليه</label>
+                                    <select asp-for="DestinationWarehouseId" class="form-select" required>
+                                        <option value="">-- اختر المستودع المستلم --</option>
+                                        @foreach (var wh in warehouses)
+                                        {
+                                            <option value="@wh.Id">@wh.Name (@wh.Code)</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="BatchNumber" class="form-label fw-semibold">رقم التشغيلة (Batch Number)</label>
+                            <input asp-for="BatchNumber" class="form-control" placeholder="مثال: SM-2026-0001" />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Quantity" class="form-label fw-semibold">الكمية المحولة</label>
+                            <input asp-for="Quantity" class="form-control" type="number" step="0.01" min="0.01" required />
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="Unit" class="form-label fw-semibold">الوحدة</label>
+                            <input asp-for="Unit" class="form-control" placeholder="كجم / كرتونة" value="كجم" required />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="ReferenceNumber" class="form-label fw-semibold">رقم إذن التحويل / المرجع</label>
+                        <input asp-for="ReferenceNumber" class="form-control" placeholder="مثال: TRSF-2026-001 (اختياري)" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Notes" class="form-label fw-semibold">سبب التحويل وملاحظات</label>
+                        <textarea asp-for="Notes" class="form-control" rows="2" placeholder="ملاحظات توضيحية حول سبب النقل..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Stock" class="btn btn-light px-4">إلغاء</a>
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="bi bi-arrow-left-right me-1"></i>تنفيذ التحويل المخزني</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,82 @@
+@model FactoryX.Application.DTOs.OperationalDefaultsDto
+@{
+    ViewData["Title"] = "محددات وضوابط المبيعات";
+    var warehouses = ViewBag.Warehouses as List<FactoryX.Domain.Entities.Warehouse> ?? new();
+    var requireCreditCheck = (bool)(ViewBag.RequireCreditCheck ?? true);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-bag-check text-primary me-2"></i>محددات وضوابط المبيعات والتسليم</h2>
+        <p class="text-muted mb-0">ضبط مستودع صرف المنتجات التامة الافتراضي وسياسات التحقق من الائتمان</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>العودة للوحة الإعدادات
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <form asp-action="Sales" method="post">
+            @Html.AntiForgeryToken()
+
+            <h5 class="fw-bold mb-3 text-primary border-bottom pb-2">مستودع صرف المبيعات والشحن</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">مستودع صرف المنتجات التامة الافتراضي</label>
+                    <select name="defaultFinishedGoodsWarehouseId" class="form-select">
+                        <option value="">-- اختر مستودع المنتجات التامة --</option>
+                        @foreach (var wh in warehouses)
+                        {
+                            if (Model.DefaultFinishedGoodsWarehouseId == wh.Id)
+                            {
+                                <option value="@wh.Id" selected>@wh.Name (@wh.Code)</option>
+                            }
+                            else
+                            {
+                                <option value="@wh.Id">@wh.Name (@wh.Code)</option>
+                            }
+                        }
+                    </select>
+                    <small class="text-muted">المستودع المعتمد للتسليم وتجهيز شحنات العملاء</small>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3 text-primary border-bottom pb-2">سياسات الائتمان والتحصيل</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" id="requireCreditCheck" name="requireCreditCheck" value="true" @(requireCreditCheck ? "checked" : "") />
+                        <label class="form-check-label fw-bold" for="requireCreditCheck">فحص الحد الائتماني للعميل قبل تأكيد أمر البيع</label>
+                        <div class="text-muted small">حظر تأكيد أمر البيع في حال تجاوز رصيد العميل الحد الائتماني المسموح به</div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary">إلغاء</a>
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save me-1"></i>حفظ ضوابط المبيعات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

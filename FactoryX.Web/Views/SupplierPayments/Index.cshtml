@@ -1,0 +1,84 @@
+@model IEnumerable<FactoryX.Application.DTOs.SupplierPaymentDto>
+@{
+    ViewData["Title"] = "سندات صرف وسداد الموردين (Supplier Payments)";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-wallet2 text-primary me-2"></i>سندات صرف وسداد الموردين</h2>
+        <p class="text-muted mb-0">تسجيل مدفوعات وسدادات مستحقات الموردين النقدية والبنكية مع الترحيل التلقائي لليومية</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>تسجيل سند صرف جديد
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">رقم السند</th>
+                        <th>المورد</th>
+                        <th>تاريخ السداد</th>
+                        <th>طريقة الدفع</th>
+                        <th>سند الاستلام (GRN)</th>
+                        <th>المبلغ المسدد</th>
+                        <th>الحالة</th>
+                        <th class="text-end pe-3">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                                لا توجد سندات صرف مسجلة حتى الآن
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var p in Model)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">
+                                <a asp-action="Details" asp-route-id="@p.Id" class="text-decoration-none">
+                                    @p.PaymentNumber
+                                </a>
+                            </td>
+                            <td class="fw-semibold">@p.SupplierName</td>
+                            <td>@p.PaymentDate.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-dark border">@p.PaymentMethodName</span>
+                            </td>
+                            <td>@(p.PurchaseReceiptNumber ?? "-")</td>
+                            <td class="font-monospace fw-bold text-success">@p.Amount.ToString("N2") @p.Currency</td>
+                            <td>
+                                <span class="badge bg-success-subtle text-success">@p.StatusName</span>
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-outline-primary" title="عرض التفاصيل">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="Receipt" asp-route-id="@p.Id" target="_blank" class="btn btn-outline-secondary" title="طباعة الإيصال">
+                                        <i class="bi bi-printer"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

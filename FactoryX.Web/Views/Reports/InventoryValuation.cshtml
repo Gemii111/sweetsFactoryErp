@@ -1,0 +1,87 @@
+@model FactoryX.Application.DTOs.InventoryValuationReportDto
+@{
+    ViewData["Title"] = "تقرير التقييم المالي للمخزون";
+    ViewData["ShowWarehouseFilter"] = true;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-cash-coin text-success me-2"></i>تقرير التقييم المالي للمخزون (Inventory Valuation)</h2>
+        <p class="text-muted mb-0">تقييم شامل لأرصدة المواد الخام، مواد التعبئة والتغليف، والمنتج التام بالتكلفة القياسية</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">مخزون المواد الخام</small>
+            <h4 class="fw-bold text-dark font-monospace mb-0">@Model.TotalRawMaterialValuation.ToString("N2") EGP</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">مخزون مواد التعبئة والتغليف</small>
+            <h4 class="fw-bold text-dark font-monospace mb-0">@Model.TotalPackagingValuation.ToString("N2") EGP</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-light p-3">
+            <small class="text-muted">مخزون المنتجات التامة</small>
+            <h4 class="fw-bold text-primary font-monospace mb-0">@Model.TotalFinishedGoodsValuation.ToString("N2") EGP</h4>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 bg-success-subtle p-3">
+            <small class="text-success fw-bold">إجمالي التقييم المخزني العام</small>
+            <h4 class="fw-bold text-success font-monospace mb-0">@Model.TotalInventoryValuation.ToString("N2") EGP</h4>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">نوع الصنف</th>
+                        <th>كود الصنف</th>
+                        <th>اسم الصنف</th>
+                        <th>المستودع</th>
+                        <th>رقم التشغيلة / الدفعة</th>
+                        <th class="text-end">الكمية</th>
+                        <th class="text-end">تكلفة الوحدة</th>
+                        <th class="text-end pe-3">إجمالي القيمة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">لا توجد أرصدة مخزنية مسجلة</td>
+                        </tr>
+                    }
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td class="ps-3"><span class="badge bg-light text-dark border">@item.ItemType</span></td>
+                            <td class="font-monospace fw-bold">@item.ItemCode</td>
+                            <td class="fw-semibold">@item.ItemName</td>
+                            <td>@item.WarehouseName</td>
+                            <td class="font-monospace">@(item.BatchNumber ?? "-")</td>
+                            <td class="text-end font-monospace">@item.Quantity.ToString("N2") @item.Unit</td>
+                            <td class="text-end font-monospace">@item.UnitCost.ToString("N2")</td>
+                            <td class="text-end font-monospace pe-3 fw-bold text-success">@item.TotalValue.ToString("N2") EGP</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

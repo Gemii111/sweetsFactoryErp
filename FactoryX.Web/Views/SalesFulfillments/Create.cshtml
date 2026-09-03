@@ -1,0 +1,307 @@
+@model FactoryX.Application.DTOs.CreateSalesFulfillmentRequest
+@{
+    ViewData["Title"] = "تسليم وصرف مبيعات جديدة";
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-truck-loading text-success me-2"></i>تسليم وصرف مبيعات (Sales Fulfillment Cockpit)</h2>
+            <p class="text-muted mb-0">صرف كميات المنتجات التامة من المستودع بنظام FEFO وخصم الأرصدة وإصدار إذن التسليم</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-right me-1"></i> العودة للقائمة
+        </a>
+    </div>
+
+    <form asp-action="Create" method="post" id="fulfillmentForm">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <!-- Order Selection Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0"><i class="fas fa-file-invoice me-2 text-primary"></i>اختيار أمر البيع المعتمد للتسليم</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label asp-for="SalesOrderId" class="form-label fw-bold">أمر البيع المعتمد <span class="text-danger">*</span></label>
+                        <select asp-for="SalesOrderId" class="form-select font-monospace" asp-items="ViewBag.SalesOrders" id="orderSelect" required>
+                            <option value="">-- اختر أمر البيع المراد صرفه --</option>
+                        </select>
+                        <span asp-validation-for="SalesOrderId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="FulfillmentDate" class="form-label fw-bold">تاريخ الصرف والتسليم <span class="text-danger">*</span></label>
+                        <input asp-for="FulfillmentDate" type="date" class="form-control" value="@Model.FulfillmentDate.ToString("yyyy-MM-dd")" required />
+                        <span asp-validation-for="FulfillmentDate" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-outline-primary w-100" id="reloadOrderBtn">
+                            <i class="fas fa-sync-alt me-1"></i> تحميل بنود وأرصدة الأمر
+                        </button>
+                    </div>
+
+                    <input type="hidden" asp-for="CustomerId" id="hiddenCustomerId" />
+                    <input type="hidden" asp-for="WarehouseId" id="hiddenWarehouseId" />
+                </div>
+
+                <!-- Order Info Preview Banner -->
+                <div class="alert alert-light border mt-3 mb-0 d-none" id="orderInfoBanner">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">العميل:</small>
+                            <strong id="bannerCustomerName">—</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">مستودع الصرف:</small>
+                            <strong id="bannerWarehouseName">—</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">حالة أمر البيع:</small>
+                            <span class="badge bg-primary" id="bannerOrderStatus">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Items & Batches Allocation Table -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold mb-0"><i class="fas fa-boxes-stacked me-2 text-primary"></i>تخصيص التشغيلات وصرف الكميات (FEFO Allocation)</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0" id="fulfillmentItemsTable">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th style="width: 20%;">المنتج التام</th>
+                            <th style="width: 8%;">المطلوب</th>
+                            <th style="width: 8%;">المسلم سابقاً</th>
+                            <th style="width: 8%;">المتبقي</th>
+                            <th style="width: 26%;">التشغيلة المتاحة (FEFO) <span class="text-danger">*</span></th>
+                            <th style="width: 14%;">مكان التخزين (Location)</th>
+                            <th style="width: 16%;">الكمية المصروفة الآن <span class="text-danger">*</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="fulfillmentItemsBody">
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fas fa-arrow-up fs-2 mb-2 d-block opacity-50"></i>
+                                يرجى اختيار أمر البيع أعلاه لعرض البنود والتشغيلات المتاحة تلقائياً بنظام FEFO
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer bg-light p-3">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <label asp-for="Notes" class="form-label small fw-bold mb-1">ملاحظات إذن الصرف والتسليم</label>
+                        <input asp-for="Notes" class="form-control" placeholder="بيانات السائق أو شاحنة التوصيل أو ملاحظات التسليم..." />
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <span class="small text-muted d-block">إجمالي الكمية المصروفة في هذه الشحنة:</span>
+                        <h4 class="fw-bold text-success font-monospace mb-0" id="totalFulfillmentQtyDisplay">0.00 KG</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="d-flex justify-content-end gap-2">
+            <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+            <button type="submit" class="btn btn-success px-4 shadow-sm" id="submitFulfillmentBtn">
+                <i class="fas fa-check-circle me-1"></i> ترحيل وصرف الشحنة وخصم المخزون
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        const orderSelect = document.getElementById('orderSelect');
+        const reloadBtn = document.getElementById('reloadOrderBtn');
+        const itemsBody = document.getElementById('fulfillmentItemsBody');
+        const infoBanner = document.getElementById('orderInfoBanner');
+        const customerNameSpan = document.getElementById('bannerCustomerName');
+        const warehouseNameSpan = document.getElementById('bannerWarehouseName');
+        const orderStatusSpan = document.getElementById('bannerOrderStatus');
+        const hiddenCustomerId = document.getElementById('hiddenCustomerId');
+        const hiddenWarehouseId = document.getElementById('hiddenWarehouseId');
+        const totalQtyDisplay = document.getElementById('totalFulfillmentQtyDisplay');
+
+        async function loadOrderDetails() {
+            const orderId = orderSelect.value;
+            if (!orderId) {
+                itemsBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted">يرجى اختيار أمر البيع أعلاه.</td></tr>`;
+                infoBanner.classList.add('d-none');
+                totalQtyDisplay.textContent = '0.00 KG';
+                return;
+            }
+
+            itemsBody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-primary"><i class="fas fa-spinner fa-spin me-2"></i>جاري جلب بيانات أمر البيع والتشغيلات المتاحة...</td></tr>`;
+
+            try {
+                const response = await fetch(`/SalesOrders/GetFulfillmentInfo/${orderId}`);
+                if (!response.ok) throw new Error('فشل جلب تفاصيل أمر البيع.');
+
+                const data = await response.json();
+
+                customerNameSpan.textContent = `${data.customerName} (${data.customerCode})`;
+                warehouseNameSpan.textContent = data.warehouseName;
+                orderStatusSpan.textContent = data.status;
+                hiddenCustomerId.value = data.customerId;
+                hiddenWarehouseId.value = data.warehouseId;
+                infoBanner.classList.remove('d-none');
+
+                if (!data.items || data.items.length === 0) {
+                    itemsBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-danger">لا توجد بنود قابلة للصرف في هذا الأمر.</td></tr>`;
+                    return;
+                }
+
+                itemsBody.innerHTML = '';
+                let rowIdx = 0;
+
+                data.items.forEach(item => {
+                    const remaining = item.remainingQuantity;
+                    if (remaining <= 0) return; // Already fully fulfilled
+
+                    let batchOptionsHtml = '';
+                    let firstBatchQty = 0;
+                    let firstBatchLocId = '';
+                    let firstBatchLocName = '';
+                    let firstBatchCost = 0;
+                    let firstBatchId = '';
+
+                    const validBatches = (item.availableBatches || []).filter(b => !b.isExpired);
+
+                    if (validBatches.length === 0) {
+                        batchOptionsHtml = '<option value="" disabled selected>لا يوجد رصيد متاح صالح لهذا المنتج في المستودع</option>';
+                    } else {
+                        validBatches.forEach((b, bIdx) => {
+                            const expFormatted = b.expiryDate ? b.expiryDate.split('T')[0] : '—';
+                            const isSelected = bIdx === 0 ? 'selected' : '';
+                            batchOptionsHtml += `<option value="${b.batchNumber}" data-stock-id="${b.finishedGoodsStockId}" data-qty="${b.availableQuantity}" data-loc-id="${b.locationId || ''}" data-loc-name="${b.locationName || 'الموقع الافتراضي'}" data-cost="${b.unitCost}" data-exp="${expFormatted}" ${isSelected}>
+                                التشغيلة [${b.batchNumber}] • المتاح: ${b.availableQuantity} • انتهاء: ${expFormatted}
+                            </option>`;
+
+                            if (bIdx === 0) {
+                                firstBatchQty = b.availableQuantity;
+                                firstBatchLocId = b.locationId || '';
+                                firstBatchLocName = b.locationName || 'الموقع الافتراضي';
+                                firstBatchCost = b.unitCost;
+                                firstBatchId = b.finishedGoodsStockId;
+                            }
+                        });
+                    }
+
+                    const suggestedShipQty = Math.min(remaining, firstBatchQty);
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'fulfillment-row';
+                    tr.innerHTML = `
+                        <td>
+                            <div class="fw-bold">${item.productName}</div>
+                            <small class="text-muted font-monospace">${item.productCode}</small>
+                            <input type="hidden" name="Items[${rowIdx}].SalesOrderItemId" value="${item.salesOrderItemId}" />
+                            <input type="hidden" name="Items[${rowIdx}].ProductId" value="${item.productId}" />
+                            <input type="hidden" name="Items[${rowIdx}].Unit" value="${item.unit}" />
+                            <input type="hidden" name="Items[${rowIdx}].UnitPrice" value="${item.unitPrice}" />
+                            <input type="hidden" name="Items[${rowIdx}].OrderedQuantity" value="${item.orderedQuantity}" />
+                            <input type="hidden" name="Items[${rowIdx}].WarehouseId" value="${data.warehouseId}" />
+                            <input type="hidden" name="Items[${rowIdx}].FinishedGoodsStockId" class="stock-id-input" value="${firstBatchId}" />
+                            <input type="hidden" name="Items[${rowIdx}].UnitCost" class="unit-cost-input" value="${firstBatchCost}" />
+                        </td>
+                        <td class="text-center font-monospace">${item.orderedQuantity.toFixed(2)} ${item.unit}</td>
+                        <td class="text-center font-monospace text-muted">${item.fulfilledQuantity.toFixed(2)} ${item.unit}</td>
+                        <td class="text-center font-monospace text-primary fw-bold remaining-cell" data-remaining="${remaining}">
+                            ${remaining.toFixed(2)} ${item.unit}
+                        </td>
+                        <td>
+                            <select name="Items[${rowIdx}].BatchNumber" class="form-select font-monospace batch-select" required ${validBatches.length === 0 ? 'disabled' : ''}>
+                                ${batchOptionsHtml}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control text-center loc-name-display" value="${firstBatchLocName}" readonly />
+                            <input type="hidden" name="Items[${rowIdx}].LocationId" class="loc-id-input" value="${firstBatchLocId}" />
+                        </td>
+                        <td>
+                            <div class="input-group">
+                                <input type="number" step="0.01" min="0" max="${remaining}" name="Items[${rowIdx}].ShippedQuantity" class="form-control text-center font-monospace fw-bold ship-qty-input" value="${suggestedShipQty > 0 ? suggestedShipQty.toFixed(2) : '0.00'}" required />
+                                <span class="input-group-text">${item.unit}</span>
+                            </div>
+                        </td>
+                    `;
+
+                    itemsBody.appendChild(tr);
+                    bindRowCalculation(tr);
+                    rowIdx++;
+                });
+
+                if (rowIdx === 0) {
+                    itemsBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-success fw-bold"><i class="fas fa-check-circle me-2"></i>تم صرف وتسليم جميع بنود هذا الأمر بالكامل مسبقاً.</td></tr>`;
+                }
+
+                recalculateFulfillmentTotal();
+            } catch (err) {
+                itemsBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-danger">${err.message}</td></tr>`;
+            }
+        }
+
+        function bindRowCalculation(row) {
+            const batchSelect = row.querySelector('.batch-select');
+            const locNameDisplay = row.querySelector('.loc-name-display');
+            const locIdInput = row.querySelector('.loc-id-input');
+            const stockIdInput = row.querySelector('.stock-id-input');
+            const unitCostInput = row.querySelector('.unit-cost-input');
+            const shipQtyInput = row.querySelector('.ship-qty-input');
+            const remaining = parseFloat(row.querySelector('.remaining-cell')?.getAttribute('data-remaining')) || 0;
+
+            batchSelect?.addEventListener('change', function () {
+                const opt = this.options[this.selectedIndex];
+                const stockId = opt.getAttribute('data-stock-id');
+                const availableQty = parseFloat(opt.getAttribute('data-qty')) || 0;
+                const locId = opt.getAttribute('data-loc-id');
+                const locName = opt.getAttribute('data-loc-name');
+                const cost = opt.getAttribute('data-cost');
+
+                stockIdInput.value = stockId || '';
+                locIdInput.value = locId || '';
+                locNameDisplay.value = locName || 'الموقع الافتراضي';
+                unitCostInput.value = cost || '0';
+
+                const maxPossible = Math.min(remaining, availableQty);
+                shipQtyInput.setAttribute('max', maxPossible);
+                if (parseFloat(shipQtyInput.value) > maxPossible) {
+                    shipQtyInput.value = maxPossible.toFixed(2);
+                }
+                recalculateFulfillmentTotal();
+            });
+
+            shipQtyInput?.addEventListener('input', recalculateFulfillmentTotal);
+        }
+
+        function recalculateFulfillmentTotal() {
+            let total = 0;
+            document.querySelectorAll('#fulfillmentItemsBody tr.fulfillment-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.ship-qty-input')?.value) || 0;
+                total += qty;
+            });
+
+            totalQtyDisplay.textContent = total.toFixed(2) + ' KG';
+        }
+
+        orderSelect?.addEventListener('change', loadOrderDetails);
+        reloadBtn?.addEventListener('click', loadOrderDetails);
+
+        // Auto load if order is preselected
+        if (orderSelect && orderSelect.value) {
+            loadOrderDetails();
+        }
+    </script>
+}

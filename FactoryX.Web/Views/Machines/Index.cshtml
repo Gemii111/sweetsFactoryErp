@@ -1,0 +1,46 @@
+@model IEnumerable<FactoryX.Application.DTOs.Responses.MachineResponses.GetAllMachinesResponse>
+@{
+    ViewData["Title"] = "الماكينات وخطوط الإنتاج";
+}
+<div class="container py-4">
+    @await Html.PartialAsync("_Alert")
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-cpu-fill text-primary me-2"></i>الماكينات وخطوط الإنتاج</h2>
+            <p class="text-muted mb-0">إدارة ماكينات خلط، طبخ، وتشكيل وتعبئة حلويات المولد.</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary shadow-sm"><i class="bi bi-plus-lg me-1"></i> إضافة ماكينة جديدة</a>
+    </div>
+    <div class="row g-4">
+        @foreach (var machine in Model)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow-sm border-0 rounded-4 h-100 bg-white">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title fw-bold text-dark mb-0">@machine.Name</h5>
+                            <span class="badge bg-@(machine.Status == "Active" ? "success-subtle text-success" : "secondary-subtle text-secondary") rounded-pill px-3 py-1">
+                                @(machine.Status == "Active" ? "نشطة وتعمل" : "متوقفة")
+                            </span>
+                        </div>
+                        <div class="mb-4 text-muted">
+                            <small>الطاقة الإنتاجية: </small><span class="fw-bold text-primary">@machine.Capacity</span> <small class="text-muted">كجم/ساعة</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a asp-action="Details" asp-route-id="@machine.Id" class="btn btn-outline-primary btn-sm rounded-pill px-3"><i class="bi bi-eye"></i> تفاصيل</a>
+                            <a asp-action="Edit" asp-route-id="@machine.Id" class="btn btn-outline-warning btn-sm rounded-pill px-3"><i class="bi bi-pencil"></i> تعديل</a>
+                            <a asp-action="Delete" asp-route-id="@machine.Id" class="btn btn-outline-danger btn-sm rounded-pill px-3"><i class="bi bi-trash"></i> حذف</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info mt-4 text-center rounded-4 p-4 shadow-sm">
+            <i class="bi bi-info-circle fs-3 d-block mb-2"></i>
+            لا توجد ماكينات مسجلة حالياً. اضغط على <b>إضافة ماكينة جديدة</b> لتعريف خط الإنتاج.
+        </div>
+    }
+</div>

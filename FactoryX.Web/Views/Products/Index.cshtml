@@ -1,0 +1,246 @@
+@model IEnumerable<FactoryX.Application.DTOs.ProductDto>
+@{
+    ViewData["Title"] = "إدارة المنتجات التامة";
+    var search = ViewBag.Search as string;
+    var categoryId = ViewBag.CategoryId as int?;
+    var isActive = ViewBag.IsActive as bool?;
+    var productType = ViewBag.ProductType as FactoryX.Domain.Entities.ProductType?;
+    var summary = ViewBag.Summary as FactoryX.Application.DTOs.ProductSummaryDto;
+    var categories = ViewBag.Categories as SelectList;
+}
+
+<div class="container-fluid py-4" dir="rtl">
+    @await Html.PartialAsync("_Alert")
+
+    <!-- رأس الصفحة -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="bi bi-box-seam-fill text-success me-2"></i>إدارة المنتجات التامة (حلويات المولد)
+            </h2>
+            <p class="text-muted mb-0">البيانات الأساسية لأصناف الحلويات التامة (سمسمية، فولية، حمصية، ملبن، نوجا، لديدة، علب مشكلة...).</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="ProductCategories" asp-action="Index" class="btn btn-outline-primary rounded-pill px-3 shadow-sm">
+                <i class="bi bi-tags me-1"></i> تصنيفات المنتجات
+            </a>
+            <a asp-action="Create" class="btn btn-success rounded-pill px-4 shadow-sm">
+                <i class="bi bi-plus-lg me-1"></i> إضافة منتج تام جديد
+            </a>
+        </div>
+    </div>
+
+    <!-- كروت المؤشرات والإحصائيات -->
+    @if (summary != null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-3 border-start border-primary border-4 text-center">
+                    <span class="text-muted small d-block">إجمالي المنتجات</span>
+                    <h3 class="fw-bold text-primary mb-0 mt-1">@summary.TotalProducts</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-3 border-start border-success border-4 text-center">
+                    <span class="text-muted small d-block">المنتجات النشطة</span>
+                    <h3 class="fw-bold text-success mb-0 mt-1">@summary.ActiveProducts</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-3 border-start border-danger border-4 text-center">
+                    <span class="text-muted small d-block">المنتجات المعطلة</span>
+                    <h3 class="fw-bold text-danger mb-0 mt-1">@summary.InactiveProducts</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-3 border-start border-info border-4 text-center">
+                    <span class="text-muted small d-block">منتجات تامة</span>
+                    <h3 class="fw-bold text-info mb-0 mt-1">@summary.FinishedProductsCount</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-3 border-start border-warning border-4 text-center">
+                    <span class="text-muted small d-block">علب مشكلة</span>
+                    <h3 class="fw-bold text-warning mb-0 mt-1">@summary.AssortedBoxesCount</h3>
+                </div>
+            </div>
+            <div class="col-md-2 col-sm-4 col-6">
+                <div class="card border-0 shadow-sm rounded-4 bg-white p-3 border-start border-secondary border-4 text-center">
+                    <span class="text-muted small d-block">عدد التصنيفات</span>
+                    <h3 class="fw-bold text-secondary mb-0 mt-1">@summary.CategoriesCount</h3>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- شريط البحث والفلترة المتقدمة -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+        <div class="card-body p-3">
+            <form method="get" asp-action="Index" class="row g-2 align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" name="search" class="form-control bg-light border-0" placeholder="بحث بالاسم، الكود، SKU، أو الباركود..." value="@search" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="categoryId" class="form-select bg-light border-0" asp-items="categories">
+                        <option value="">جميع التصنيفات</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="productType" class="form-select bg-light border-0">
+                        <option value="">جميع الأنواع</option>
+                        <option value="1" selected="@(productType == FactoryX.Domain.Entities.ProductType.FinishedProduct ? "selected" : null)">منتج تام</option>
+                        <option value="2" selected="@(productType == FactoryX.Domain.Entities.ProductType.SemiFinishedProduct ? "selected" : null)">منتج وسيط / نصف مصنع</option>
+                        <option value="3" selected="@(productType == FactoryX.Domain.Entities.ProductType.PackagingItem ? "selected" : null)">مادة تعبئة / علبة مجمعة</option>
+                        <option value="4" selected="@(productType == FactoryX.Domain.Entities.ProductType.AssortedBox ? "selected" : null)">علبة مشكلة</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="isActive" class="form-select bg-light border-0">
+                        <option value="">جميع الحالات</option>
+                        <option value="true" selected="@(isActive == true ? "selected" : null)">نشط فقط</option>
+                        <option value="false" selected="@(isActive == false ? "selected" : null)">معطل فقط</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex gap-1">
+                    <button type="submit" class="btn btn-dark rounded-pill w-100"><i class="bi bi-funnel"></i></button>
+                    <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-2" title="إعادة تعيين"><i class="bi bi-arrow-counterclockwise"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- جدول عرض المنتجات -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="py-3 px-3 text-secondary">الكود / SKU</th>
+                        <th class="py-3 px-3 text-secondary">اسم المنتج</th>
+                        <th class="py-3 px-3 text-secondary">التصنيف</th>
+                        <th class="py-3 px-3 text-secondary text-center">الوزن / التعبئة</th>
+                        <th class="py-3 px-3 text-secondary text-end">سعر البيع</th>
+                        <th class="py-3 px-3 text-secondary text-end">التكلفة التقديرية</th>
+                        <th class="py-3 px-3 text-secondary text-center">الصلاحية</th>
+                        <th class="py-3 px-3 text-secondary text-center">الباركود</th>
+                        <th class="py-3 px-3 text-secondary text-center">الحالة</th>
+                        <th class="py-3 px-3 text-secondary text-center">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center py-5 text-muted">
+                                <i class="bi bi-box2 fs-1 d-block mb-2 text-secondary"></i>
+                                لا توجد منتجات مسجلة مطابقة للبحث.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="px-3">
+                                    <span class="fw-bold text-dark font-monospace d-block">@item.Code</span>
+                                    <span class="badge bg-light text-secondary border font-monospace small">@item.SKU</span>
+                                </td>
+                                <td class="px-3">
+                                    <span class="fw-bold text-dark d-block">@item.Name</span>
+                                    @if (!string.IsNullOrEmpty(item.ArabicName))
+                                    {
+                                        <span class="text-muted small">@item.ArabicName</span>
+                                    }
+                                </td>
+                                <td class="px-3">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">
+                                        @(string.IsNullOrEmpty(item.CategoryName) ? "غير مصنف" : item.CategoryName)
+                                    </span>
+                                </td>
+                                <td class="px-3 text-center">
+                                    <span class="fw-semibold text-dark">@item.Weight.ToString("N0") @item.WeightUnit</span>
+                                    <span class="text-muted small d-block">(@item.Unit)</span>
+                                </td>
+                                <td class="px-3 text-end fw-bold text-success">
+                                    @item.SellingPrice.ToString("N2") ج.م
+                                </td>
+                                <td class="px-3 text-end text-muted">
+                                    @item.StandardCost.ToString("N2") ج.م
+                                </td>
+                                <td class="px-3 text-center">
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 small">
+                                        @item.ExpiryPeriod @item.ExpiryUnit
+                                    </span>
+                                </td>
+                                <td class="px-3 text-center font-monospace small text-muted">
+                                    @(string.IsNullOrEmpty(item.Barcode) ? "-" : item.Barcode)
+                                </td>
+                                <td class="px-3 text-center">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                                            <i class="bi bi-check-circle me-1"></i> نشط
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">
+                                            <i class="bi bi-x-circle me-1"></i> معطل
+                                        </span>
+                                    }
+                                </td>
+                                <td class="px-3 text-center">
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm rounded-circle shadow-none" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            <li>
+                                                <a class="dropdown-item py-2" asp-action="Details" asp-route-id="@item.Id">
+                                                    <i class="bi bi-eye text-primary me-2"></i> عرض التفاصيل الكاملة
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2" asp-action="Edit" asp-route-id="@item.Id">
+                                                    <i class="bi bi-pencil text-warning me-2"></i> تعديل المنتج
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <form asp-action="ToggleActive" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="dropdown-item py-2">
+                                                        @if (item.IsActive)
+                                                        {
+                                                            <span><i class="bi bi-slash-circle text-secondary me-2"></i> تعطيل المنتج</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span><i class="bi bi-check2-circle text-success me-2"></i> تنشيط المنتج</span>
+                                                        }
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('هل أنت متأكد من حذف هذا المنتج؟');">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="dropdown-item py-2 text-danger">
+                                                        <i class="bi bi-trash me-2"></i> حذف المنتج
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

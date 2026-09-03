@@ -1,0 +1,163 @@
+@model IEnumerable<FactoryX.Application.DTOs.FinishedGoodsMovementDto>
+@{
+    ViewData["Title"] = "سجل حركات مخزون المنتجات التامة (FG Movements)";
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-history text-primary me-2"></i>سجل حركات مخزون المنتجات التامة (Finished Goods Ledger)</h2>
+            <p class="text-muted mb-0">سجل تدقيق كامل لكافة عمليات استلام، تسوية، ونقل المنتجات التامة بالمستودعات</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary shadow-sm">
+                <i class="fas fa-arrow-left me-1"></i> العودة للأرصدة
+            </a>
+            <a asp-controller="FinishedGoodsReleases" asp-action="Index" class="btn btn-outline-primary shadow-sm">
+                <i class="fas fa-file-invoice me-1"></i> سندات الإفراج
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body">
+            <form method="get" asp-action="Movements" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">المستودع:</label>
+                    <select name="warehouseId" asp-items="ViewBag.Warehouses" class="form-select">
+                        <option value="">-- جميع المستودعات --</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">المنتج التام:</label>
+                    <select name="productId" asp-items="ViewBag.Products" class="form-select">
+                        <option value="">-- جميع المنتجات --</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold small text-muted">نوع الحركة:</label>
+                    <select name="transactionType" class="form-select">
+                        <option value="">-- جميع الحركات --</option>
+                        <option value="14" selected="@(ViewBag.SelectedTransactionType?.ToString() == "FinishedGoodsReceipt" || ViewBag.SelectedTransactionType?.ToString() == "14")">استلام إفراج تام (Receipt)</option>
+                        <option value="15" selected="@(ViewBag.SelectedTransactionType?.ToString() == "FinishedGoodsAdjustment" || ViewBag.SelectedTransactionType?.ToString() == "15")">تسوية جردية (Adjustment)</option>
+                        <option value="16" selected="@(ViewBag.SelectedTransactionType?.ToString() == "FinishedGoodsTransfer" || ViewBag.SelectedTransactionType?.ToString() == "16")">نقل داخلي (Transfer)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold small text-muted">رقم التشغيلة:</label>
+                    <input type="text" name="batchNumber" class="form-control" value="@ViewBag.BatchNumber" placeholder="B-2026..." />
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i> تصفية</button>
+                    <a asp-action="Movements" class="btn btn-outline-secondary"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Movements Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark text-nowrap">
+                        <tr>
+                            <th class="ps-3">التاريخ والوقت</th>
+                            <th>نوع الحركة</th>
+                            <th>المنتج التام</th>
+                            <th>رقم التشغيلة</th>
+                            <th>المستودع / الموقع</th>
+                            <th>الكمية</th>
+                            <th>تكلفة الوحدة</th>
+                            <th>إجمالي القيمة</th>
+                            <th>المستند المرجعي</th>
+                            <th>المستخدم</th>
+                            <th class="pe-3">ملاحظات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var m in Model)
+                            {
+                                <tr>
+                                    <td class="ps-3 text-nowrap">
+                                        <small class="fw-bold">@m.TransactionDate.ToString("yyyy-MM-dd")</small>
+                                        <small class="text-muted d-block">@m.TransactionDate.ToString("HH:mm:ss")</small>
+                                    </td>
+                                    <td>
+                                        @if (m.TransactionType == FactoryX.Domain.Entities.InventoryTransactionType.FinishedGoodsReceipt)
+                                        {
+                                            <span class="badge bg-success"><i class="fas fa-arrow-down me-1"></i>استلام إفراج تام</span>
+                                        }
+                                        else if (m.TransactionType == FactoryX.Domain.Entities.InventoryTransactionType.FinishedGoodsAdjustment || m.TransactionType == FactoryX.Domain.Entities.InventoryTransactionType.StockAdjustment)
+                                        {
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-sliders me-1"></i>تسوية جردية</span>
+                                        }
+                                        else if (m.TransactionType == FactoryX.Domain.Entities.InventoryTransactionType.FinishedGoodsTransfer || m.TransactionType == FactoryX.Domain.Entities.InventoryTransactionType.StockTransfer)
+                                        {
+                                            <span class="badge bg-info text-dark"><i class="fas fa-arrow-right-arrow-left me-1"></i>نقل داخلي</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">@m.TransactionTypeName</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">@m.ProductName</span>
+                                        <small class="text-muted d-block font-monospace">@m.ProductCode</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border font-monospace">@m.BatchNumber</span>
+                                    </td>
+                                    <td>
+                                        <span>@m.WarehouseName</span>
+                                        @if (!string.IsNullOrEmpty(m.DestinationLocationName))
+                                        {
+                                            <small class="text-muted d-block">إلى: @m.DestinationLocationName</small>
+                                        }
+                                        @if (!string.IsNullOrEmpty(m.SourceLocationName))
+                                        {
+                                            <small class="text-muted d-block">من: @m.SourceLocationName</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold @(m.Quantity >= 0 ? "text-success" : "text-danger")">
+                                            @(m.Quantity >= 0 ? "+" : "")@m.Quantity.ToString("N0")
+                                        </span> @m.Unit
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@m.UnitCost.ToString("C2")</small>
+                                    </td>
+                                    <td>
+                                        <strong class="text-dark">@m.TotalCost.ToString("C2")</strong>
+                                    </td>
+                                    <td>
+                                        <span class="font-monospace text-primary fw-bold">@m.ReferenceDocumentNumber</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@(m.UserName ?? "النظام")</small>
+                                    </td>
+                                    <td class="pe-3">
+                                        <small class="text-muted">@m.Notes</small>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="11" class="text-center py-5 text-muted">
+                                    <i class="fas fa-receipt fa-3x mb-3 text-secondary d-block"></i>
+                                    لا توجد حركات مخزنية مسجلة تطابق معايير البحث.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

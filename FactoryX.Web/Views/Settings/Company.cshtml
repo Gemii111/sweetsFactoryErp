@@ -1,0 +1,114 @@
+@model FactoryX.Application.DTOs.CompanyProfileDto
+@{
+    ViewData["Title"] = "الملف التعريفي للشركة والمصنع";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-building text-primary me-2"></i>الملف التعريفي للمصنع والشركة</h2>
+        <p class="text-muted mb-0">تحديث الهوية التجارية، البيانات القانونية، الأرقام الضريبية، ومعلومات التواصل</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>العودة للوحة الإعدادات
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <form asp-action="Company" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="CompanyName" class="form-label fw-bold"></label>
+                    <input asp-for="CompanyName" class="form-control" />
+                    <span asp-validation-for="CompanyName" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="LegalName" class="form-label fw-bold"></label>
+                    <input asp-for="LegalName" class="form-control" />
+                    <span asp-validation-for="LegalName" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="CommercialRegistration" class="form-label fw-bold"></label>
+                    <input asp-for="CommercialRegistration" class="form-control" />
+                    <span asp-validation-for="CommercialRegistration" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="TaxRegistrationNumber" class="form-label fw-bold"></label>
+                    <input asp-for="TaxRegistrationNumber" class="form-control" />
+                    <span asp-validation-for="TaxRegistrationNumber" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Phone" class="form-label fw-bold"></label>
+                    <input asp-for="Phone" class="form-control" />
+                    <span asp-validation-for="Phone" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Email" class="form-label fw-bold"></label>
+                    <input asp-for="Email" class="form-control" type="email" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Website" class="form-label fw-bold"></label>
+                    <input asp-for="Website" class="form-control" />
+                    <span asp-validation-for="Website" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="City" class="form-label fw-bold"></label>
+                    <input asp-for="City" class="form-control" />
+                    <span asp-validation-for="City" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Country" class="form-label fw-bold"></label>
+                    <input asp-for="Country" class="form-control" />
+                    <span asp-validation-for="Country" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Address" class="form-label fw-bold"></label>
+                    <input asp-for="Address" class="form-control" />
+                    <span asp-validation-for="Address" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="DefaultCurrency" class="form-label fw-bold"></label>
+                    <input asp-for="DefaultCurrency" class="form-control" />
+                    <span asp-validation-for="DefaultCurrency" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="DefaultTimeZone" class="form-label fw-bold"></label>
+                    <input asp-for="DefaultTimeZone" class="form-control" />
+                    <span asp-validation-for="DefaultTimeZone" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary">إلغاء</a>
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save me-1"></i>حفظ التعديلات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

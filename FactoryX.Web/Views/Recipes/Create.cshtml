@@ -1,0 +1,93 @@
+@model FactoryX.Application.DTOs.CreateRecipeRequest
+@{
+    ViewData["Title"] = "إضافة وصفة جديدة (New Recipe)";
+    var products = ViewBag.Products as SelectList;
+}
+
+<div class="container py-4" dir="rtl">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-white">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="fw-bold text-dark mb-1">
+                                <i class="bi bi-plus-circle text-danger me-2"></i>إضافة وصفة معيارية جديدة
+                            </h4>
+                            <p class="text-muted small mb-0">تعريف الوصفة وتخصيصها لمنتج تام من منتجات حلويات المولد.</p>
+                        </div>
+                        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3 btn-sm">
+                            <i class="bi bi-arrow-right me-1"></i> العودة للقائمة
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 mb-4"></div>
+
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label asp-for="ProductId" class="form-label fw-semibold text-secondary">المنتج التام المستهدف <span class="text-danger">*</span></label>
+                                <select asp-for="ProductId" class="form-select rounded-3 py-2" asp-items="products">
+                                    <option value="">-- اختر المنتج التام --</option>
+                                </select>
+                                <span asp-validation-for="ProductId" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Code" class="form-label fw-semibold text-secondary">كود الوصفة <span class="text-danger">*</span></label>
+                                <input asp-for="Code" class="form-control font-monospace rounded-3 py-2" placeholder="مثال: REC-SES-100" />
+                                <span asp-validation-for="Code" class="text-danger small"></span>
+                                <small class="text-muted d-block mt-1">كود فريد للوصفة لتمييزها في النظام.</small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Name" class="form-label fw-semibold text-secondary">اسم الوصفة (بالإنجليزية أو الفني) <span class="text-danger">*</span></label>
+                                <input asp-for="Name" class="form-control rounded-3 py-2" placeholder="مثال: Premium Sesameya Batch 100KG" />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="ArabicName" class="form-label fw-semibold text-secondary">الاسم العربي للوصفة</label>
+                                <input asp-for="ArabicName" class="form-control rounded-3 py-2" placeholder="مثال: خلطة سمسمية فاخرة تشغيلة 100 كجم" />
+                                <span asp-validation-for="ArabicName" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label asp-for="BaseOutputQuantity" class="form-label fw-semibold text-secondary">كمية التشغيلة المعيارية <span class="text-danger">*</span></label>
+                                <input asp-for="BaseOutputQuantity" type="number" step="0.01" class="form-control rounded-3 py-2" value="@(Model?.BaseOutputQuantity > 0 ? Model.BaseOutputQuantity : 100.00)" />
+                                <span asp-validation-for="BaseOutputQuantity" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label asp-for="Unit" class="form-label fw-semibold text-secondary">وحدة المخرجات</label>
+                                <select asp-for="Unit" class="form-select rounded-3 py-2">
+                                    <option value="KG">كجم (KG)</option>
+                                    <option value="علبة">علبة</option>
+                                    <option value="قطعة">قطعة</option>
+                                    <option value="كرتونة">كرتونة</option>
+                                    <option value="طبق">طبق</option>
+                                </select>
+                                <span asp-validation-for="Unit" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-12">
+                                <label asp-for="Description" class="form-label fw-semibold text-secondary">وصف الوصفة وملاحظات التحضير</label>
+                                <textarea asp-for="Description" class="form-control rounded-3" rows="3" placeholder="ملاحظات حول طريقة الخلط أو درجات الحرارة..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                            <a asp-action="Index" class="btn btn-light rounded-pill px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-danger rounded-pill px-4">
+                                <i class="bi bi-check2-circle me-1"></i> حفظ ومتابعة لإضافة الإصدار (BOM)
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

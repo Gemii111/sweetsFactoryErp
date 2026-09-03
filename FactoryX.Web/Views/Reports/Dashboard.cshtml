@@ -1,0 +1,377 @@
+@model FactoryX.Application.DTOs.ManagementDashboardDto
+@{
+    ViewData["Title"] = "لوحة التقارير والتحليلات الإدارية (Executive Management Dashboard)";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i>لوحة المؤشرات والتحليلات الإدارية الشاملة</h2>
+        <p class="text-muted mb-0">نظرة عامة حية على مؤشرات المبيعات، الإنتاج، المخزون، المشتريات، الجودة، الهالك، والأداء المالي</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" onclick="window.print()" class="btn btn-outline-dark no-print">
+            <i class="bi bi-printer me-1"></i>طباعة التقرير
+        </button>
+    </div>
+</div>
+
+<!-- Date Range Filter -->
+<div class="card shadow-sm border-0 mb-4 no-print">
+    <div class="card-body p-3">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold mb-1">من تاريخ</label>
+                <input type="date" name="FromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-bold mb-1">إلى تاريخ</label>
+                <input type="date" name="ToDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-arrow-repeat me-1"></i>تحديث البيانات والمؤشرات</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 1. Top Executive KPIs Overview -->
+<div class="row g-3 mb-4">
+    <!-- Sales Revenue -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 border-start border-primary border-4 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-bold">إجمالي المبيعات (Sales Revenue)</span>
+                <div class="rounded-circle bg-primary-subtle p-2 text-primary">
+                    <i class="bi bi-cart-check-fill fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold font-monospace text-dark mb-1">@Model.TotalSalesRevenue.ToString("N2")</h3>
+            <div class="d-flex justify-content-between small text-muted">
+                <span>الطلبات: <strong>@Model.TotalSalesOrdersCount</strong></span>
+                <span>المحصل: <strong>@Model.AccountingRevenue.ToString("N2") EGP</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Production Output -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 border-start border-success border-4 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-bold">الإنتاج الفعلي (Actual Output)</span>
+                <div class="rounded-circle bg-success-subtle p-2 text-success">
+                    <i class="bi bi-gear-wide-connected fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold font-monospace text-dark mb-1">@Model.TotalActualProductionKg.ToString("N2") <small class="fs-6 text-muted">KG</small></h3>
+            <div class="d-flex justify-content-between small text-muted">
+                <span>المخطط: <strong>@Model.TotalPlannedProductionKg.ToString("N2") KG</strong></span>
+                <span class="badge bg-success-subtle text-success font-monospace">@Model.ProductionAchievementRate% إنجاز</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Valuation -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 border-start border-warning border-4 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-bold">تقييم المخزون العام (Total Inventory)</span>
+                <div class="rounded-circle bg-warning-subtle p-2 text-warning">
+                    <i class="bi bi-box-seam fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold font-monospace text-dark mb-1">@Model.TotalInventoryValue.ToString("N2")</h3>
+            <div class="d-flex justify-content-between small text-muted">
+                <span>تام: <strong>@Model.FinishedGoodsInventoryValue.ToString("N2")</strong></span>
+                <span>خامات: <strong>@Model.RawMaterialInventoryValue.ToString("N2")</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Net Profit -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 border-start border-info border-4 p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-bold">صافي الربح المحاسبي (Net Profit)</span>
+                <div class="rounded-circle bg-info-subtle p-2 text-info">
+                    <i class="bi bi-cash-stack fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold font-monospace @(Model.AccountingNetProfit >= 0 ? "text-success" : "text-danger") mb-1">
+                @Model.AccountingNetProfit.ToString("N2")
+            </h3>
+            <div class="d-flex justify-content-between small text-muted">
+                <span>مجمل الربح: <strong>@Model.AccountingGrossProfit.ToString("N2")</strong></span>
+                <span>السيولة: <strong>@Model.TotalLiquidFunds.ToString("N2")</strong></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Operational Highlights Cards (Quality, Waste, Purchasing, Receivables) -->
+<div class="row g-3 mb-4">
+    <!-- Quality Assurance -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100 p-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold text-dark"><i class="bi bi-shield-check text-success me-1"></i>مؤشرات الجودة</span>
+                <span class="badge bg-success">@Model.QCPassRate% قبول</span>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="text-muted">إجمالي الفحوصات:</span>
+                <strong>@Model.TotalQCInspectionsCount</strong>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="text-muted">الفحوصات المقبولة:</span>
+                <strong class="text-success">@Model.QCApprovedCount</strong>
+            </div>
+            <div class="d-flex justify-content-between small">
+                <span class="text-muted">المرفوضة / تحت الفحص:</span>
+                <strong class="text-danger">@Model.QCRejectedCount / @Model.QCOnHoldCount</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Waste & Losses -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100 p-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold text-dark"><i class="bi bi-trash3 text-danger me-1"></i>الهالك والتوالف</span>
+                <span class="badge bg-danger font-monospace">@Model.TotalWasteCost.ToString("N2") EGP</span>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="text-muted">كمية الهالك المعتمد:</span>
+                <strong>@Model.TotalWasteQuantityKg.ToString("N2") KG</strong>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="text-muted">هالك المواد الخام:</span>
+                <strong>@(Model.WasteByType.FirstOrDefault(w => w.TypeName.Contains("RAW"))?.Quantity.ToString("N2") ?? "0.00") KG</strong>
+            </div>
+            <div class="d-flex justify-content-between small">
+                <span class="text-muted">مرفوضات الإنتاج:</span>
+                <strong>@(Model.WasteByType.FirstOrDefault(w => w.TypeName.Contains("OUTPUT"))?.Quantity.ToString("N2") ?? "0.00") KG</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purchasing & Payables -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100 p-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold text-dark"><i class="bi bi-truck text-warning me-1"></i>المشتريات والموردين</span>
+                <span class="badge bg-warning text-dark">@Model.TotalPurchaseOrdersCount طلب</span>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="text-muted">الأوامر المستلمة بالكامل:</span>
+                <strong>@Model.ReceivedPurchaseOrdersCount</strong>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="text-muted">الأوامر الجارية:</span>
+                <strong class="text-primary">@Model.OutstandingPurchaseOrdersCount</strong>
+            </div>
+            <div class="d-flex justify-content-between small">
+                <span class="text-muted">مستحقات الموردين:</span>
+                <strong class="text-danger font-monospace">@Model.TotalSupplierPayables.ToString("N2") EGP</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receivables & Customers -->
+    <div class="col-md-3">
+        <div class="card shadow-sm border-0 h-100 p-3 bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold text-dark"><i class="bi bi-people text-info me-1"></i>العملاء والتحصيل</span>
+                <span class="badge bg-info text-dark">@Model.TotalSalesOrdersCount طلب</span>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="text-muted">المبيعات المفوترة:</span>
+                <strong class="font-monospace">@Model.TotalInvoicedSales.ToString("N2")</strong>
+            </div>
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="text-muted">الطلبات المسلمة:</span>
+                <strong>@Model.FulfilledSalesOrdersCount</strong>
+            </div>
+            <div class="d-flex justify-content-between small">
+                <span class="text-muted">المديونية المستحقة (AR):</span>
+                <strong class="text-danger font-monospace">@Model.TotalCustomerReceivables.ToString("N2") EGP</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Visual Charts (Chart.js Integration) -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-graph-up text-primary me-2"></i>اتجاه المبيعات الشهرية (Sales Revenue Trend)</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="salesTrendChart" style="max-height: 280px;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-bar-chart-fill text-success me-2"></i>الإنتاج المخطط مقابل الفعلي (Planned vs Actual Output)</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="productionTrendChart" style="max-height: 280px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Quick Reports Directory Hub -->
+<div class="card shadow-sm border-0 mb-4 no-print">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-folder2-open text-primary me-2"></i>دليل التقارير والتحليلات المتخصصة</h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-4">
+            <!-- Sales Reports Hub -->
+            <div class="col-md-4">
+                <div class="p-3 border rounded-3 h-100 bg-white shadow-sm">
+                    <h6 class="fw-bold text-primary mb-2"><i class="bi bi-cart3 me-1"></i>تقارير المبيعات</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2"><a asp-action="SalesSummary" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>ملخص المبيعات الشامل</a></li>
+                        <li class="mb-2"><a asp-action="SalesOrderStatus" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>حالات ومتابعة أوامر البيع</a></li>
+                        <li class="mb-2"><a asp-action="CustomerSales" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>مبيعات ومديونيات العملاء</a></li>
+                        <li><a asp-action="ProductSales" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>مبيعات وهوامش المنتجات</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Purchasing Reports Hub -->
+            <div class="col-md-4">
+                <div class="p-3 border rounded-3 h-100 bg-white shadow-sm">
+                    <h6 class="fw-bold text-warning mb-2"><i class="bi bi-truck me-1"></i>تقارير المشتريات</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2"><a asp-action="PurchaseSummary" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>ملخص المشتريات والتوريدات</a></li>
+                        <li class="mb-2"><a asp-action="SupplierPurchases" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>مشتريات ومستحقات الموردين</a></li>
+                        <li class="mb-2"><a asp-action="PurchaseOrderStatus" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>حالات أوامر الشراء والوارد</a></li>
+                        <li><a asp-action="SupplierPriceHistory" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>سجل تطور أسعار الموردين</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Inventory Reports Hub -->
+            <div class="col-md-4">
+                <div class="p-3 border rounded-3 h-100 bg-white shadow-sm">
+                    <h6 class="fw-bold text-success mb-2"><i class="bi bi-boxes me-1"></i>تقارير المخزون</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2"><a asp-action="InventoryValuation" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>التقييم المالي للمخزون</a></li>
+                        <li class="mb-2"><a asp-action="StockBalance" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>أرصدة المستودعات والمواقع</a></li>
+                        <li class="mb-2"><a asp-action="InventoryMovements" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>حركات وسجل كارت الصنف</a></li>
+                        <li class="mb-2"><a asp-action="LowStock" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>نواقص المخزون وحد الطلب</a></li>
+                        <li><a asp-action="Expiry" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>صلاحيات وتشغيلات الخامات والإنتاج</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Production Reports Hub -->
+            <div class="col-md-4">
+                <div class="p-3 border rounded-3 h-100 bg-white shadow-sm">
+                    <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-cpu me-1"></i>تقارير الإنتاج والتصنيع</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2"><a asp-action="ProductionSummary" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>ملخص الإنتاج ومعدلات الإنجاز</a></li>
+                        <li class="mb-2"><a asp-action="ProductionOrderPerformance" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>أداء أوامر الشغل والإنتاج</a></li>
+                        <li class="mb-2"><a asp-action="ProductionBatches" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>سجل تشغيلات وخلطات التصنيع</a></li>
+                        <li class="mb-2"><a asp-action="MaterialVariance" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>انحراف استهلاك الخامات عن BOM</a></li>
+                        <li><a asp-action="ProductionCost" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>تكلفة تشغيلات الإنتاج للوحدة</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Quality & Waste Hub -->
+            <div class="col-md-4">
+                <div class="p-3 border rounded-3 h-100 bg-white shadow-sm">
+                    <h6 class="fw-bold text-danger mb-2"><i class="bi bi-shield-exclamation me-1"></i>الجودة والهالك</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2"><a asp-action="QualitySummary" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>ملخص ونسب قبول فحوصات الجودة</a></li>
+                        <li class="mb-2"><a asp-action="QualityRejections" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>سجل مرفوضات الجودة وأسبابها</a></li>
+                        <li class="mb-2"><a asp-action="WasteSummary" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>ملخص وخسائر الهالك والتوالف</a></li>
+                        <li><a asp-action="WasteByReason" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>تحليل أسباب الهالك في الخطوط</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Accounting & Profitability Hub -->
+            <div class="col-md-4">
+                <div class="p-3 border rounded-3 h-100 bg-white shadow-sm">
+                    <h6 class="fw-bold text-dark mb-2"><i class="bi bi-calculator me-1"></i>القوائم المالية والربحية</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2"><a asp-action="ProfitAndLoss" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>قائمة الأرباح والخسائر (P&L)</a></li>
+                        <li class="mb-2"><a asp-action="BalanceSheet" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>الميزانية العمومية والمركز المالي</a></li>
+                        <li class="mb-2"><a asp-action="Profitability" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>تحليل ربحية المنتجات والعملاء</a></li>
+                        <li class="mb-2"><a asp-action="Vat" class="text-decoration-none"><i class="bi bi-chevron-left me-1"></i>إقرار وضريبة القيمة المضافة (VAT)</a></li>
+                        <li><a asp-action="Traceability" class="text-decoration-none text-info fw-bold"><i class="bi bi-diagram-3-fill me-1"></i>تتبع مسار الدفعة الشامل (Traceability)</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Sales Trend Chart
+        var salesCtx = document.getElementById('salesTrendChart')?.getContext('2d');
+        if (salesCtx) {
+            var salesLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlySalesTrend.Select(s => s.PeriodName)));
+            var salesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlySalesTrend.Select(s => s.Revenue)));
+
+            new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: salesLabels.length ? salesLabels : ['الشهر الحالي'],
+                    datasets: [{
+                        label: 'إيرادات المبيعات (EGP)',
+                        data: salesData.length ? salesData : [@Model.TotalSalesRevenue],
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'top' } }
+                }
+            });
+        }
+
+        // Production Trend Chart
+        var prodCtx = document.getElementById('productionTrendChart')?.getContext('2d');
+        if (prodCtx) {
+            var prodLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyProductionTrend.Select(p => p.PeriodName)));
+            var plannedData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyProductionTrend.Select(p => p.PlannedQuantity)));
+            var actualData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyProductionTrend.Select(p => p.ActualQuantity)));
+
+            new Chart(prodCtx, {
+                type: 'bar',
+                data: {
+                    labels: prodLabels.length ? prodLabels : ['الشهر الحالي'],
+                    datasets: [
+                        {
+                            label: 'المخطط (KG)',
+                            data: plannedData.length ? plannedData : [@Model.TotalPlannedProductionKg],
+                            backgroundColor: 'rgba(108, 117, 125, 0.6)'
+                        },
+                        {
+                            label: 'الفعلي (KG)',
+                            data: actualData.length ? actualData : [@Model.TotalActualProductionKg],
+                            backgroundColor: 'rgba(25, 135, 84, 0.8)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'top' } }
+                }
+            });
+        }
+    });
+</script>

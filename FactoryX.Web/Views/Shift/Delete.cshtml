@@ -1,0 +1,35 @@
+@model FactoryX.Application.DTOs.Responses.ShiftResponses.GetShiftResponse
+@{
+    ViewData["Title"] = "Vardiya Sil";
+}
+
+<h2 class="fw-bold mb-4 text-danger">Vardiya Sil</h2>
+
+<div class="glass-card p-4 shadow-sm mx-auto" style="max-width: 400px;">
+    <p class="mb-3">Aşağıdaki vardiyayı silmek istediğinize emin misiniz?</p>
+    <dl class="row mb-0">
+        <dt class="col-5">Vardiya Adı</dt>
+        <dd class="col-7">@Model.Name</dd>
+        <dt class="col-5">Başlangıç Saati</dt>
+        <dd class="col-7">@Model.StartTime</dd>
+        <dt class="col-5">Bitiş Saati</dt>
+        <dd class="col-7">@Model.EndTime</dd>
+    </dl>
+    <form asp-action="Delete" method="post" class="mt-4 d-flex justify-content-end gap-2">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">Sil</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">İptal</a>
+    </form>
+</div>
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 1rem;
+        backdrop-filter: blur(6px);
+    }
+
+    [data-bs-theme="dark"] .glass-card {
+        background: rgba(30, 30, 40, 0.7);
+    }
+</style>

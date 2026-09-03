@@ -1,0 +1,245 @@
+@model FactoryX.Application.DTOs.CustomerDto
+@{
+    ViewData["Title"] = $"تفاصيل العميل - {Model.Name}";
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h2 class="fw-bold mb-0">@Model.Name</h2>
+                <span class="badge bg-light text-primary border font-monospace fs-6">@Model.Code</span>
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>نشط</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger"><i class="fas fa-ban me-1"></i>معطل</span>
+                }
+            </div>
+            <p class="text-muted mb-0">
+                @if (!string.IsNullOrWhiteSpace(Model.ArabicName))
+                {
+                    <span>@Model.ArabicName • </span>
+                }
+                <span>نوع العميل: @Model.TypeName</span>
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-warning">
+                <i class="fas fa-edit me-1"></i> تعديل البيانات
+            </a>
+            @if (Model.IsActive)
+            {
+                <a asp-controller="SalesOrders" asp-action="Create" asp-route-customerId="@Model.Id" class="btn btn-primary shadow-sm">
+                    <i class="fas fa-cart-plus me-1"></i> إنشاء أمر بيع
+                </a>
+            }
+            <form asp-action="ToggleActive" asp-route-id="@Model.Id" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                @if (Model.IsActive)
+                {
+                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('هل أنت متأكد من تعطيل هذا العميل؟ لن يمكن استخدامه في أوامر بيع جديدة.')">
+                        <i class="fas fa-user-slash me-1"></i> تعطيل العميل
+                    </button>
+                }
+                else
+                {
+                    <button type="submit" class="btn btn-outline-success" onclick="return confirm('هل تريد إعادة تفعيل هذا العميل؟')">
+                        <i class="fas fa-user-check me-1"></i> تفعيل العميل
+                    </button>
+                }
+            </form>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-right me-1"></i> العودة للقائمة
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Summary KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">إجمالي أوامر البيع</h6>
+                            <h3 class="fw-bold mb-0 text-primary">@Model.SalesOrdersCount</h3>
+                        </div>
+                        <div class="fs-1 text-primary opacity-25"><i class="fas fa-shopping-cart"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">إجمالي قيمة المبيعات</h6>
+                            <h3 class="fw-bold mb-0 text-success font-monospace">@Model.TotalSalesValue.ToString("N2") EGP</h3>
+                        </div>
+                        <div class="fs-1 text-success opacity-25"><i class="fas fa-money-bill-wave"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h6 class="text-muted mb-1">سندات الصرف والتسليم</h6>
+                            <h3 class="fw-bold mb-0 text-info">@Model.SalesFulfillmentsCount</h3>
+                        </div>
+                        <div class="fs-1 text-info opacity-25"><i class="fas fa-truck-loading"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Information Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white py-3 border-0">
+            <h5 class="fw-bold mb-0"><i class="fas fa-address-card me-2 text-primary"></i>بيانات العميل وجهات الاتصال</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded">
+                        <small class="text-muted d-block mb-1">المسؤول / جهة الاتصال</small>
+                        <div class="fw-bold">@(string.IsNullOrWhiteSpace(Model.ContactPerson) ? "—" : Model.ContactPerson)</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded">
+                        <small class="text-muted d-block mb-1">رقم الهاتف</small>
+                        <div class="fw-bold">@(string.IsNullOrWhiteSpace(Model.Phone) ? "—" : Model.Phone)</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded">
+                        <small class="text-muted d-block mb-1">رقم الجوال</small>
+                        <div class="fw-bold">@(string.IsNullOrWhiteSpace(Model.Mobile) ? "—" : Model.Mobile)</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded">
+                        <small class="text-muted d-block mb-1">البريد الإلكتروني</small>
+                        <div class="fw-bold font-monospace">@(string.IsNullOrWhiteSpace(Model.Email) ? "—" : Model.Email)</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded">
+                        <small class="text-muted d-block mb-1">الرقم الضريبي</small>
+                        <div class="fw-bold font-monospace">@(string.IsNullOrWhiteSpace(Model.TaxNumber) ? "—" : Model.TaxNumber)</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded">
+                        <small class="text-muted d-block mb-1">الحد الائتماني</small>
+                        <div class="fw-bold font-monospace text-success">@Model.CreditLimit.ToString("N2") EGP</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded">
+                        <small class="text-muted d-block mb-1">عنوان التسليم والتوصيل</small>
+                        <div>@(string.IsNullOrWhiteSpace(Model.Address) ? "—" : Model.Address)</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded">
+                        <small class="text-muted d-block mb-1">ملاحظات وشروط العميل</small>
+                        <div>@(string.IsNullOrWhiteSpace(Model.Notes) ? "—" : Model.Notes)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Sales Orders Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0"><i class="fas fa-history me-2 text-primary"></i>سجل أوامر البيع الحديثة للعميل (@Model.RecentSalesOrders.Count)</h5>
+            @if (Model.IsActive)
+            {
+                <a asp-controller="SalesOrders" asp-action="Create" asp-route-customerId="@Model.Id" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-plus me-1"></i> أمر بيع جديد
+                </a>
+            }
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>رقم الأمر</th>
+                        <th>تاريخ الطلب</th>
+                        <th>المستودع</th>
+                        <th>إجمالي الكمية</th>
+                        <th>تم التسليم</th>
+                        <th>المتبقي</th>
+                        <th>القيمة الإجمالية</th>
+                        <th>الحالة</th>
+                        <th class="text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.RecentSalesOrders.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">
+                                لا توجد أوامر بيع مسجلة لهذا العميل حتى الآن.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in Model.RecentSalesOrders)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-primary border font-monospace fs-6">@order.OrderNumber</span>
+                                </td>
+                                <td>@order.OrderDate.ToString("yyyy-MM-dd")</td>
+                                <td>@order.WarehouseName</td>
+                                <td class="font-monospace">@order.TotalOrderedQuantity.ToString("N2")</td>
+                                <td class="font-monospace text-success">@order.TotalFulfilledQuantity.ToString("N2")</td>
+                                <td class="font-monospace text-danger">@order.RemainingQuantity.ToString("N2")</td>
+                                <td class="fw-bold font-monospace">@order.TotalAmount.ToString("N2") EGP</td>
+                                <td>
+                                    <span class="badge @(order.Status == FactoryX.Domain.Entities.SalesOrderStatus.FullyFulfilled ? "bg-success" : (order.Status == FactoryX.Domain.Entities.SalesOrderStatus.PartiallyFulfilled ? "bg-info" : (order.Status == FactoryX.Domain.Entities.SalesOrderStatus.Confirmed ? "bg-primary" : (order.Status == FactoryX.Domain.Entities.SalesOrderStatus.Cancelled ? "bg-danger" : "bg-secondary"))))">
+                                        @order.StatusName
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <a asp-controller="SalesOrders" asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-info" title="عرض تفاصيل أمر البيع">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

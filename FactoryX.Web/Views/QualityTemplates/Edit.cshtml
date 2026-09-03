@@ -1,0 +1,223 @@
+@model FactoryX.Application.DTOs.UpdateQualityTemplateRequest
+
+@{
+    ViewData["Title"] = "تعديل المواصفة القياسية - " + Model.Code;
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm me-3">
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+                <div>
+                    <h2 class="fw-bold mb-0 text-primary">
+                        <i class="bi bi-pencil-square me-2"></i> تعديل المواصفة القياسية: @Model.Code
+                    </h2>
+                    <small class="text-muted">تحديث معايير الجودة والحدود المسموحة</small>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-4">
+                    <form asp-action="Edit" asp-route-id="@Model.Id" method="post" id="templateForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-4 rounded-3" role="alert"></div>
+
+                        <!-- Basic Information -->
+                        <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">البيانات الأساسية للمواصفة</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label asp-for="Code" class="form-label fw-bold">كود المواصفة <span class="text-danger">*</span></label>
+                                <input asp-for="Code" class="form-control font-monospace" />
+                                <span asp-validation-for="Code" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-8">
+                                <label asp-for="Name" class="form-label fw-bold">اسم المواصفة القياسية <span class="text-danger">*</span></label>
+                                <input asp-for="Name" class="form-control" />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label fw-bold">الوصف والتفاصيل</label>
+                                <input asp-for="Description" class="form-control" />
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ProductId" class="form-label fw-bold">تخصيص لمنتج محدد</label>
+                                <select asp-for="ProductId" asp-items="ViewBag.Products" class="form-select">
+                                    <option value="">-- اختياري: ينطبق على كافة منتجات التصنيف --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ProductCategoryId" class="form-label fw-bold">تخصيص لتصنيف منتجات</label>
+                                <select asp-for="ProductCategoryId" asp-items="ViewBag.Categories" class="form-select">
+                                    <option value="">-- اختياري: ينطبق على كافة التصنيفات --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Template Items Table -->
+                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                            <h5 class="fw-bold text-dark mb-0">معايير ومواصفات الفحص</h5>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="addItemBtn">
+                                <i class="bi bi-plus-circle me-1"></i> إضافة معيار جديد
+                            </button>
+                        </div>
+
+                        <div class="table-responsive mb-4">
+                            <table class="table table-bordered align-middle" id="itemsTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 50px;">#</th>
+                                        <th>اسم المعيار / المواصفة <span class="text-danger">*</span></th>
+                                        <th style="width: 140px;">نوع البيان</th>
+                                        <th style="width: 100px;">الحد الأدنى</th>
+                                        <th style="width: 100px;">الحد الأقصى</th>
+                                        <th style="width: 100px;">المستهدف</th>
+                                        <th style="width: 80px;">الوحدة</th>
+                                        <th style="width: 80px;" class="text-center">إلزامي</th>
+                                        <th style="width: 50px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (int i = 0; i < Model.Items.Count; i++)
+                                    {
+                                        <tr class="item-row">
+                                            <td class="text-center fw-bold row-index">@(i + 1)</td>
+                                            <td>
+                                                <input name="Items[@i].SpecificationName" value="@Model.Items[i].SpecificationName" class="form-control form-control-sm" required />
+                                                <input type="hidden" name="Items[@i].Sequence" value="@(i + 1)" class="item-seq" />
+                                            </td>
+                                            <td>
+                                                <select name="Items[@i].DataType" class="form-select form-select-sm data-type-select">
+                                                    <option value="Number" selected="@(Model.Items[i].DataType == FactoryX.Domain.Entities.InspectionDataType.Number)">رقمي (Number)</option>
+                                                    <option value="PassFail" selected="@(Model.Items[i].DataType == FactoryX.Domain.Entities.InspectionDataType.PassFail)">Pass / Fail</option>
+                                                    <option value="Boolean" selected="@(Model.Items[i].DataType == FactoryX.Domain.Entities.InspectionDataType.Boolean)">منطقي (Boolean)</option>
+                                                    <option value="Text" selected="@(Model.Items[i].DataType == FactoryX.Domain.Entities.InspectionDataType.Text)">نصي (Text)</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input name="Items[@i].MinValue" value="@Model.Items[i].MinValue" type="number" step="0.01" class="form-control form-control-sm" placeholder="Min" />
+                                            </td>
+                                            <td>
+                                                <input name="Items[@i].MaxValue" value="@Model.Items[i].MaxValue" type="number" step="0.01" class="form-control form-control-sm" placeholder="Max" />
+                                            </td>
+                                            <td>
+                                                <input name="Items[@i].TargetValue" value="@Model.Items[i].TargetValue" type="number" step="0.01" class="form-control form-control-sm" placeholder="Target" />
+                                            </td>
+                                            <td>
+                                                <input name="Items[@i].Unit" value="@Model.Items[i].Unit" class="form-control form-control-sm" placeholder="G, %" />
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="checkbox" name="Items[@i].IsRequired" value="true" class="form-check-input" checked="@Model.Items[i].IsRequired" />
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-sm btn-outline-danger remove-row-btn" title="حذف المعيار"><i class="bi bi-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" id="isActiveSwitch" />
+                                <label class="form-check-label fw-bold" for="isActiveSwitch">الحالة: نشط</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-light px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                <i class="bi bi-save me-1"></i> حفظ التعديلات
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tableBody = document.querySelector('#itemsTable tbody');
+            const addBtn = document.getElementById('addItemBtn');
+
+            function reindex() {
+                const rows = tableBody.querySelectorAll('.item-row');
+                rows.forEach((row, idx) => {
+                    row.querySelector('.row-index').innerText = (idx + 1);
+                    row.querySelectorAll('input, select').forEach(input => {
+                        const name = input.getAttribute('name');
+                        if (name) {
+                            input.setAttribute('name', name.replace(/Items\[\d+\]/, `Items[${idx}]`));
+                        }
+                    });
+                    const seqInput = row.querySelector('.item-seq');
+                    if (seqInput) seqInput.value = (idx + 1);
+                });
+            }
+
+            addBtn.addEventListener('click', function () {
+                const idx = tableBody.querySelectorAll('.item-row').length;
+                const newRow = document.createElement('tr');
+                newRow.className = 'item-row';
+                newRow.innerHTML = `
+                    <td class="text-center fw-bold row-index">${idx + 1}</td>
+                    <td>
+                        <input name="Items[${idx}].SpecificationName" class="form-control form-control-sm" placeholder="اسم المعيار" required />
+                        <input type="hidden" name="Items[${idx}].Sequence" value="${idx + 1}" class="item-seq" />
+                    </td>
+                    <td>
+                        <select name="Items[${idx}].DataType" class="form-select form-select-sm data-type-select">
+                            <option value="Number">رقمي (Number)</option>
+                            <option value="PassFail">Pass / Fail</option>
+                            <option value="Boolean">منطقي (Boolean)</option>
+                            <option value="Text">نصي (Text)</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input name="Items[${idx}].MinValue" type="number" step="0.01" class="form-control form-control-sm" placeholder="Min" />
+                    </td>
+                    <td>
+                        <input name="Items[${idx}].MaxValue" type="number" step="0.01" class="form-control form-control-sm" placeholder="Max" />
+                    </td>
+                    <td>
+                        <input name="Items[${idx}].TargetValue" type="number" step="0.01" class="form-control form-control-sm" placeholder="Target" />
+                    </td>
+                    <td>
+                        <input name="Items[${idx}].Unit" class="form-control form-control-sm" placeholder="G, %" />
+                    </td>
+                    <td class="text-center">
+                        <input type="checkbox" name="Items[${idx}].IsRequired" value="true" class="form-check-input" checked />
+                    </td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-row-btn" title="حذف المعيار"><i class="bi bi-trash"></i></button>
+                    </td>
+                `;
+                tableBody.appendChild(newRow);
+                attachDeleteEvent(newRow.querySelector('.remove-row-btn'));
+            });
+
+            function attachDeleteEvent(btn) {
+                btn.addEventListener('click', function () {
+                    if (tableBody.querySelectorAll('.item-row').length > 1) {
+                        btn.closest('.item-row').remove();
+                        reindex();
+                    } else {
+                        alert('يجب الإبقاء على معيار فحص واحد على الأقل.');
+                    }
+                });
+            }
+
+            document.querySelectorAll('.remove-row-btn').forEach(btn => attachDeleteEvent(btn));
+        });
+    </script>
+}

@@ -1,0 +1,311 @@
+@model FactoryX.Application.DTOs.MaterialDto
+@{
+    ViewData["Title"] = $"تفاصيل الخامة: {Model.Name}";
+    var stockBalances = ViewBag.StockBalances as IEnumerable<FactoryX.Application.DTOs.StockBalanceDto> ?? Enumerable.Empty<FactoryX.Application.DTOs.StockBalanceDto>();
+    var recentTransactions = ViewBag.RecentTransactions as IEnumerable<FactoryX.Application.DTOs.InventoryTransactionDto> ?? Enumerable.Empty<FactoryX.Application.DTOs.InventoryTransactionDto>();
+}
+
+<div class="container-fluid py-4">
+    @await Html.PartialAsync("_Alert")
+
+    <!-- Header / Action Bar -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+                <i class="bi bi-box-seam-fill fs-2"></i>
+            </div>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <h2 class="fw-bold text-dark mb-0">@Model.Name</h2>
+                    <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-1">@Model.Code</span>
+                    <span class="badge bg-light text-muted border rounded-pill px-3 py-1">SKU: @Model.SKU</span>
+                    <span class="badge bg-@(Model.IsActive ? "success-subtle text-success" : "secondary-subtle text-secondary") rounded-pill px-3 py-1">
+                        @(Model.IsActive ? "نشط" : "معطل")
+                    </span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.ArabicName) && Model.ArabicName != Model.Name)
+                {
+                    <p class="text-muted mb-0 fs-5">@Model.ArabicName</p>
+                }
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning px-4 rounded-pill shadow-sm">
+                <i class="bi bi-pencil me-1"></i> تعديل البيانات
+            </a>
+            <a asp-controller="Inventory" asp-action="Adjust" asp-route-materialId="@Model.Id" class="btn btn-outline-primary px-3 rounded-pill">
+                <i class="bi bi-sliders me-1"></i> تسوية رصيد
+            </a>
+            <a asp-controller="Inventory" asp-action="Transfer" class="btn btn-outline-info px-3 rounded-pill">
+                <i class="bi bi-arrow-left-right me-1"></i> نقل مخزني
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill">
+                <i class="bi bi-arrow-right me-1"></i> قائمة المواد
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Metric Cards -->
+    <div class="row g-3 mb-4">
+        <!-- Stock Level KPI -->
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm border-0 rounded-4 bg-white p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted fw-semibold">الرصيد الفعلي الحالي</span>
+                    <span class="badge bg-@(Model.StockStatus switch {
+                        FactoryX.Application.DTOs.MaterialStockStatus.OUT_OF_STOCK => "danger",
+                        FactoryX.Application.DTOs.MaterialStockStatus.LOW_STOCK => "warning text-dark",
+                        FactoryX.Application.DTOs.MaterialStockStatus.REORDER_REQUIRED => "info text-dark",
+                        FactoryX.Application.DTOs.MaterialStockStatus.NORMAL => "success",
+                        _ => "secondary"
+                    }) rounded-pill px-3 py-1">
+                        @Model.StockStatusName
+                    </span>
+                </div>
+                <h2 class="fw-bold mb-1 text-dark">@Model.CurrentStock.ToString("N2") <span class="fs-5 text-muted">@Model.Unit</span></h2>
+                <div class="progress mt-3" style="height: 8px;">
+                    @{
+                        var maxCap = Model.MaximumStock > 0 ? Model.MaximumStock : 100;
+                        var pct = Math.Min(100, Math.Max(0, (double)(Model.CurrentStock / maxCap) * 100));
+                        var barColor = Model.CurrentStock <= Model.MinimumStock ? "bg-danger" : Model.CurrentStock <= Model.ReorderLevel ? "bg-warning" : "bg-success";
+                    }
+                    <div class="progress-bar @barColor" style="width: @pct.ToString("F0")%"></div>
+                </div>
+                <div class="d-flex justify-content-between text-muted small mt-2">
+                    <span>أدنى: @Model.MinimumStock</span>
+                    <span>طلب: @Model.ReorderLevel</span>
+                    <span>أقصى: @Model.MaximumStock</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cost Foundation KPI -->
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm border-0 rounded-4 bg-white p-4 h-100">
+                <span class="text-muted fw-semibold d-block mb-2">أسعار التكلفة للوحدة</span>
+                <div class="mb-2">
+                    <small class="text-muted">التكلفة الحالية:</small>
+                    <h3 class="fw-bold text-primary mb-0">@Model.CurrentCost.ToString("N2") <small class="fs-6 text-muted">ج.م / @Model.Unit</small></h3>
+                </div>
+                <div class="row g-2 pt-2 border-top">
+                    <div class="col-6">
+                        <small class="text-muted d-block">المعيارية:</small>
+                        <span class="fw-bold text-dark">@Model.StandardCost.ToString("N2") ج.م</span>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">آخر توريد:</small>
+                        <span class="fw-bold text-dark">@Model.LastPurchaseCost.ToString("N2") ج.م</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Units & Conversion KPI -->
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm border-0 rounded-4 bg-white p-4 h-100">
+                <span class="text-muted fw-semibold d-block mb-2">وحدات القياس ومعامل التحويل</span>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div>
+                        <small class="text-muted d-block">وحدة التخزين:</small>
+                        <span class="fw-bold fs-5 text-dark">@Model.Unit</span>
+                    </div>
+                    <i class="bi bi-arrow-left-right text-muted fs-4"></i>
+                    <div>
+                        <small class="text-muted d-block">وحدة الشراء:</small>
+                        <span class="fw-bold fs-5 text-dark">@(string.IsNullOrEmpty(Model.PurchaseUnit) ? Model.Unit : Model.PurchaseUnit)</span>
+                    </div>
+                </div>
+                <div class="p-2 bg-light rounded-3 text-center small text-secondary mt-2">
+                    1 @(string.IsNullOrEmpty(Model.PurchaseUnit) ? Model.Unit : Model.PurchaseUnit) = <b class="text-dark">@Model.ConversionFactor</b> @Model.Unit
+                </div>
+            </div>
+        </div>
+
+        <!-- Expiry & Batch KPI -->
+        <div class="col-md-6 col-xl-3">
+            <div class="card shadow-sm border-0 rounded-4 bg-white p-4 h-100">
+                <span class="text-muted fw-semibold d-block mb-2">الصلاحية والتشغيلة</span>
+                @if (Model.ExpiryDate.HasValue)
+                {
+                    <div class="mb-2">
+                        @if (Model.IsExpired)
+                        {
+                            <span class="badge bg-danger rounded-pill px-3 py-1 mb-2"><i class="bi bi-x-circle me-1"></i>منتهي الصلاحية</span>
+                        }
+                        else if (Model.IsExpiringSoon)
+                        {
+                            <span class="badge bg-warning text-dark rounded-pill px-3 py-1 mb-2"><i class="bi bi-exclamation-triangle me-1"></i>قريب الانتهاء</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 mb-2"><i class="bi bi-check-circle me-1"></i>ساري الصلاحية</span>
+                        }
+                        <h5 class="fw-bold text-dark mb-0">@Model.ExpiryDate.Value.ToString("yyyy-MM-dd")</h5>
+                    </div>
+                    <small class="text-muted">تشغيلة: <b>@(string.IsNullOrEmpty(Model.BatchNumber) ? "غير محدد" : Model.BatchNumber)</b></small>
+                }
+                else
+                {
+                    <div class="text-center py-3 text-muted">
+                        <i class="bi bi-calendar-x fs-3 d-block mb-1"></i>
+                        <small>لا توجد بيانات صلاحية مسجلة</small>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Detailed Attributes & Warehouse Stock Breakdown -->
+    <div class="row g-4 mb-4">
+        <!-- Classification & Properties -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 rounded-4 bg-white h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-card-checklist text-primary me-2"></i>المواصفات والتصنيف</h5>
+                </div>
+                <div class="card-body p-4">
+                    <dl class="row mb-0">
+                        <dt class="col-5 text-muted">التصنيف:</dt>
+                        <dd class="col-7 fw-semibold">
+                            @(string.IsNullOrEmpty(Model.CategoryName) ? "بدون تصنيف" : Model.CategoryName)
+                        </dd>
+
+                        <dt class="col-5 text-muted">المستودع الرئيسي:</dt>
+                        <dd class="col-7 fw-semibold">
+                            @(string.IsNullOrEmpty(Model.WarehouseName) ? "غير محدد" : Model.WarehouseName)
+                        </dd>
+
+                        <dt class="col-5 text-muted">رقم التشغيلة:</dt>
+                        <dd class="col-7 font-monospace">
+                            @(string.IsNullOrEmpty(Model.BatchNumber) ? "-" : Model.BatchNumber)
+                        </dd>
+
+                        <dt class="col-5 text-muted">تاريخ الإنتاج:</dt>
+                        <dd class="col-7">
+                            @(Model.ManufacturingDate.HasValue ? Model.ManufacturingDate.Value.ToString("yyyy-MM-dd") : "-")
+                        </dd>
+
+                        <dt class="col-5 text-muted">الوصف الفني:</dt>
+                        <dd class="col-7 text-muted small">
+                            @(string.IsNullOrWhiteSpace(Model.Description) ? "لا توجد ملاحظات." : Model.Description)
+                        </dd>
+
+                        <dt class="col-5 text-muted">تاريخ التسجيل:</dt>
+                        <dd class="col-7 text-muted small">@Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real Warehouse Stock Balances (Phase 3 Integration) -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4 bg-white h-100">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-geo-alt-fill text-danger me-2"></i>توزيع الأرصدة المخزنية الفعلية (أماكن التخزين)</h5>
+                    <span class="badge bg-light text-dark border">@stockBalances.Count() موقع تخزين</span>
+                </div>
+                <div class="card-body p-4">
+                    @if (stockBalances.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>المستودع</th>
+                                        <th>مكان التخزين (Location)</th>
+                                        <th>رقم التشغيلة</th>
+                                        <th>الكمية المتوفرة</th>
+                                        <th>تاريخ الانتهاء</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var sb in stockBalances)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@sb.WarehouseName</td>
+                                            <td>
+                                                <span class="badge bg-secondary-subtle text-secondary border">
+                                                    @(string.IsNullOrEmpty(sb.LocationName) ? "الرئيسي" : sb.LocationName)
+                                                </span>
+                                            </td>
+                                            <td><code>@(string.IsNullOrEmpty(sb.BatchNumber) ? "-" : sb.BatchNumber)</code></td>
+                                            <td class="fw-bold text-success fs-6">@sb.Quantity.ToString("N2") @Model.Unit</td>
+                                            <td class="text-muted small">@(sb.ExpiryDate.HasValue ? sb.ExpiryDate.Value.ToString("yyyy-MM-dd") : "-")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light text-center py-4 rounded-4">
+                            <i class="bi bi-inbox fs-3 text-muted d-block mb-2"></i>
+                            <p class="text-muted mb-2">لا توجد أرصدة مخزنية حالية مسجلة لهذه الخامة في المستودعات.</p>
+                            <small class="text-muted">يمكنك إجراء تسوية رصيد أول المدة أو استلام بضاعة لإنشاء رصيد فعلي.</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Recent Inventory Transactions (Phase 3 Integration) -->
+    <div class="card shadow-sm border-0 rounded-4 bg-white">
+        <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0"><i class="bi bi-clock-history text-info me-2"></i>سجل الحركات المخزنية الأخيرة على هذه الخامة</h5>
+            <span class="badge bg-light text-dark border">آخر @recentTransactions.Count() حركة</span>
+        </div>
+        <div class="card-body p-4">
+            @if (recentTransactions.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>التاريخ والوقت</th>
+                                <th>نوع الحركة</th>
+                                <th>المستودع</th>
+                                <th>الموقع المصدر &rarr; الهدف</th>
+                                <th>الكمية</th>
+                                <th>رقم المرجع / المستند</th>
+                                <th>المستخدم المسؤول</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tx in recentTransactions)
+                            {
+                                <tr>
+                                    <td class="small">@tx.TransactionDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>
+                                        <span class="badge bg-primary-subtle text-primary border rounded-pill px-2 py-1">
+                                            @tx.TransactionTypeName
+                                        </span>
+                                    </td>
+                                    <td>@tx.WarehouseName</td>
+                                    <td class="small">
+                                        @(string.IsNullOrEmpty(tx.SourceLocationName) ? "-" : tx.SourceLocationName) 
+                                        &rarr; 
+                                        @(string.IsNullOrEmpty(tx.DestinationLocationName) ? "-" : tx.DestinationLocationName)
+                                    </td>
+                                    <td class="fw-bold @(tx.Quantity > 0 ? "text-success" : "text-danger")">
+                                        @(tx.Quantity > 0 ? $"+{tx.Quantity:N2}" : $"{tx.Quantity:N2}") @Model.Unit
+                                    </td>
+                                    <td><code>@(string.IsNullOrEmpty(tx.ReferenceDocumentNumber) ? "-" : tx.ReferenceDocumentNumber)</code></td>
+                                    <td class="small text-muted">@tx.UserName</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-light text-center py-4 rounded-4 mb-0">
+                    <i class="bi bi-clock-history fs-3 text-muted d-block mb-2"></i>
+                    <p class="text-muted mb-0">لم يتم تنفيذ أي حركات مخزنية على هذا الصنف حتى الآن.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

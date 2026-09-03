@@ -1,0 +1,107 @@
+@model FactoryX.Application.DTOs.ProfitAndLossReportDto
+@{
+    ViewData["Title"] = "قائمة الأرباح والخسائر والدخل الشامل (P&L)";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-file-earmark-spreadsheet-fill text-primary me-2"></i>قائمة الأرباح والخسائر (Profit & Loss Statement)</h2>
+        <p class="text-muted mb-0">تقرير مالي رسمي مستخرج مباشرة من قيود اليومية العامة المرحلة والمعتمدة</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+@await Html.PartialAsync("_ReportFilter", Model.Filter)
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow-sm border-0 p-4">
+            <div class="text-center mb-4 pb-3 border-bottom">
+                <h4 class="fw-bold mb-1">شركة مصنع حلويات المولد</h4>
+                <h5 class="text-primary fw-bold mb-1">قائمة الأرباح والخسائر والدخل الشامل</h5>
+                <p class="text-muted small mb-0">للفترة المالية المنتهية في @(Model.Filter.ToDate?.ToString("yyyy-MM-dd") ?? DateTime.UtcNow.ToString("yyyy-MM-dd")) (القيم بالجنيه المصري EGP)</p>
+            </div>
+
+            <!-- Statement Table -->
+            <table class="table table-borderless align-middle mb-0 font-monospace">
+                <tbody>
+                    <!-- 1. Revenues -->
+                    <tr class="table-light">
+                        <td colspan="2" class="fw-bold fs-6 text-dark font-sans-serif">
+                            <i class="bi bi-plus-circle text-success me-1"></i>1. الإيرادات التشغيلية (Operating Revenue)
+                        </td>
+                        <td class="text-end fw-bold text-success fs-6"></td>
+                    </tr>
+                    @foreach (var r in Model.RevenueLines)
+                    {
+                        <tr>
+                            <td class="ps-4 text-muted">@r.AccountCode</td>
+                            <td>@r.AccountNameAr</td>
+                            <td class="text-end">@r.Amount.ToString("N2")</td>
+                        </tr>
+                    }
+                    <tr class="border-bottom">
+                        <td colspan="2" class="fw-bold ps-4">إجمالي الإيرادات (Total Revenue):</td>
+                        <td class="text-end fw-bold text-success fs-6">@Model.TotalRevenue.ToString("N2")</td>
+                    </tr>
+
+                    <!-- 2. Cost of Goods Sold -->
+                    <tr class="table-light">
+                        <td colspan="2" class="fw-bold fs-6 text-dark font-sans-serif">
+                            <i class="bi bi-dash-circle text-danger me-1"></i>2. تكلفة البضاعة المباعة (Cost of Goods Sold - COGS)
+                        </td>
+                        <td class="text-end fw-bold text-danger fs-6"></td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 text-muted">5101</td>
+                        <td>تكلفة البضاعة المباعة (الخامات ومستلزمات الإنتاج المباع)</td>
+                        <td class="text-end text-danger">(@Model.CostOfGoodsSold.ToString("N2"))</td>
+                    </tr>
+                    <tr class="border-bottom bg-light-subtle">
+                        <td colspan="2" class="fw-bold ps-4 fs-6">مجمل الربح التجاري (Gross Profit):</td>
+                        <td class="text-end fw-bold fs-6 @(Model.GrossProfit >= 0 ? "text-primary" : "text-danger")">
+                            @Model.GrossProfit.ToString("N2")
+                        </td>
+                    </tr>
+
+                    <!-- 3. Operating Expenses -->
+                    <tr class="table-light">
+                        <td colspan="2" class="fw-bold fs-6 text-dark font-sans-serif">
+                            <i class="bi bi-dash-circle text-danger me-1"></i>3. المصروفات التشغيلية والإدارية (Operating Expenses)
+                        </td>
+                        <td class="text-end fw-bold text-danger fs-6"></td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4 text-muted">6101</td>
+                        <td>مصروف الهالك والتوالف المعتمدة</td>
+                        <td class="text-end text-danger">(@Model.WasteExpense.ToString("N2"))</td>
+                    </tr>
+                    @if (Model.GeneralAndAdminExpenses > 0)
+                    {
+                        <tr>
+                            <td class="ps-4 text-muted">6201</td>
+                            <td>مصروفات إدارية وعمومية</td>
+                            <td class="text-end text-danger">(@Model.GeneralAndAdminExpenses.ToString("N2"))</td>
+                        </tr>
+                    }
+                    <tr class="border-bottom">
+                        <td colspan="2" class="fw-bold ps-4">إجمالي المصروفات التشغيلية:</td>
+                        <td class="text-end fw-bold text-danger">(@Model.TotalOperatingExpenses.ToString("N2"))</td>
+                    </tr>
+
+                    <!-- Net Operating Profit -->
+                    <tr class="table-primary border-top border-bottom border-2">
+                        <td colspan="2" class="fw-bold fs-5 text-dark font-sans-serif py-3">
+                            صافي الربح التشغيلي للفترة (Net Operating Profit):
+                        </td>
+                        <td class="text-end fw-bold fs-4 @(Model.NetOperatingProfit >= 0 ? "text-success" : "text-danger") py-3">
+                            @Model.NetOperatingProfit.ToString("N2") EGP
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

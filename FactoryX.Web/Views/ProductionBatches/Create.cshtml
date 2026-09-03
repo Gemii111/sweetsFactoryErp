@@ -1,0 +1,194 @@
+@model FactoryX.Application.DTOs.CreateProductionBatchRequest
+@{
+    ViewData["Title"] = "إنشاء دفعة إنتاج جديدة";
+    var orders = ViewBag.Orders as IEnumerable<FactoryX.Application.DTOs.ProductionOrderDto>;
+    var selectedOrder = ViewBag.SelectedOrder as FactoryX.Application.DTOs.ProductionOrderDto;
+    var machines = ViewBag.Machines as IEnumerable<FactoryX.Application.DTOs.MachineDto>;
+    var operators = ViewBag.Operators as IEnumerable<FactoryX.Application.DTOs.Responses.OperatorResponses.GetOperatorResponse>;
+    var shifts = ViewBag.Shifts as IEnumerable<FactoryX.Application.DTOs.Responses.ShiftResponses.GetShiftResponse>;
+    var warehouses = ViewBag.Warehouses as IEnumerable<FactoryX.Application.DTOs.WarehouseDto>;
+}
+
+<div class="container py-4" dir="rtl">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="fw-bold mb-1"><i class="bi bi-plus-circle text-primary me-2"></i> إنشاء دفعة تصنيع جديدة</h3>
+                    <p class="text-muted mb-0">ربط الدفعة بأمر إنتاج معتمد وتحميل متطلبات الوصفة المجمدة</p>
+                </div>
+                <div>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-right me-1"></i> العودة للقائمة
+                    </a>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-body p-4">
+                    <form method="post" asp-action="Create" id="createBatchForm">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="All" class="alert alert-danger mb-4" style="@(ViewData.ModelState.IsValid ? "display:none" : "")"></div>
+
+                        <!-- 1. Order Selection -->
+                        <div class="bg-light p-3 rounded-3 mb-4">
+                            <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-file-earmark-text me-2"></i> بيانات أمر الإنتاج الأساسي</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="WorkOrderId" class="form-label fw-semibold">أمر الإنتاج المعتمد <span class="text-danger">*</span></label>
+                                    <select asp-for="WorkOrderId" class="form-select" id="workOrderSelect" required>
+                                        <option value="">-- اختر أمر الإنتاج --</option>
+                                        @if (orders != null)
+                                        {
+                                            foreach (var order in orders)
+                                            {
+                                                <option value="@order.Id" selected="@(Model.WorkOrderId == order.Id)">
+                                                    @order.OrderNumber - @order.ProductDisplayName (مخطط: @order.PlannedQuantity.ToString("N0") @order.OutputUnit) [@order.StatusName]
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="WorkOrderId" class="text-danger small"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="BatchNumber" class="form-label fw-semibold">رقم الدفعة (توليد تلقائي) <span class="text-danger">*</span></label>
+                                    <input asp-for="BatchNumber" class="form-control" placeholder="B-YYYYMMDD-XXXX" />
+                                    <span asp-validation-for="BatchNumber" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div id="orderDetailsCard" class="mt-3 p-3 bg-white rounded border" style="@(selectedOrder == null ? "display:none;" : "")">
+                                <div class="row g-2 small">
+                                    <div class="col-md-4"><strong>المنتج:</strong> <span id="infoProductName">@(selectedOrder?.ProductDisplayName)</span></div>
+                                    <div class="col-md-4"><strong>الوصفة / الإصدار:</strong> <span id="infoRecipeName">@(selectedOrder?.RecipeName) (@(selectedOrder?.RecipeVersionNumber))</span></div>
+                                    <div class="col-md-4"><strong>حالة أمر الإنتاج:</strong> <span class="badge bg-info" id="infoOrderStatus">@(selectedOrder?.StatusName)</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Batch Quantities and Dates -->
+                        <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-calendar-event me-2"></i> معلمات وتاريخ التشغيل</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label asp-for="PlannedQuantity" class="form-label fw-semibold">الكمية المخططة للدفعة <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input asp-for="PlannedQuantity" type="number" step="0.01" class="form-control" required />
+                                    <span class="input-group-text" id="unitSpan">@Model.OutputUnit</span>
+                                </div>
+                                <span asp-validation-for="PlannedQuantity" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ProductionDate" class="form-label fw-semibold">تاريخ الإنتاج <span class="text-danger">*</span></label>
+                                <input asp-for="ProductionDate" type="date" class="form-control" value="@Model.ProductionDate.ToString("yyyy-MM-dd")" required />
+                                <span asp-validation-for="ProductionDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ExpiryDate" class="form-label fw-semibold">تاريخ الصلاحية المتوقع</label>
+                                <input asp-for="ExpiryDate" type="date" class="form-control" />
+                                <span asp-validation-for="ExpiryDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- 3. Resource Assignment -->
+                        <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-people me-2"></i> تعيين الموارد وخط الإنتاج</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label asp-for="MachineId" class="form-label">الماكينة / الخط</label>
+                                <select asp-for="MachineId" class="form-select" id="machineSelect">
+                                    <option value="">-- اختياري --</option>
+                                    @if (machines != null)
+                                    {
+                                        foreach (var m in machines)
+                                        {
+                                            <option value="@m.Id" selected="@(Model.MachineId == m.Id)">@m.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="OperatorId" class="form-label">المشغل المسؤول</label>
+                                <select asp-for="OperatorId" class="form-select" id="operatorSelect">
+                                    <option value="">-- اختياري --</option>
+                                    @if (operators != null)
+                                    {
+                                        foreach (var op in operators)
+                                        {
+                                            <option value="@op.Id" selected="@(Model.OperatorId == op.Id)">@op.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ShiftId" class="form-label">الوردية</label>
+                                <select asp-for="ShiftId" class="form-select" id="shiftSelect">
+                                    <option value="">-- اختياري --</option>
+                                    @if (shifts != null)
+                                    {
+                                        foreach (var s in shifts)
+                                        {
+                                            <option value="@s.Id" selected="@(Model.ShiftId == s.Id)">@s.Name</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 4. Notes -->
+                        <div class="mb-4">
+                            <label asp-for="Notes" class="form-label">ملاحظات التشغيل</label>
+                            <textarea asp-for="Notes" class="form-control" rows="2" placeholder="أية تعليمات خاصة بهذه التشغيلة..."></textarea>
+                            <span asp-validation-for="Notes" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="Index" class="btn btn-secondary px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-5 shadow-sm">
+                                <i class="bi bi-check-circle me-1"></i> حفظ وتجهيز للتشغيل
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('workOrderSelect').addEventListener('change', function () {
+            const orderId = this.value;
+            if (!orderId) {
+                document.getElementById('orderDetailsCard').style.display = 'none';
+                return;
+            }
+
+            fetch(`/ProductionBatches/GetOrderDetailsJson?orderId=${orderId}`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('infoProductName').textContent = data.productName;
+                    document.getElementById('infoRecipeName').textContent = data.recipeVersionName;
+                    document.getElementById('orderDetailsCard').style.display = 'block';
+
+                    if (data.plannedQuantity) {
+                        document.querySelector('[name="PlannedQuantity"]').value = data.plannedQuantity;
+                    }
+                    if (data.outputUnit) {
+                        document.getElementById('unitSpan').textContent = data.outputUnit;
+                    }
+                    if (data.machineId) {
+                        document.getElementById('machineSelect').value = data.machineId;
+                    }
+                    if (data.operatorId) {
+                        document.getElementById('operatorSelect').value = data.operatorId;
+                    }
+                    if (data.shiftId) {
+                        document.getElementById('shiftSelect').value = data.shiftId;
+                    }
+                })
+                .catch(err => console.error(err));
+        });
+    </script>
+}

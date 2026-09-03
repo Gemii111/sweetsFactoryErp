@@ -1,0 +1,60 @@
+@model FactoryX.Application.DTOs.CreateMaterialCategoryRequest
+@{
+    ViewData["Title"] = "إضافة تصنيف مواد خام جديد";
+}
+
+<div class="container py-4">
+    @await Html.PartialAsync("_Alert")
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="bg-primary-subtle text-primary p-3 rounded-circle d-inline-block mb-3">
+                            <i class="bi bi-tag-fill fs-2"></i>
+                        </div>
+                        <h3 class="fw-bold text-dark">إضافة تصنيف مواد خام</h3>
+                        <p class="text-muted small">تعريف فئة لتصنيف مدخلات إنتاج حلويات المولد وتسهيل الجرد والمشتريات</p>
+                    </div>
+
+                    <form asp-action="Create" method="post" autocomplete="off" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3" role="alert"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Code" class="form-label fw-semibold">رمز / كود التصنيف <span class="text-danger">*</span></label>
+                            <input asp-for="Code" class="form-control form-control-lg" placeholder="مثال: CAT-NUTS" autofocus />
+                            <div class="form-text">رمز فريد لا يتكرر لتمييز التصنيف في التقارير والحسابات.</div>
+                            <span asp-validation-for="Code" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label fw-semibold">اسم التصنيف <span class="text-danger">*</span></label>
+                            <input asp-for="Name" class="form-control form-control-lg" placeholder="مثال: المكسرات والسمسم والحبوب" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label fw-semibold">الوصف والملاحظات</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="ملاحظات تفصيلية حول أصناف المواد التابعة لهذا التصنيف وشروط تخزينها..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between pt-3 border-top">
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill">
+                                <i class="bi bi-arrow-right me-1"></i> إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm">
+                                <i class="bi bi-check-lg me-1"></i> حفظ التصنيف
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

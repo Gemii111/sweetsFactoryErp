@@ -1,0 +1,46 @@
+@model FactoryX.Application.DTOs.ProductQualityReportDto
+@{
+    ViewData["Title"] = "تقرير جودة المنتجات ونسب القبول";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-award-fill text-success me-2"></i>تقرير جودة المنتجات (Product Quality)</h2>
+        <p class="text-muted mb-0">تحليل معايير الجودة ومعدلات المطابقة لكل منتج من منتجات حلويات المولد</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">اسم المنتج</th>
+                        <th class="text-center">عدد الفحوصات</th>
+                        <th class="text-center">المطابق (Approved)</th>
+                        <th class="text-center">غير المطابق (Rejected)</th>
+                        <th class="text-center">نسبة المطابقة %</th>
+                        <th class="text-center pe-3">نسبة الرفض %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Products)
+                    {
+                        <tr>
+                            <td class="ps-3 fw-semibold">@p.ProductName</td>
+                            <td class="text-center"><span class="badge bg-light text-dark border">@p.TotalInspections</span></td>
+                            <td class="text-center font-monospace text-success fw-bold">@p.ApprovedCount</td>
+                            <td class="text-center font-monospace text-danger fw-bold">@p.RejectedCount</td>
+                            <td class="text-center font-monospace text-success fw-bold">@p.ApprovedPercent%</td>
+                            <td class="text-center pe-3 font-monospace text-danger fw-bold">@p.RejectedPercent%</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

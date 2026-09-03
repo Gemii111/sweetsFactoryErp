@@ -1,0 +1,368 @@
+@model FactoryX.Application.DTOs.ProductionOrderDto
+@{
+    ViewData["Title"] = $"أمر الإنتاج: {Model.OrderNumber}";
+    var hasFrozenRequirements = Model.MaterialRequirements != null && Model.MaterialRequirements.Any();
+}
+
+<div class="container-fluid py-4" dir="rtl">
+    @await Html.PartialAsync("_Alert")
+
+    <!-- رأس الصفحة مع كروت الحالة والأزرار -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 font-monospace fs-6">
+                    @Model.OrderNumber
+                </span>
+                <span class="badge @Model.StatusBadgeClass rounded-pill px-3 py-1 fs-6">
+                    @Model.StatusName
+                </span>
+                <span class="badge @Model.PriorityBadgeClass rounded-pill px-3 py-1 fs-6">
+                    الأولوية: @Model.PriorityName
+                </span>
+            </div>
+            <h3 class="fw-bold text-dark mb-0">أمر تشغيل إنتاج: @Model.ProductName</h3>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3">
+                <i class="bi bi-arrow-right me-1"></i> قائمة الأوامر
+            </a>
+
+            @if (Model.OrderStatus == FactoryX.Domain.Entities.ProductionOrderStatus.Draft || Model.OrderStatus == FactoryX.Domain.Entities.ProductionOrderStatus.Planned)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-warning rounded-pill px-3">
+                    <i class="bi bi-pencil me-1"></i> تعديل التخطيط
+                </a>
+
+                <form asp-action="Release" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm" onclick="return confirm('هل تريد اعتماد وإطلاق هذا الأمر للإنتاج وتجميد لقطة متطلبات الخامات؟');">
+                        <i class="bi bi-check2-circle me-1"></i> إطلاق واعتماد للإنتاج (Release)
+                    </button>
+                </form>
+
+                @if (Model.OrderStatus == FactoryX.Domain.Entities.ProductionOrderStatus.Draft)
+                {
+                    <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger rounded-pill px-3" onclick="return confirm('هل أنت متأكد من حذف هذه المسودة نهائياً؟');">
+                            <i class="bi bi-trash me-1"></i> حذف المسودة
+                        </button>
+                    </form>
+                }
+            }
+
+            @if (Model.OrderStatus == FactoryX.Domain.Entities.ProductionOrderStatus.Released)
+            {
+                <form asp-action="Start" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                        <i class="bi bi-play-circle me-1"></i> بدء التشغيل (Start)
+                    </button>
+                </form>
+            }
+
+            @if (Model.OrderStatus == FactoryX.Domain.Entities.ProductionOrderStatus.InProgress)
+            {
+                <form asp-action="Complete" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm" onclick="return confirm('هل تريد إكمال وتسجيل هذا الأمر كمكتمل الإنتاج؟');">
+                        <i class="bi bi-check-all me-1"></i> إنهاء وإكمال الأمر (Complete)
+                    </button>
+                </form>
+            }
+
+            @if (Model.OrderStatus != FactoryX.Domain.Entities.ProductionOrderStatus.Completed && Model.OrderStatus != FactoryX.Domain.Entities.ProductionOrderStatus.Cancelled)
+            {
+                <button type="button" class="btn btn-outline-danger rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                    <i class="bi bi-x-circle me-1"></i> إلغاء الأمر
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- كروت ملخص الأمر والجدولة -->
+    <div class="row g-4 mb-4">
+        <!-- بيانات المنتج والكميات المخططة -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+                <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+                    <i class="bi bi-box-seam text-danger me-2"></i>بيانات المنتج والكميات
+                </h5>
+                <div class="d-flex flex-column gap-3">
+                    <div>
+                        <span class="text-muted small d-block">المنتج التام المستهدف</span>
+                        <a asp-controller="Products" asp-action="Details" asp-route-id="@Model.ProductId" class="fw-bold text-primary fs-5 text-decoration-none">
+                            @Model.ProductName
+                        </a>
+                        @if (!string.IsNullOrEmpty(Model.ProductArabicName))
+                        {
+                            <span class="text-muted small d-block">@Model.ProductArabicName</span>
+                        }
+                    </div>
+
+                    <div>
+                        <span class="text-muted small d-block">إصدار الوصفة (Recipe Version & BOM)</span>
+                        @if (Model.RecipeVersionId.HasValue)
+                        {
+                            <span class="badge bg-danger-subtle text-danger font-monospace fs-6 px-3 py-1">
+                                @Model.RecipeVersionNumber
+                            </span>
+                            <span class="fw-semibold text-dark ms-2">@(string.IsNullOrEmpty(Model.RecipeVersionName) ? Model.RecipeName : Model.RecipeVersionName)</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">غير محدد</span>
+                        }
+                    </div>
+
+                    <div class="bg-light p-3 rounded-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted small">الكمية المخطط إنتاجها:</span>
+                            <span class="fw-bold fs-5 text-dark">@Model.PlannedQuantity.ToString("N0") @Model.OutputUnit</span>
+                        </div>
+                        @if (Model.ActualQuantity > 0)
+                        {
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted small">الكمية الفعلية المنجزة:</span>
+                                <span class="fw-bold fs-5 text-success">@Model.ActualQuantity.ToString("N0") @Model.OutputUnit</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- الجدولة والموارد التشغيلية -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-4 h-100">
+                <h5 class="fw-bold text-dark mb-3 border-bottom pb-2">
+                    <i class="bi bi-calendar-check text-danger me-2"></i>الجدولة وتخصيص الموارد
+                </h5>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">تاريخ الإنتاج المخطط</span>
+                        <span class="fw-bold text-dark fs-6">
+                            <i class="bi bi-calendar-event text-secondary me-1"></i>
+                            @Model.PlannedDate.ToString("yyyy-MM-dd")
+                        </span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">تاريخ الاستحقاق (Due Date)</span>
+                        <span class="fw-bold text-dark fs-6">
+                            @if (Model.DueDate.HasValue)
+                            {
+                                <i class="bi bi-clock-history text-secondary me-1"></i>
+                                @Model.DueDate.Value.ToString("yyyy-MM-dd")
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">تاريخ الإكمال الفعلي</span>
+                        <span class="fw-bold text-success fs-6">
+                            @if (Model.ActualCompletionDate.HasValue)
+                            {
+                                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                @Model.ActualCompletionDate.Value.ToString("yyyy-MM-dd HH:mm")
+                            }
+                            else
+                            {
+                                <span class="text-muted">قيد المتابعة</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">الماكينة / خط التشغيل</span>
+                        <span class="fw-semibold text-dark">@(string.IsNullOrEmpty(Model.MachineName) ? "غير مخصص" : Model.MachineName)</span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">المشغل / المشرف المسؤول</span>
+                        <span class="fw-semibold text-dark">@(string.IsNullOrEmpty(Model.OperatorName) ? "غير مخصص" : Model.OperatorName)</span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <span class="text-muted small d-block">وردية التشغيل (Shift)</span>
+                        <span class="fw-semibold text-dark">@(string.IsNullOrEmpty(Model.ShiftName) ? "غير مخصص" : Model.ShiftName)</span>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <div class="col-12 mt-3">
+                            <span class="text-muted small d-block">ملاحظات التشغيل والتخطيط:</span>
+                            <p class="text-secondary small bg-light p-3 rounded-3 mb-0">@Model.Notes</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- جدول متطلبات الخامات ومطابقة المخزون -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white p-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 border-bottom pb-2 gap-2">
+            <div>
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-list-check text-danger me-2"></i>متطلبات الخامات ومطابقة أرصدة المخزون (Material Requirements & Stock Availability)
+                </h5>
+                @if (hasFrozenRequirements)
+                {
+                    <small class="text-success"><i class="bi bi-lock-fill me-1"></i>تم تجميد لقطة متطلبات الخامات المعيارية (BOM Snapshot) عند اعتماد وإطلاق الأمر.</small>
+                }
+                else
+                {
+                    <small class="text-primary"><i class="bi bi-arrow-repeat me-1"></i>يتم احتساب المتطلبات تقديرياً وبشكل حي من بطاقة الوصفة المختارة.</small>
+                }
+            </div>
+            <span class="badge bg-light text-secondary border px-3 py-2">
+                معادلة التشغيلة = @Model.PlannedQuantity.ToString("N0") @Model.OutputUnit
+            </span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-secondary py-3">كود المادة</th>
+                        <th class="text-secondary">اسم مادة الخام</th>
+                        <th class="text-secondary text-center">كمية الوصفة الأساسية</th>
+                        <th class="text-secondary text-center text-primary">الكمية المطلوبة للأمر</th>
+                        <th class="text-secondary text-center">الرصيد المتاح بالمخزن</th>
+                        <th class="text-secondary text-center text-danger">كمية العجز (Shortage)</th>
+                        <th class="text-secondary text-center">حالة التوفر بالمخزون</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (hasFrozenRequirements)
+                    {
+                        @foreach (var item in Model.MaterialRequirements)
+                        {
+                            <tr>
+                                <td class="font-monospace text-secondary">@item.MaterialCode</td>
+                                <td>
+                                    <span class="fw-semibold text-dark d-block">@item.MaterialName</span>
+                                    @if (!string.IsNullOrEmpty(item.MaterialArabicName) && item.MaterialArabicName != item.MaterialName)
+                                    {
+                                        <small class="text-muted">@item.MaterialArabicName</small>
+                                    }
+                                </td>
+                                <td class="text-center text-muted">@item.RecipeQuantity.ToString("N2") @item.StockUnit</td>
+                                <td class="text-center fw-bold text-primary fs-6">@item.RequiredQuantity.ToString("N2") @item.StockUnit</td>
+                                <td class="text-center fw-semibold text-dark">@item.CurrentStock.ToString("N2") @item.StockUnit</td>
+                                <td class="text-center">
+                                    @if (item.ShortageQuantity > 0)
+                                    {
+                                        <span class="text-danger fw-bold">@item.ShortageQuantity.ToString("N2") @item.StockUnit</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">0 @item.StockUnit</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @switch (item.AvailabilityStatus)
+                                    {
+                                        case FactoryX.Application.DTOs.MaterialAvailabilityStatus.Available:
+                                            <span class="badge bg-success rounded-pill px-3 py-1">متوفر بالكامل (AVAILABLE)</span>
+                                            break;
+                                        case FactoryX.Application.DTOs.MaterialAvailabilityStatus.Shortage:
+                                            <span class="badge bg-warning text-dark rounded-pill px-3 py-1">عجز جزئي (SHORTAGE)</span>
+                                            break;
+                                        case FactoryX.Application.DTOs.MaterialAvailabilityStatus.OutOfStock:
+                                            <span class="badge bg-danger rounded-pill px-3 py-1">غير متوفر بالمخزن (OUT OF STOCK)</span>
+                                            break;
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else if (Model.LiveMaterialRequirements != null && Model.LiveMaterialRequirements.Any())
+                    {
+                        @foreach (var item in Model.LiveMaterialRequirements)
+                        {
+                            <tr>
+                                <td class="font-monospace text-secondary">@item.MaterialCode</td>
+                                <td>
+                                    <span class="fw-semibold text-dark d-block">@item.MaterialName</span>
+                                    @if (!string.IsNullOrEmpty(item.MaterialArabicName) && item.MaterialArabicName != item.MaterialName)
+                                    {
+                                        <small class="text-muted">@item.MaterialArabicName</small>
+                                    }
+                                </td>
+                                <td class="text-center text-muted">@item.RecipeQuantity.ToString("N2") @item.StockUnit</td>
+                                <td class="text-center fw-bold text-primary fs-6">@item.RequiredQuantity.ToString("N2") @item.StockUnit</td>
+                                <td class="text-center fw-semibold text-dark">@item.CurrentStock.ToString("N2") @item.StockUnit</td>
+                                <td class="text-center">
+                                    @if (item.ShortageQuantity > 0)
+                                    {
+                                        <span class="text-danger fw-bold">@item.ShortageQuantity.ToString("N2") @item.StockUnit</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">0 @item.StockUnit</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @item.AvailabilityBadgeClass rounded-pill px-3 py-1">
+                                        @item.AvailabilityStatusText
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="bi bi-exclamation-triangle fs-3 d-block mb-1 text-warning"></i>
+                                لا توجد بنود خامات مسجلة في إصدار الوصفة المحدد.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="alert alert-info border-0 rounded-4 mt-3 mb-0 d-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+            <small>
+                <strong>تنويه تخطيطي:</strong> جدول متطلبات الخامات ومطابقة المخزون في هذه المرحلة هو للأغراض التخطيطية والتقديرية فقط، ولا يؤثر إطلاق الأمر على خصم أو تعديل أرصدة المخزون الفعلية.
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- نافذة تأكيد الإلغاء -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true" dir="rtl">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <form asp-action="Cancel" asp-route-id="@Model.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold text-danger">
+                        <i class="bi bi-slash-circle me-1"></i> إلغاء أمر الإنتاج @Model.OrderNumber
+                    </h5>
+                    <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p class="text-muted">هل أنت متأكد من رغبتك في إلغاء أمر الإنتاج؟ سيتم تغيير الحالة إلى "ملغي (Cancelled)".</p>
+                    <label class="form-label fw-semibold text-secondary">سبب الإلغاء (اختياري)</label>
+                    <textarea name="cancellationReason" class="form-control rounded-3" rows="3" placeholder="اكتب سبب إلغاء الأمر هنا..."></textarea>
+                </div>
+                <div class="modal-footer border-top">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">إغلاق</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4">تأكيد الإلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

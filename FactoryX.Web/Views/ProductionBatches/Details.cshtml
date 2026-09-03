@@ -1,0 +1,170 @@
+@model FactoryX.Application.DTOs.ProductionBatchDto
+@{
+    ViewData["Title"] = $"تفاصيل دفعة الإنتاج - {Model.BatchNumber}";
+}
+
+<div class="container-fluid py-4" dir="rtl">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h3 class="fw-bold mb-0 text-primary"><i class="bi bi-tag-fill me-1"></i> دفعة إنتاج: @Model.BatchNumber</h3>
+                <span class="badge @Model.StatusBadgeClass fs-6 px-3 py-2">@Model.StatusName</span>
+            </div>
+            <p class="text-muted mb-0">أمر الإنتاج المرتبط: <strong>@Model.WorkOrderNumber</strong> | المنتج: <strong>@Model.ProductName</strong></p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Execute" asp-route-id="@Model.Id" class="btn btn-primary px-4 shadow-sm">
+                <i class="bi bi-gear-wide-connected me-1"></i> شاشة التشغيل والتحكم
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-right me-1"></i> العودة للدفعات
+            </a>
+        </div>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <span class="text-muted small">الكمية المخططة للتشغيل</span>
+                <h4 class="fw-bold text-primary my-1">@Model.PlannedQuantity.ToString("N2") @Model.OutputUnit</h4>
+                <small class="text-muted">تاريخ الإنتاج: @Model.ProductionDate.ToString("yyyy-MM-dd")</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <span class="text-muted small">الناتج الفعلي المسجل</span>
+                @if (Model.Status == FactoryX.Domain.Entities.ProductionBatchStatus.Completed)
+                {
+                    <h4 class="fw-bold text-success my-1">@Model.ActualOutputQuantity.ToString("N2") @Model.OutputUnit</h4>
+                    var diff = Model.ActualOutputQuantity - Model.PlannedQuantity;
+                    <small class="@(diff >= 0 ? "text-success" : "text-danger")">الفارق: @diff.ToString("+#,##0.00;-#,##0.00;0.00") @Model.OutputUnit</small>
+                }
+                else
+                {
+                    <h4 class="fw-bold text-muted my-1">--</h4>
+                    <small class="text-muted">قيد التنفيذ / الانتظار</small>
+                }
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <span class="text-muted small">الموارد والخط التشغيلي</span>
+                <div class="fw-bold text-dark my-1"><i class="bi bi-hdd-rack me-1"></i> @(Model.MachineName ?? "غير محدد")</div>
+                <small class="text-muted"><i class="bi bi-person me-1"></i> @(Model.OperatorName ?? "غير محدد") | @(Model.ShiftName ?? "الوردية الافتراضية")</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3">
+                <span class="text-muted small">التوقيت الفعلي</span>
+                <div class="small my-1"><strong>البدء:</strong> @(Model.StartTime.HasValue ? Model.StartTime.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "--")</div>
+                <div class="small text-muted"><strong>الانتهاء:</strong> @(Model.EndTime.HasValue ? Model.EndTime.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "--")</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Traceability & Consumed Materials Table -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-transparent py-3 border-0 d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0 text-primary">
+                <i class="bi bi-box-seam me-2"></i> سجل الخامات المستهلكة فعلياً وتتبع الدفعات (Material Traceability Log)
+            </h5>
+            <span class="badge bg-light text-dark border">عدد الخامات: @Model.Consumptions.Count</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>كود الخامة</th>
+                        <th>اسم المادة الخام</th>
+                        <th>المستودع المصروف منه</th>
+                        <th>رقم تشغيلة المادة الخام (Lot/Batch)</th>
+                        <th>الكمية المخططة (BOM)</th>
+                        <th>الكمية المصروفة فعلياً</th>
+                        <th>الفارق (Variance)</th>
+                        <th>تكلفة الوحدة</th>
+                        <th>إجمالي التكلفة</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Consumptions != null && Model.Consumptions.Any())
+                    {
+                        foreach (var c in Model.Consumptions)
+                        {
+                            <tr>
+                                <td><span class="badge bg-secondary font-monospace">@c.MaterialCode</span></td>
+                                <td>
+                                    <div class="fw-bold">@c.MaterialName</div>
+                                    @if (!string.IsNullOrEmpty(c.MaterialArabicName))
+                                    {
+                                        <small class="text-muted">@c.MaterialArabicName</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span><i class="bi bi-building me-1"></i> @(c.WarehouseName ?? "مستودع الخامات")</span>
+                                    @if (!string.IsNullOrEmpty(c.LocationName))
+                                    {
+                                        <small class="text-muted d-block">موقع: @c.LocationName</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-dark font-monospace">
+                                        <i class="bi bi-upc-scan me-1"></i> @(string.IsNullOrEmpty(c.RawMaterialBatchNumber) ? "عام" : c.RawMaterialBatchNumber)
+                                    </span>
+                                </td>
+                                <td>@c.PlannedQuantity.ToString("N4") @c.Unit</td>
+                                <td><strong class="text-primary">@c.ActualQuantity.ToString("N4") @c.Unit</strong></td>
+                                <td>
+                                    @if (c.Variance > 0)
+                                    {
+                                        <span class="badge bg-danger">+@c.Variance.ToString("N4")</span>
+                                    }
+                                    else if (c.Variance < 0)
+                                    {
+                                        <span class="badge bg-success">@c.Variance.ToString("N4")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-dark border">0.0000</span>
+                                    }
+                                </td>
+                                <td>@c.UnitCost.ToString("N2") ج.م</td>
+                                <td><strong class="text-dark">@c.TotalCost.ToString("N2") ج.م</strong></td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-4 text-muted">
+                                <i class="bi bi-exclamation-circle fs-3 d-block mb-2"></i>
+                                <span>لم يتم تسجيل صرف خامات لهذه الدفعة بعد (الدفعة في حالة مخطط).</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Notes & Audit -->
+    @if (!string.IsNullOrEmpty(Model.Notes) || !string.IsNullOrEmpty(Model.CancellationReason))
+    {
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body">
+                <h6 class="fw-bold text-muted mb-2"><i class="bi bi-chat-left-text me-1"></i> الملاحظات وسجل التدقيق</h6>
+                @if (!string.IsNullOrEmpty(Model.CancellationReason))
+                {
+                    <div class="alert alert-danger mb-2">
+                        <strong>سبب الإلغاء:</strong> @Model.CancellationReason
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <p class="mb-0 text-secondary">@Model.Notes</p>
+                }
+            </div>
+        </div>
+    }
+</div>

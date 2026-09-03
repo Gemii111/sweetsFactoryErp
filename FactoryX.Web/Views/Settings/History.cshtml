@@ -1,0 +1,109 @@
+@model IEnumerable<FactoryX.Application.DTOs.AuditLogItemDto>
+@{
+    ViewData["Title"] = "سجل تعديلات وتدقيق الإعدادات";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-clock-history text-secondary me-2"></i>سجل تعديلات وتدقيق الإعدادات والمعلمات</h2>
+        <p class="text-muted mb-0">سجل غير قابل للتعديل (Immutable Ledger) يوثق كل تغيير للإعدادات وهوية المنفذ والقيم السابقة والجديدة</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>العودة للوحة الإعدادات
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">التوقيت (UTC)</th>
+                        <th>المستخدم</th>
+                        <th>الإجراء</th>
+                        <th>نوع الكيان</th>
+                        <th>البيان والوصف</th>
+                        <th class="text-end pe-3">تفاصيل التغيير</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-3 d-block mb-2"></i>لا توجد سجلات تعديل إعدادات مسجلة حتى الآن
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var log in Model)
+                        {
+                            <tr>
+                                <td class="ps-3 small font-monospace">@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td><span class="badge bg-secondary">@log.Username</span></td>
+                                <td><span class="badge bg-light text-dark border">@log.Action</span></td>
+                                <td><span class="badge bg-info-subtle text-info border">@log.EntityType</span></td>
+                                <td>@log.Description</td>
+                                <td class="text-end pe-3">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick='showDiffModal(@Json.Serialize(log))'>
+                                        <i class="bi bi-code-square me-1"></i>عرض الفروقات (Diff)
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Diff Modal -->
+<div class="modal fade" id="diffModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="diffModalTitle">تفاصيل وتدقيق التعديل</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-danger"><i class="bi bi-dash-circle me-1"></i>القيم السابقة (Old State)</h6>
+                        <pre class="bg-light p-3 border rounded font-monospace small" id="oldValuesText" style="max-height: 250px; overflow-y: auto;"></pre>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-success"><i class="bi bi-plus-circle me-1"></i>القيم الجديدة (New State)</h6>
+                        <pre class="bg-light p-3 border rounded font-monospace small" id="newValuesText" style="max-height: 250px; overflow-y: auto;"></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showDiffModal(log) {
+        document.getElementById('diffModalTitle').innerText = `تدقيق [${log.action}] - ${log.description}`;
+        
+        try {
+            document.getElementById('oldValuesText').innerText = log.oldValues ? JSON.stringify(JSON.parse(log.oldValues), null, 2) : '(لا توجد قيم سابقة - إنشاء جديد)';
+        } catch {
+            document.getElementById('oldValuesText').innerText = log.oldValues || '(لا توجد قيم سابقة)';
+        }
+
+        try {
+            document.getElementById('newValuesText').innerText = log.newValues ? JSON.stringify(JSON.parse(log.newValues), null, 2) : '(لا توجد بيانات جديدة)';
+        } catch {
+            document.getElementById('newValuesText').innerText = log.newValues || '(لا توجد بيانات جديدة)';
+        }
+
+        var modal = new bootstrap.Modal(document.getElementById('diffModal'));
+        modal.show();
+    }
+</script>

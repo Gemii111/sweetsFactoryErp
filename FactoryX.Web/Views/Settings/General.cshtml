@@ -1,0 +1,106 @@
+@model FactoryX.Application.DTOs.GeneralSettingsDto
+@{
+    ViewData["Title"] = "الإعدادات العامة والإقليمية";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-globe-americas text-info me-2"></i>الإعدادات العامة والإقليمية</h2>
+        <p class="text-muted mb-0">تحديد العملة الأساسية، دقة الخانات العشرية، وتنسيقات التاريخ والوقت</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>العودة للوحة الإعدادات
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+        <form asp-action="General" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <h5 class="fw-bold mb-3 text-primary border-bottom pb-2">إعدادات العملة والمبالغ المالية</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label asp-for="CurrencyCode" class="form-label fw-bold"></label>
+                    <input asp-for="CurrencyCode" class="form-control font-monospace" />
+                    <span asp-validation-for="CurrencyCode" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="CurrencyName" class="form-label fw-bold"></label>
+                    <input asp-for="CurrencyName" class="form-control" />
+                    <span asp-validation-for="CurrencyName" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-2">
+                    <label asp-for="CurrencySymbol" class="form-label fw-bold"></label>
+                    <input asp-for="CurrencySymbol" class="form-control" />
+                    <span asp-validation-for="CurrencySymbol" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-2">
+                    <label asp-for="CurrencyDecimalPrecision" class="form-label fw-bold"></label>
+                    <input asp-for="CurrencyDecimalPrecision" class="form-control" type="number" min="0" max="4" />
+                    <span asp-validation-for="CurrencyDecimalPrecision" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <h5 class="fw-bold mb-3 text-primary border-bottom pb-2">إعدادات التاريخ والوقت والنظام</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="SystemTimeZone" class="form-label fw-bold"></label>
+                    <input asp-for="SystemTimeZone" class="form-control" />
+                    <span asp-validation-for="SystemTimeZone" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="DateDisplayFormat" class="form-label fw-bold"></label>
+                    <select asp-for="DateDisplayFormat" class="form-select font-monospace">
+                        <option value="yyyy-MM-dd">yyyy-MM-dd (2026-09-02)</option>
+                        <option value="dd/MM/yyyy">dd/MM/yyyy (02/09/2026)</option>
+                        <option value="yyyy/MM/dd">yyyy/MM/dd (2026/09/02)</option>
+                        <option value="dd-MM-yyyy">dd-MM-yyyy (02-09-2026)</option>
+                    </select>
+                    <span asp-validation-for="DateDisplayFormat" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-2">
+                    <label asp-for="TimeDisplayFormat" class="form-label fw-bold"></label>
+                    <select asp-for="TimeDisplayFormat" class="form-select font-monospace">
+                        <option value="HH:mm:ss">HH:mm:ss (24h)</option>
+                        <option value="hh:mm:ss tt">hh:mm:ss tt (12h AM/PM)</option>
+                    </select>
+                    <span asp-validation-for="TimeDisplayFormat" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-2">
+                    <label asp-for="FirstDayOfWeek" class="form-label fw-bold"></label>
+                    <select asp-for="FirstDayOfWeek" class="form-select">
+                        <option value="Saturday">السبت (Saturday)</option>
+                        <option value="Sunday">الأحد (Sunday)</option>
+                        <option value="Monday">الإثنين (Monday)</option>
+                    </select>
+                    <span asp-validation-for="FirstDayOfWeek" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary">إلغاء</a>
+                <button type="submit" class="btn btn-info text-white px-4">
+                    <i class="bi bi-save me-1"></i>حفظ الإعدادات الإقليمية
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

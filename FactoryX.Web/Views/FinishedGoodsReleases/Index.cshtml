@@ -1,0 +1,164 @@
+@model IEnumerable<FactoryX.Application.DTOs.FinishedGoodsReleaseDto>
+@{
+    ViewData["Title"] = "سندات إفراج المنتجات التامة (Finished Goods Releases)";
+}
+
+<div class="container-fluid py-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="fas fa-file-invoice text-primary me-2"></i>سندات إفراج المنتجات التامة (Finished Goods Releases)</h2>
+            <p class="text-muted mb-0">توثيق إفراج المنتجات التامة المطابقة للجودة والتعبئة ونقلها إلى المخزون النهائي</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary shadow-sm">
+                <i class="fas fa-plus-circle me-1"></i> إفراج منتج تام جديد
+            </a>
+            <a asp-controller="FinishedGoods" asp-action="Index" class="btn btn-outline-secondary shadow-sm">
+                <i class="fas fa-boxes-packing me-1"></i> أرصدة المخزون التام
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Filter Card -->
+    <div class="card shadow-sm border-0 mb-4 bg-light">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">المنتج التام:</label>
+                    <select name="productId" asp-items="ViewBag.Products" class="form-select">
+                        <option value="">-- جميع المنتجات التامة --</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-muted">مستودع الاستلام:</label>
+                    <select name="warehouseId" asp-items="ViewBag.Warehouses" class="form-select">
+                        <option value="">-- جميع مستودعات التام --</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small text-muted">بحث برقم السند أو التشغيلة:</label>
+                    <input type="text" name="searchTerm" class="form-control" value="@ViewBag.SearchTerm" placeholder="FG-2026..., B-2026..." />
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search me-1"></i> تصفية</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-undo"></i></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Releases Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-dark text-nowrap">
+                        <tr>
+                            <th class="ps-3">رقم سند الإفراج</th>
+                            <th>المنتج التام</th>
+                            <th>رقم التشغيلة (Batch)</th>
+                            <th>أمر العمل (WO)</th>
+                            <th>مستودع الاستلام</th>
+                            <th>كمية الإفراج</th>
+                            <th>تكلفة الوحدة</th>
+                            <th>إجمالي القيمة</th>
+                            <th>فحص الجودة (QC)</th>
+                            <th>تاريخ الإفراج</th>
+                            <th>بواسطة</th>
+                            <th class="text-center pe-3">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            @foreach (var r in Model)
+                            {
+                                <tr>
+                                    <td class="ps-3">
+                                        <a asp-action="Details" asp-route-id="@r.Id" class="fw-bold text-primary text-decoration-none font-monospace">
+                                            @r.ReleaseNumber
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">@r.ProductName</span>
+                                        <small class="text-muted d-block font-monospace">@r.ProductCode</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary font-monospace">@r.BatchNumber</span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@(r.WorkOrderNumber ?? "-")</small>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">@r.WarehouseName</span>
+                                        @if (!string.IsNullOrEmpty(r.LocationName))
+                                        {
+                                            <small class="text-muted d-block">@r.LocationName</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-success fs-6">@r.Quantity.ToString("N0")</span> @r.Unit
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@r.UnitCost.ToString("C2")</small>
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">@r.TotalCost.ToString("C2")</strong>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(r.QCInspectionNumber))
+                                        {
+                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>@r.QCInspectionNumber</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-light text-dark border">فحص مباشر</span>
+                                        }
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <small>@r.ReleasedAt.ToString("yyyy-MM-dd")</small>
+                                        <small class="text-muted d-block">@r.ReleasedAt.ToString("HH:mm")</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@r.ReleasedByUserName</small>
+                                    </td>
+                                    <td class="text-center pe-3 text-nowrap">
+                                        <a asp-action="Details" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-file-lines me-1"></i>عرض السند
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="12" class="text-center py-5 text-muted">
+                                    <i class="fas fa-file-circle-xmark fa-3x mb-3 text-secondary d-block"></i>
+                                    لا توجد سندات إفراج مسجلة حالياً.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

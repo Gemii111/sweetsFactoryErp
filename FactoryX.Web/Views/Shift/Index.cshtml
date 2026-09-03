@@ -1,0 +1,55 @@
+@model IEnumerable<FactoryX.Application.DTOs.Responses.ShiftResponses.GetAllShiftResponse>
+@{
+    ViewData["Title"] = "Vardiyalar";
+}
+
+<partial name="_Alert" />
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">Vardiyalar</h2>
+    <a asp-action="Create" class="btn btn-primary rounded-pill shadow">+ Yeni Vardiya</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Henüz vardiya eklenmemiş.</div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var shift in Model)
+        {
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card glass-card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">@shift.Name</h5>
+                        <p class="card-text mb-1"><strong>Başlangıç:</strong> @shift.StartTime</p>
+                        <p class="card-text mb-1"><strong>Bitiş:</strong> @shift.EndTime</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0 d-flex justify-content-end gap-2">
+                        <a asp-action="Details" asp-route-id="@shift.Id" class="btn btn-outline-secondary btn-sm">Detay</a>
+                        <a asp-action="Edit" asp-route-id="@shift.Id" class="btn btn-outline-primary btn-sm">Düzenle</a>
+                        <a asp-action="Delete" asp-route-id="@shift.Id" class="btn btn-outline-danger btn-sm">Sil</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 1rem;
+        backdrop-filter: blur(6px);
+        transition: box-shadow 0.2s;
+    }
+
+    .glass-card:hover {
+        box-shadow: 0 0 0.5rem #007bff33;
+    }
+
+    [data-bs-theme="dark"] .glass-card {
+        background: rgba(30, 30, 40, 0.7);
+    }
+</style>

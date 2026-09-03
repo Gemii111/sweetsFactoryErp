@@ -1,0 +1,228 @@
+@model FactoryX.Web.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "لوحة التحكم";
+}
+<div class="container py-3">
+    <h2 class="fw-bold mb-4 text-center text-primary"><i class="bi bi-speedometer2 me-2"></i>لوحة التحكم التشغيلية (MES Dashboard)</h2>
+    
+    <!-- إحصائيات سريعة -->
+    <div class="row g-4 mb-5">
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card glass-card text-center shadow-sm h-100">
+                <div class="card-body">
+                    <div class="display-6 mb-2"><i class="bi bi-cpu text-primary"></i></div>
+                    <div class="fs-4 fw-bold">@Model.MachineCount</div>
+                    <div class="small text-muted fw-semibold">الماكينات</div>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex justify-content-center gap-3 py-2">
+                    <a asp-controller="Machines" asp-action="Index" class="icon-link" data-bs-toggle="tooltip" title="عرض الكل">
+                        <i class="bi bi-eye fs-5 text-primary"></i>
+                    </a>
+                    <a asp-controller="Machines" asp-action="Create" class="icon-link" data-bs-toggle="tooltip" title="إضافة جديد">
+                        <i class="bi bi-plus-circle fs-5 text-success"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card glass-card text-center shadow-sm h-100">
+                <div class="card-body">
+                    <div class="display-6 mb-2"><i class="bi bi-basket3 text-success"></i></div>
+                    <div class="fs-4 fw-bold">@Model.ProductCount</div>
+                    <div class="small text-muted fw-semibold">المنتجات</div>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex justify-content-center gap-3 py-2">
+                    <a asp-controller="Products" asp-action="Index" class="icon-link" data-bs-toggle="tooltip" title="عرض الكل">
+                        <i class="bi bi-eye fs-5 text-primary"></i>
+                    </a>
+                    <a asp-controller="Products" asp-action="Create" class="icon-link" data-bs-toggle="tooltip" title="إضافة جديد">
+                        <i class="bi bi-plus-circle fs-5 text-success"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card glass-card text-center shadow-sm h-100">
+                <div class="card-body">
+                    <div class="display-6 mb-2"><i class="bi bi-person-badge text-info"></i></div>
+                    <div class="fs-4 fw-bold">@Model.OperatorCount</div>
+                    <div class="small text-muted fw-semibold">العمال والمشغلين</div>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex justify-content-center gap-3 py-2">
+                    <a asp-controller="Operator" asp-action="Index" class="icon-link" data-bs-toggle="tooltip" title="عرض الكل">
+                        <i class="bi bi-eye fs-5 text-primary"></i>
+                    </a>
+                    <a asp-controller="Operator" asp-action="Create" class="icon-link" data-bs-toggle="tooltip" title="إضافة جديد">
+                        <i class="bi bi-plus-circle fs-5 text-success"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card glass-card text-center shadow-sm h-100">
+                <div class="card-body">
+                    <div class="display-6 mb-2"><i class="bi bi-list-task text-warning"></i></div>
+                    <div class="fs-4 fw-bold">@Model.WorkOrderCount</div>
+                    <div class="small text-muted fw-semibold">أوامر التشغيل</div>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex justify-content-center gap-3 py-2">
+                    <a asp-controller="WorkOrder" asp-action="Index" class="icon-link" data-bs-toggle="tooltip" title="عرض الكل">
+                        <i class="bi bi-eye fs-5 text-primary"></i>
+                    </a>
+                    <a asp-controller="WorkOrder" asp-action="Create" class="icon-link" data-bs-toggle="tooltip" title="إضافة جديد">
+                        <i class="bi bi-plus-circle fs-5 text-success"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card glass-card text-center shadow-sm h-100">
+                <div class="card-body">
+                    <div class="display-6 mb-2"><i class="bi bi-clipboard-data text-danger"></i></div>
+                    <div class="fs-4 fw-bold">@Model.ProductionRecordCount</div>
+                    <div class="small text-muted fw-semibold">سجلات الإنتاج</div>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex justify-content-center gap-3 py-2">
+                    <a asp-controller="ProductionRecord" asp-action="Index" class="icon-link" data-bs-toggle="tooltip" title="عرض الكل">
+                        <i class="bi bi-eye fs-5 text-primary"></i>
+                    </a>
+                    <a asp-controller="ProductionRecord" asp-action="Create" class="icon-link" data-bs-toggle="tooltip" title="إضافة جديد">
+                        <i class="bi bi-plus-circle fs-5 text-success"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-lg-2">
+            <div class="card glass-card text-center shadow-sm h-100">
+                <div class="card-body">
+                    <div class="display-6 mb-2"><i class="bi bi-stopwatch text-secondary"></i></div>
+                    <div class="fs-4 fw-bold">@Model.ShiftCount</div>
+                    <div class="small text-muted fw-semibold">الورديات</div>
+                </div>
+                <div class="card-footer bg-transparent border-0 d-flex justify-content-center gap-3 py-2">
+                    <a asp-controller="Shift" asp-action="Index" class="icon-link" data-bs-toggle="tooltip" title="عرض الكل">
+                        <i class="bi bi-eye fs-5 text-primary"></i>
+                    </a>
+                    <a asp-controller="Shift" asp-action="Create" class="icon-link" data-bs-toggle="tooltip" title="إضافة جديد">
+                        <i class="bi bi-plus-circle fs-5 text-success"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- جداول العمليات الأخيرة -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card glass-card shadow-sm h-100">
+                <div class="card-header bg-transparent fw-bold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-list-task me-1 text-primary"></i>آخر أوامر التشغيل</span>
+                    <span>
+                        <a asp-controller="WorkOrder" asp-action="Index" class="btn btn-sm btn-outline-primary ms-1">عرض الكل</a>
+                        <a asp-controller="WorkOrder" asp-action="Create" class="btn btn-sm btn-primary">إضافة أمر</a>
+                    </span>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>المنتج</th>
+                                <th>الماكينة</th>
+                                <th>الكمية</th>
+                                <th>تاريخ البدء</th>
+                                <th class="pe-3">الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.RecentWorkOrders.Any())
+                            {
+                                <tr><td colspan="6" class="text-center py-4 text-muted">لا توجد أوامر تشغيل حديثة</td></tr>
+                            }
+                            @foreach (var wo in Model.RecentWorkOrders)
+                            {
+                                <tr>
+                                    <td class="ps-3">@wo.Id</td>
+                                    <td class="fw-semibold">@wo.ProductName</td>
+                                    <td>@wo.MachineName</td>
+                                    <td class="fw-bold text-success">@wo.Quantity</td>
+                                    <td>@wo.StartDate.ToShortDateString()</td>
+                                    <td class="pe-3"><span class="badge bg-secondary-subtle text-secondary">@wo.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card glass-card shadow-sm h-100">
+                <div class="card-header bg-transparent fw-bold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clipboard-data me-1 text-success"></i>آخر سجلات الإنتاج</span>
+                    <span>
+                        <a asp-controller="ProductionRecord" asp-action="Index" class="btn btn-sm btn-outline-primary ms-1">عرض الكل</a>
+                        <a asp-controller="ProductionRecord" asp-action="Create" class="btn btn-sm btn-primary">تسجيل إنتاج</a>
+                    </span>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3">#</th>
+                                <th>أمر التشغيل</th>
+                                <th>المشغل</th>
+                                <th>الكمية المنتجة</th>
+                                <th class="pe-3">التاريخ والوقت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.RecentProductionRecords.Any())
+                            {
+                                <tr><td colspan="5" class="text-center py-4 text-muted">لا توجد سجلات إنتاج حديثة</td></tr>
+                            }
+                            @foreach (var rec in Model.RecentProductionRecords)
+                            {
+                                <tr>
+                                    <td class="ps-3">@rec.Id</td>
+                                    <td class="fw-semibold">@rec.WorkOrderName</td>
+                                    <td>@rec.OperatorName</td>
+                                    <td class="fw-bold text-primary">@rec.QuantityProduced</td>
+                                    <td class="pe-3">@rec.Timestamp.ToString("g")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        border-radius: 1rem;
+        backdrop-filter: blur(6px);
+        transition: box-shadow 0.2s;
+    }
+
+    .glass-card:hover {
+        box-shadow: 0 4px 16px rgba(0, 123, 255, 0.15);
+    }
+
+    [data-bs-theme="dark"] .glass-card {
+        background: rgba(30, 34, 54, 0.85);
+    }
+
+    .icon-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: transform 0.15s;
+    }
+
+    .icon-link:hover {
+        transform: scale(1.15);
+        opacity: 0.85;
+    }
+</style>

@@ -1,0 +1,119 @@
+@model FactoryX.Application.DTOs.SupplierPaymentCreateDto
+@{
+    ViewData["Title"] = "تسجيل سند صرف وسداد مورد";
+    var suppliers = ViewBag.Suppliers as IEnumerable<FactoryX.Application.DTOs.SupplierDto> ?? new List<FactoryX.Application.DTOs.SupplierDto>();
+    var receipts = ViewBag.Receipts as IEnumerable<FactoryX.Application.DTOs.PurchaseReceiptDto> ?? new List<FactoryX.Application.DTOs.PurchaseReceiptDto>();
+    var orders = ViewBag.Orders as IEnumerable<FactoryX.Application.DTOs.PurchaseOrderDto> ?? new List<FactoryX.Application.DTOs.PurchaseOrderDto>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-wallet2 text-primary me-2"></i>تسجيل سند صرف وسداد مورد جديد</h5>
+                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-right me-1"></i>العودة لسندات الصرف
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="mb-3">
+                        <label asp-for="SupplierId" class="form-label fw-bold">المورد <span class="text-danger">*</span></label>
+                        <select asp-for="SupplierId" class="form-select" required>
+                            <option value="">-- اختر المورد --</option>
+                            @foreach (var s in suppliers)
+                            {
+                                <option value="@s.Id" selected="@(s.Id == Model.SupplierId)">@s.Code - @s.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="SupplierId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="PurchaseReceiptId" class="form-label fw-bold">سند استلام المشتريات المرتبط (اختياري)</label>
+                            <select asp-for="PurchaseReceiptId" class="form-select" onchange="onReceiptSelect(this)">
+                                <option value="">-- بدون ارتباط بسند استلام محدد --</option>
+                                @foreach (var r in receipts)
+                                {
+                                    <option value="@r.Id" data-cost="@r.TotalCost" data-supplier="@r.SupplierId" selected="@(r.Id == Model.PurchaseReceiptId)">
+                                        @r.ReceiptNumber - إجمالي (@r.TotalCost.ToString("N2") EGP)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="PurchaseOrderId" class="form-label fw-bold">أمر الشراء المرتبط (اختياري)</label>
+                            <select asp-for="PurchaseOrderId" class="form-select">
+                                <option value="">-- بدون ارتباط بأمر شراء --</option>
+                                @foreach (var o in orders)
+                                {
+                                    <option value="@o.Id" selected="@(o.Id == Model.PurchaseOrderId)">@o.OrderNumber - @o.SupplierName</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Amount" class="form-label fw-bold">المبلغ المسدد <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input asp-for="Amount" type="number" step="0.01" min="0.01" class="form-control font-monospace text-end fs-5 fw-bold" id="txtAmount" required />
+                                <span class="input-group-text">EGP</span>
+                            </div>
+                            <span asp-validation-for="Amount" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="PaymentDate" class="form-label fw-bold">تاريخ السداد <span class="text-danger">*</span></label>
+                            <input asp-for="PaymentDate" type="date" class="form-control" required />
+                            <span asp-validation-for="PaymentDate" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="PaymentMethod" class="form-label fw-bold">طريقة الصرف والدفع <span class="text-danger">*</span></label>
+                            <select asp-for="PaymentMethod" class="form-select" asp-items="Html.GetEnumSelectList<FactoryX.Domain.Entities.PaymentMethod>()"></select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ReferenceNumber" class="form-label fw-bold">رقم الشيك / التحويل البنكي المرجعي</label>
+                            <input asp-for="ReferenceNumber" class="form-control font-monospace" placeholder="رقم الشيك أو الحوالة" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Notes" class="form-label fw-bold">ملاحظات وبيان الصرف</label>
+                        <textarea asp-for="Notes" class="form-control" rows="2" placeholder="أي تفاصيل حول سبب أو دفعة السداد..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-circle me-1"></i>تسجيل وصرف السند</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function onReceiptSelect(select) {
+        var option = select.options[select.selectedIndex];
+        var cost = option.getAttribute('data-cost');
+        var supplierId = option.getAttribute('data-supplier');
+        if (cost && parseFloat(cost) > 0) {
+            document.getElementById('txtAmount').value = parseFloat(cost);
+        }
+        if (supplierId) {
+            document.getElementById('SupplierId').value = supplierId;
+        }
+    }
+</script>

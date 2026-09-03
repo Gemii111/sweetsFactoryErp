@@ -1,0 +1,122 @@
+@model FactoryX.Application.DTOs.AccountUpdateDto
+@{
+    ViewData["Title"] = "تعديل حساب مالي";
+    var parentAccounts = ViewBag.ParentAccounts as List<FactoryX.Application.DTOs.AccountDto> ?? new List<FactoryX.Application.DTOs.AccountDto>();
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-pencil-square text-primary me-2"></i>تعديل الحساب المالي: @Model.AccountCode - @Model.AccountNameAr</h5>
+                    <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-right me-1"></i>العودة للدليل
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="AccountCode" class="form-label fw-bold">رمز / كود الحساب <span class="text-danger">*</span></label>
+                            <input asp-for="AccountCode" class="form-control font-monospace" required />
+                            <span asp-validation-for="AccountCode" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="AccountType" class="form-label fw-bold">نوع / تصنيف الحساب <span class="text-danger">*</span></label>
+                            <select asp-for="AccountType" class="form-select" asp-items="Html.GetEnumSelectList<FactoryX.Domain.Entities.AccountType>()"></select>
+                            <span asp-validation-for="AccountType" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="AccountNameAr" class="form-label fw-bold">اسم الحساب (عربي) <span class="text-danger">*</span></label>
+                            <input asp-for="AccountNameAr" class="form-control" required />
+                            <span asp-validation-for="AccountNameAr" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="AccountName" class="form-label fw-bold">اسم الحساب (English) <span class="text-danger">*</span></label>
+                            <input asp-for="AccountName" class="form-control" required />
+                            <span asp-validation-for="AccountName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ParentAccountId" class="form-label fw-bold">الحساب الرئيسي التابع له</label>
+                            <select asp-for="ParentAccountId" class="form-select">
+                                <option value="">-- بدون حساب رئيسي (حساب من المستوى الأول) --</option>
+                                @foreach (var p in parentAccounts)
+                                {
+                                    <option value="@p.Id" selected="@(p.Id == Model.ParentAccountId)">@p.AccountCode - @p.AccountNameAr (@p.AccountTypeName)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="AccountRole" class="form-label fw-bold">الدور المحاسبي الآلي</label>
+                            <select asp-for="AccountRole" class="form-select" asp-items="Html.GetEnumSelectList<FactoryX.Domain.Entities.AccountRole>()"></select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-4">
+                                <input asp-for="IsControlAccount" class="form-check-input" type="checkbox" role="switch" />
+                                <label asp-for="IsControlAccount" class="form-check-label fw-bold">حساب رئيسي / تجميعي (Control Account)</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-4">
+                                <input asp-for="IsActive" class="form-check-input" type="checkbox" role="switch" />
+                                <label asp-for="IsActive" class="form-check-label fw-bold">تفعيل الحساب (Active)</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Notes" class="form-label fw-bold">ملاحظات إضافية</label>
+                            <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="bi bi-trash me-1"></i>حذف الحساب
+                        </button>
+                        <div class="d-flex gap-2">
+                            <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+                            <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i>حفظ التعديلات</button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Delete Confirmation Modal -->
+                <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>تأكيد حذف الحساب</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                هل أنت متأكد من رغبتك في حذف الحساب <strong>@Model.AccountCode - @Model.AccountNameAr</strong>؟
+                                <p class="text-danger small mt-2">لا يمكن حذف الحساب إذا كان يحتوي على حركات وقيود يومية مسجلة مسبقاً.</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-danger">تأكيد الحذف</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

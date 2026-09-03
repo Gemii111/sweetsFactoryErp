@@ -1,0 +1,106 @@
+@{
+    ViewData["Title"] = "لوحة التحكم الرئيسية";
+    var username = User.Identity?.Name ?? "المستخدم";
+    var machineCount = ViewBag.MachineCount ?? "-";
+    var productCount = ViewBag.ProductCount ?? "-";
+    var workOrderCount = ViewBag.WorkOrderCount ?? "-";
+    var operatorCount = ViewBag.OperatorCount ?? "-";
+}
+<div class="container py-4">
+    <div class="row justify-content-center mb-4">
+        <div class="col-lg-12">
+            <div class="p-4 mb-4 rounded-4 shadow-sm bg-white text-center border">
+                <h1 class="display-6 fw-bold mb-2">أهلاً بك، <span class="text-primary">@username</span>!</h1>
+                <p class="lead mb-0 text-muted">نظام تخطيط وإدارة تصنيع حلويات المولد (Mawlid Sweets ERP & MES)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقات سريعة للمستودعات والمخزون -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <a asp-controller="Warehouses" asp-action="Index" class="text-decoration-none">
+                <div class="card shadow-sm border-0 rounded-4 text-center h-100 p-3 hover-shadow">
+                    <div class="card-body">
+                        <i class="bi bi-buildings display-4 text-primary mb-2"></i>
+                        <h5 class="card-title fw-bold text-dark">المستودعات</h5>
+                        <p class="card-text text-muted small">إدارة وتوزيع المخازن</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a asp-controller="Inventory" asp-action="Stock" class="text-decoration-none">
+                <div class="card shadow-sm border-0 rounded-4 text-center h-100 p-3">
+                    <div class="card-body">
+                        <i class="bi bi-box-seam display-4 text-success mb-2"></i>
+                        <h5 class="card-title fw-bold text-dark">أرصدة المخزون</h5>
+                        <p class="card-text text-muted small">رصيد المواد التام والخام</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a asp-controller="Inventory" asp-action="Transfer" class="text-decoration-none">
+                <div class="card shadow-sm border-0 rounded-4 text-center h-100 p-3">
+                    <div class="card-body">
+                        <i class="bi bi-arrow-left-right display-4 text-warning mb-2"></i>
+                        <h5 class="card-title fw-bold text-dark">تحويل مخزني</h5>
+                        <p class="card-text text-muted small">نقل فوري بين المستودعات</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <a asp-controller="Inventory" asp-action="Transactions" class="text-decoration-none">
+                <div class="card shadow-sm border-0 rounded-4 text-center h-100 p-3">
+                    <div class="card-body">
+                        <i class="bi bi-clock-history display-4 text-info mb-2"></i>
+                        <h5 class="card-title fw-bold text-dark">سجل الحركات</h5>
+                        <p class="card-text text-muted small">حركات وتدقيق المخزون</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- الخطوط والإنتاج -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 rounded-4 text-center h-100 bg-white">
+                <div class="card-body py-4">
+                    <i class="bi bi-cpu-fill fs-1 text-primary mb-2"></i>
+                    <h6 class="card-title text-muted">الماكينات وخطوط التصنيع</h6>
+                    <p class="card-text fs-4 fw-bold">@machineCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 rounded-4 text-center h-100 bg-white">
+                <div class="card-body py-4">
+                    <i class="bi bi-basket3-fill fs-1 text-success mb-2"></i>
+                    <h6 class="card-title text-muted">المنتجات المسجلة</h6>
+                    <p class="card-text fs-4 fw-bold">@productCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 rounded-4 text-center h-100 bg-white">
+                <div class="card-body py-4">
+                    <i class="bi bi-clipboard-data-fill fs-1 text-warning mb-2"></i>
+                    <h6 class="card-title text-muted">أوامر التشغيل</h6>
+                    <p class="card-text fs-4 fw-bold">@workOrderCount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="card shadow-sm border-0 rounded-4 text-center h-100 bg-white">
+                <div class="card-body py-4">
+                    <i class="bi bi-people-fill fs-1 text-info mb-2"></i>
+                    <h6 class="card-title text-muted">العمال والمشغلين</h6>
+                    <p class="card-text fs-4 fw-bold">@operatorCount</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,69 @@
+@model FactoryX.Application.DTOs.UpdateWarehouseRequest
+
+@{
+    ViewData["Title"] = "تعديل المستودع";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+        <div class="d-flex align-items-center mb-4">
+            <a asp-action="Index" class="btn btn-light rounded-circle ms-3"><i class="bi bi-arrow-right"></i></a>
+            <div>
+                <h2 class="fw-bold mb-0">تعديل بيانات المستودع</h2>
+                <small class="text-muted">تحديث خصائص المستودع وحالته التشغيلية.</small>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <form asp-action="Edit" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3" role="alert"></div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Code" class="form-label fw-semibold">كود المستودع</label>
+                            <input asp-for="Code" class="form-control" required />
+                            <span asp-validation-for="Code" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Type" class="form-label fw-semibold">نوع المستودع</label>
+                            <select asp-for="Type" class="form-select" required>
+                                <option value="1">مخزن مواد خام (RawMaterial)</option>
+                                <option value="2">مخزن مواد تعبئة وتغليف (Packaging)</option>
+                                <option value="3">مخزن تحت التشغيل والإنتاج (Production)</option>
+                                <option value="4">مخزن منتج تام وجاهز (FinishedGoods)</option>
+                                <option value="5">مخزن هالك وتوالف (Waste)</option>
+                            </select>
+                            <span asp-validation-for="Type" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Name" class="form-label fw-semibold">اسم المستودع</label>
+                        <input asp-for="Name" class="form-control" required />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-semibold">الوصف / ملاحظات الموقع</label>
+                        <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-check form-switch mb-4">
+                        <input class="form-check-input" type="checkbox" asp-for="IsActive" id="IsActiveSwitch">
+                        <label class="form-check-label fw-semibold" for="IsActiveSwitch">المستودع نشط ويعمل</label>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-light px-4">إلغاء</a>
+                        <button type="submit" class="btn btn-primary px-4 shadow-sm"><i class="bi bi-check-lg me-1"></i>تحديث البيانات</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

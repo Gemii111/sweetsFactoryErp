@@ -1,0 +1,84 @@
+@model IEnumerable<FactoryX.Application.DTOs.AccountDto>
+@{
+    ViewData["Title"] = "قائمة الحسابات المالية (Accounts List)";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-list-task text-primary me-2"></i>قائمة الحسابات المالية</h2>
+        <p class="text-muted mb-0">عرض كافة الحسابات الرئيسية والفرعية في جدول مفصل</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-diagram-3-fill me-1"></i>العرض الشجري
+        </a>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>إضافة حساب جديد
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">رمز الحساب</th>
+                        <th>اسم الحساب (عربي)</th>
+                        <th>اسم الحساب (English)</th>
+                        <th>نوع الحساب</th>
+                        <th>الحساب الرئيسي</th>
+                        <th>طبيعة الحساب</th>
+                        <th>الحالة</th>
+                        <th class="text-end pe-3">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">@item.AccountCode</td>
+                            <td class="fw-semibold">@item.AccountNameAr</td>
+                            <td class="text-muted">@item.AccountName</td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-dark border">@item.AccountTypeName</span>
+                            </td>
+                            <td>@(item.ParentAccountName ?? "-")</td>
+                            <td>
+                                @if (item.IsControlAccount)
+                                {
+                                    <span class="badge bg-warning-subtle text-dark border">رئيسي / تجميعي</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-info-subtle text-dark border">فرعي / ترحيل</span>
+                                }
+                            </td>
+                            <td>
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge bg-success-subtle text-success">نشط</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger">معطل</span>
+                                }
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-primary" title="تعديل">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a asp-controller="GeneralLedger" asp-action="Index" asp-route-AccountId="@item.Id" class="btn btn-outline-info" title="كشف الحساب">
+                                        <i class="bi bi-journal-text"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

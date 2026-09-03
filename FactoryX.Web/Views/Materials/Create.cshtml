@@ -1,0 +1,187 @@
+@model FactoryX.Application.DTOs.CreateMaterialRequest
+@{
+    ViewData["Title"] = "إضافة مادة خام جديدة";
+}
+
+<div class="container py-4">
+    @await Html.PartialAsync("_Alert")
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            <div class="card shadow-sm border-0 rounded-4 bg-white">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                        <div class="bg-primary-subtle text-primary p-3 rounded-circle me-3">
+                            <i class="bi bi-box-seam-fill fs-3"></i>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold text-dark mb-1">تعريف مادة خام جديدة (Raw Material)</h3>
+                            <p class="text-muted small mb-0">إدخال البيانات الأساسية، الوحدات والتحويل، مستويات التخزين، والتكلفة التقديرية</p>
+                        </div>
+                    </div>
+
+                    <form asp-action="Create" method="post" autocomplete="off" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3" role="alert"></div>
+
+                        <!-- Section 1: Basic Information -->
+                        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-info-circle me-2"></i>1. البيانات الأساسية والتصنيف</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="Code" class="form-label fw-semibold">كود المادة <span class="text-danger">*</span></label>
+                                <input asp-for="Code" class="form-control" placeholder="مثال: RM-SUG-01" />
+                                <div class="form-text">كود فريد للتعريف في النظام.</div>
+                                <span asp-validation-for="Code" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="SKU" class="form-label fw-semibold">رمز التخزين (SKU) <span class="text-danger">*</span></label>
+                                <input asp-for="SKU" class="form-control" placeholder="مثال: SUG-50KG-BAG" />
+                                <div class="form-text">رمز الصنف المخزني الفريد.</div>
+                                <span asp-validation-for="SKU" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Name" class="form-label fw-semibold">اسم الخامة (بالإنجليزي / التقني) <span class="text-danger">*</span></label>
+                                <input asp-for="Name" class="form-control" placeholder="مثال: White Refined Sugar" />
+                                <span asp-validation-for="Name" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="ArabicName" class="form-label fw-semibold">الاسم بالعربي</label>
+                                <input asp-for="ArabicName" class="form-control" placeholder="مثال: سكر أبيض مكرر درجة أولى" />
+                                <span asp-validation-for="ArabicName" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="MaterialCategoryId" class="form-label fw-semibold">تصنيف المادة الخام <span class="text-danger">*</span></label>
+                                <select asp-for="MaterialCategoryId" class="form-select" asp-items="ViewBag.Categories">
+                                    <option value="">-- اختر التصنيف --</option>
+                                </select>
+                                <span asp-validation-for="MaterialCategoryId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="WarehouseId" class="form-label fw-semibold">مستودع التخزين الافتراضي</label>
+                                <select asp-for="WarehouseId" class="form-select" asp-items="ViewBag.Warehouses">
+                                    <option value="">-- اختر المستودع (مستودع المواد الخام) --</option>
+                                </select>
+                                <span asp-validation-for="WarehouseId" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Description" class="form-label fw-semibold">الوصف والمواصفات الفنية</label>
+                                <textarea asp-for="Description" class="form-control" rows="2" placeholder="مواصفات الخامة، نسبة الرطوبة، بلد المنشأ، أو ملاحظات الجودة..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Units & Conversion -->
+                        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-rulers me-2"></i>2. وحدات القياس والتحويل</h5>
+                        <div class="row g-3 mb-4 p-3 bg-light rounded-4">
+                            <div class="col-md-4">
+                                <label asp-for="Unit" class="form-label fw-semibold">وحدة التخزين والإنتاج (Stock Unit) <span class="text-danger">*</span></label>
+                                <input asp-for="Unit" class="form-control" placeholder="مثال: كجم، لتر، قطعة" />
+                                <div class="form-text">الوحدة التي يتم بها استهلاك الخامة في أوامر التصنيع والجرد.</div>
+                                <span asp-validation-for="Unit" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="PurchaseUnit" class="form-label fw-semibold">وحدة الشراء والتوريد (Purchase Unit)</label>
+                                <input asp-for="PurchaseUnit" class="form-control" placeholder="مثال: شيكارة، طن، برميل، كرتونة" />
+                                <div class="form-text">الوحدة التي يتم بها استلام البضاعة من الموردين.</div>
+                                <span asp-validation-for="PurchaseUnit" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ConversionFactor" class="form-label fw-semibold">معامل التحويل (Conversion Factor) <span class="text-danger">*</span></label>
+                                <input asp-for="ConversionFactor" type="number" step="0.0001" min="0.0001" class="form-control" value="1.0" />
+                                <div class="form-text">1 وحدة شراء = كم وحدة تخزين؟ (مثال: 1 شيكارة = 50 كجم &rarr; 50).</div>
+                                <span asp-validation-for="ConversionFactor" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Stock Control Limits -->
+                        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-shield-check me-2"></i>3. حدود ومستويات الرقابة على المخزون</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label asp-for="MinimumStock" class="form-label fw-semibold">الحد الأدنى للأمان (Min Stock) <span class="text-danger">*</span></label>
+                                <input asp-for="MinimumStock" type="number" step="0.01" min="0" class="form-control" placeholder="مثال: 100" />
+                                <div class="form-text text-danger">مستوى الخطر الذي يجب عدم النزول تحته.</div>
+                                <span asp-validation-for="MinimumStock" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ReorderLevel" class="form-label fw-semibold">نقطة إعادة الطلب (Reorder Level) <span class="text-danger">*</span></label>
+                                <input asp-for="ReorderLevel" type="number" step="0.01" min="0" class="form-control" placeholder="مثال: 250" />
+                                <div class="form-text text-primary">المستوى الذي يتم عنده إصدار أمر شراء جديد.</div>
+                                <span asp-validation-for="ReorderLevel" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="MaximumStock" class="form-label fw-semibold">الحد الأقصى للتخزين (Max Stock) <span class="text-danger">*</span></label>
+                                <input asp-for="MaximumStock" type="number" step="0.01" min="0" class="form-control" placeholder="مثال: 1000" />
+                                <div class="form-text text-muted">السعة التخزينية القصوى لتجنب التكدس وتلف المواد.</div>
+                                <span asp-validation-for="MaximumStock" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Section 4: Cost Foundation -->
+                        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-currency-dollar me-2"></i>4. أسس التكاليف والتقييم المالي</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label asp-for="StandardCost" class="form-label fw-semibold">التكلفة المعيارية (Standard Cost)</label>
+                                <div class="input-group">
+                                    <input asp-for="StandardCost" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                                    <span class="input-group-text">ج.م</span>
+                                </div>
+                                <div class="form-text">التكلفة المخططة في دراسة الجدوى ومعادلات المنتجات.</div>
+                                <span asp-validation-for="StandardCost" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="CurrentCost" class="form-label fw-semibold">التكلفة الحالية (Current Cost)</label>
+                                <div class="input-group">
+                                    <input asp-for="CurrentCost" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                                    <span class="input-group-text">ج.م</span>
+                                </div>
+                                <div class="form-text">متوسط تكلفة الوحدة المخزنية الحالية.</div>
+                                <span asp-validation-for="CurrentCost" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="LastPurchaseCost" class="form-label fw-semibold">تكلفة آخر شراء (Last Purchase Cost)</label>
+                                <div class="input-group">
+                                    <input asp-for="LastPurchaseCost" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                                    <span class="input-group-text">ج.م</span>
+                                </div>
+                                <div class="form-text">سعر آخر فاتورة توريد سابقة.</div>
+                                <span asp-validation-for="LastPurchaseCost" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Section 5: Batch & Expiry (Initial Data) -->
+                        <h5 class="fw-bold text-primary mb-3"><i class="bi bi-calendar-event me-2"></i>5. تتبع التشغيلة والصلاحية</h5>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label asp-for="BatchNumber" class="form-label fw-semibold">رقم التشغيلة الافتراضي (Batch No)</label>
+                                <input asp-for="BatchNumber" class="form-control" placeholder="مثال: BAT-2026-01" />
+                                <span asp-validation-for="BatchNumber" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ManufacturingDate" class="form-label fw-semibold">تاريخ الإنتاج</label>
+                                <input asp-for="ManufacturingDate" type="date" class="form-control" />
+                                <span asp-validation-for="ManufacturingDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="ExpiryDate" class="form-label fw-semibold">تاريخ انتهاء الصلاحية</label>
+                                <input asp-for="ExpiryDate" type="date" class="form-control" />
+                                <span asp-validation-for="ExpiryDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between pt-4 border-top">
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4 rounded-pill">
+                                <i class="bi bi-arrow-right me-1"></i> إلغاء
+                            </a>
+                            <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm">
+                                <i class="bi bi-check-lg me-1"></i> حفظ مادة الخام
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

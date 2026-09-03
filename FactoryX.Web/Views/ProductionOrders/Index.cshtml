@@ -1,0 +1,295 @@
+@model IEnumerable<FactoryX.Application.DTOs.ProductionOrderDto>
+@{
+    ViewData["Title"] = "تخطيط وأوامر الإنتاج (Production Orders & Planning)";
+    var summary = ViewBag.Summary as FactoryX.Application.DTOs.ProductionOrderSummaryDto;
+    var filter = ViewBag.Filter as FactoryX.Application.DTOs.ProductionOrderFilterRequest;
+}
+
+<div class="container-fluid py-4" dir="rtl">
+    @await Html.PartialAsync("_Alert")
+
+    <!-- الهيدر الرئيسي -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="bi bi-calendar2-range text-danger me-2"></i>تخطيط وأوامر الإنتاج
+            </h2>
+            <p class="text-muted mb-0">إدارة أوامر التشغيل، واحتساب احتياجات المواد الخام (BOM)، وجدولة الموارد وخطوط الإنتاج.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-danger rounded-pill px-4 shadow-sm">
+                <i class="bi bi-plus-circle me-1"></i> إنشاء أمر إنتاج جديد
+            </a>
+        </div>
+    </div>
+
+    <!-- كروت الإحصائيات والمؤشرات (KPIs) -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100 border-start border-4 border-primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small d-block">إجمالي الأوامر</span>
+                        <h4 class="fw-bold mb-0 text-primary">@(summary?.TotalOrders ?? 0)</h4>
+                    </div>
+                    <div class="bg-primary-subtle text-primary p-2 rounded-circle">
+                        <i class="bi bi-journal-text fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100 border-start border-4 border-secondary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small d-block">المسودات</span>
+                        <h4 class="fw-bold mb-0 text-secondary">@(summary?.DraftOrders ?? 0)</h4>
+                    </div>
+                    <div class="bg-secondary-subtle text-secondary p-2 rounded-circle">
+                        <i class="bi bi-pencil-square fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100 border-start border-4 border-info">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small d-block">مخطط (Planned)</span>
+                        <h4 class="fw-bold mb-0 text-info">@(summary?.PlannedOrders ?? 0)</h4>
+                    </div>
+                    <div class="bg-info-subtle text-info p-2 rounded-circle">
+                        <i class="bi bi-calendar-check fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100 border-start border-4 border-warning">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small d-block">مطلق وجاهز</span>
+                        <h4 class="fw-bold mb-0 text-warning">@(summary?.ReleasedOrders ?? 0)</h4>
+                    </div>
+                    <div class="bg-warning-subtle text-warning p-2 rounded-circle">
+                        <i class="bi bi-play-circle fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100 border-start border-4 border-success">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small d-block">قيد التشغيل</span>
+                        <h4 class="fw-bold mb-0 text-success">@(summary?.InProgressOrders ?? 0)</h4>
+                    </div>
+                    <div class="bg-success-subtle text-success p-2 rounded-circle">
+                        <i class="bi bi-gear-wide-connected fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-white p-3 h-100 border-start border-4 border-dark">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small d-block">إجمالي المخطط</span>
+                        <h4 class="fw-bold mb-0 text-dark">@(summary?.TotalPlannedQuantity.ToString("N0") ?? "0") <span class="fs-6 text-muted">كجم</span></h4>
+                    </div>
+                    <div class="bg-light text-dark p-2 rounded-circle">
+                        <i class="bi bi-speedometer fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- شريط البحث والفلترة -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white mb-4 p-3">
+        <form method="get" asp-action="Index" class="row g-2 align-items-center">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" name="Search" class="form-control border-0 bg-light rounded-end" placeholder="بحث برقم الأمر أو اسم المنتج..." value="@filter?.Search" />
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select name="ProductId" asp-items="ViewBag.Products" class="form-select border-0 bg-light">
+                    <option value="">-- كل المنتجات --</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="Status" asp-items="ViewBag.Statuses" class="form-select border-0 bg-light">
+                    <option value="">-- كل الحالات --</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="Priority" asp-items="ViewBag.Priorities" class="form-select border-0 bg-light">
+                    <option value="">-- كل الأولويات --</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary rounded-pill px-4 flex-grow-1">
+                    <i class="bi bi-funnel me-1"></i> تصفية
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-3" title="إعادة تعيين">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- جدول أوامر الإنتاج -->
+    <div class="card border-0 shadow-sm rounded-4 bg-white overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="text-secondary py-3">رقم أمر الإنتاج</th>
+                        <th class="text-secondary">المنتج التام</th>
+                        <th class="text-secondary">إصدار الوصفة (BOM)</th>
+                        <th class="text-secondary text-center">الكمية المخططة</th>
+                        <th class="text-secondary">تاريخ الإنتاج</th>
+                        <th class="text-secondary">تاريخ الاستحقاق</th>
+                        <th class="text-secondary text-center">الأولوية</th>
+                        <th class="text-secondary text-center">حالة الأمر</th>
+                        <th class="text-secondary text-center">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                <h6 class="fw-bold">لا توجد أوامر إنتاج مسجلة حالياً</h6>
+                                <p class="small mb-3">يمكنك البدء بإنشاء أول أمر إنتاج وجدولة الخامات المطلوبة.</p>
+                                <a asp-action="Create" class="btn btn-danger rounded-pill px-4">
+                                    <i class="bi bi-plus-circle me-1"></i> إنشاء أمر إنتاج جديد
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="fw-bold font-monospace text-decoration-none text-danger">
+                                        @item.OrderNumber
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold text-dark d-block">@item.ProductName</span>
+                                    @if (!string.IsNullOrEmpty(item.ProductArabicName) && item.ProductArabicName != item.ProductName)
+                                    {
+                                        <small class="text-muted">@item.ProductArabicName</small>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.RecipeVersionNumber))
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary font-monospace">@item.RecipeVersionNumber</span>
+                                        <small class="d-block text-muted">@(string.IsNullOrEmpty(item.RecipeVersionName) ? item.RecipeName : item.RecipeVersionName)</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">-</span>
+                                    }
+                                </td>
+                                <td class="text-center fw-bold text-dark fs-6">
+                                    @item.PlannedQuantity.ToString("N0") <span class="small fw-normal text-muted">@item.OutputUnit</span>
+                                </td>
+                                <td class="small">
+                                    <i class="bi bi-calendar-event text-secondary me-1"></i>
+                                    @item.PlannedDate.ToString("yyyy-MM-dd")
+                                </td>
+                                <td class="small">
+                                    @if (item.DueDate.HasValue)
+                                    {
+                                        <i class="bi bi-clock-history text-secondary me-1"></i>
+                                        @item.DueDate.Value.ToString("yyyy-MM-dd")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @item.PriorityBadgeClass rounded-pill px-3 py-1">
+                                        @item.PriorityName
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @item.StatusBadgeClass rounded-pill px-3 py-1">
+                                        @item.StatusName
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <div class="dropdown">
+                                        <button class="btn btn-light btn-sm rounded-circle shadow-none" type="button" data-bs-toggle="dropdown">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                            <li>
+                                                <a class="dropdown-item py-2" asp-action="Details" asp-route-id="@item.Id">
+                                                    <i class="bi bi-eye text-primary me-2"></i> تفاصيل الأمر وجدول الخامات
+                                                </a>
+                                            </li>
+                                            @if (item.OrderStatus == FactoryX.Domain.Entities.ProductionOrderStatus.Draft || item.OrderStatus == FactoryX.Domain.Entities.ProductionOrderStatus.Planned)
+                                            {
+                                                <li>
+                                                    <a class="dropdown-item py-2" asp-action="Edit" asp-route-id="@item.Id">
+                                                        <i class="bi bi-pencil text-warning me-2"></i> تعديل بيانات التخطيط
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <form asp-action="Release" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item py-2 text-success" onclick="return confirm('هل تريد إطلاق أمر الإنتاج وتجميد لقطة متطلبات الخامات؟');">
+                                                            <i class="bi bi-check2-circle me-2"></i> إطلاق واعتماد للإنتاج (Release)
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            }
+                                            @if (item.OrderStatus == FactoryX.Domain.Entities.ProductionOrderStatus.Released)
+                                            {
+                                                <li>
+                                                    <form asp-action="Start" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item py-2 text-primary">
+                                                            <i class="bi bi-play-circle me-2"></i> بدء التشغيل (Start)
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            }
+                                            @if (item.OrderStatus == FactoryX.Domain.Entities.ProductionOrderStatus.InProgress)
+                                            {
+                                                <li>
+                                                    <form asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="dropdown-item py-2 text-success" onclick="return confirm('هل تريد إنهاء أمر الإنتاج وتسجيله كمكتمل؟');">
+                                                            <i class="bi bi-check-all me-2"></i> إكمال الأمر (Complete)
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

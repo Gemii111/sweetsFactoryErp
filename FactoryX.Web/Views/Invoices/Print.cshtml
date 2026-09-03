@@ -1,0 +1,182 @@
+@model FactoryX.Application.DTOs.InvoiceDto
+@{
+    Layout = null;
+    ViewData["Title"] = $"فاتورة مبيعات رقم {Model.InvoiceNumber}";
+}
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>فاتورة مبيعات - @Model.InvoiceNumber</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.rtl.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        body {
+            font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .invoice-box {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 30px;
+            border: 1px solid #dee2e6;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+        @@media print {
+            body { background: transparent; }
+            .invoice-box {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+                max-width: 100%;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-3">
+        <!-- Print Toolbar -->
+        <div class="no-print text-center mb-4">
+            <button onclick="window.print()" class="btn btn-primary px-4 shadow-sm">
+                <i class="fas fa-print me-1"></i> طباعة الفاتورة (Print Invoice)
+            </button>
+            <button onclick="window.close()" class="btn btn-outline-secondary px-3 ms-2">
+                إغلاق
+            </button>
+        </div>
+
+        <div class="invoice-box">
+            <!-- Header -->
+            <div class="row align-items-center border-bottom pb-4 mb-4">
+                <div class="col-6">
+                    <h2 class="fw-bold mb-1 text-primary">مصنع حلاوة المولد النبوي الشريف</h2>
+                    <h5 class="text-muted mb-0">Mawlid Sweets Factory ERP — إدارة المبيعات والتوزيع</h5>
+                    <small class="text-muted">السجل التجاري: 1029384756 | البطاقة الضريبية: 987-654-321</small>
+                </div>
+                <div class="col-6 text-end">
+                    <h1 class="fw-bold mb-1 text-dark">فاتورة مبيعات</h1>
+                    <span class="badge bg-light text-primary border font-monospace fs-5">@Model.InvoiceNumber</span>
+                    <div class="text-muted mt-1">تاريخ الفاتورة: @Model.InvoiceDate.ToString("yyyy/MM/dd")</div>
+                </div>
+            </div>
+
+            <!-- Customer & Order Details -->
+            <div class="row g-3 mb-4 bg-light p-3 rounded">
+                <div class="col-6">
+                    <h6 class="fw-bold text-primary mb-2">بيانات العميل (Bill To):</h6>
+                    <div class="fw-bold fs-5">@Model.CustomerName</div>
+                    <div class="text-muted">كود العميل: <span class="font-monospace">@Model.CustomerCode</span></div>
+                </div>
+                <div class="col-6 text-end">
+                    <h6 class="fw-bold text-primary mb-2">بيانات المرجع التجاري:</h6>
+                    <div>أمر البيع المعتمد: <span class="fw-bold font-monospace">@Model.SalesOrderNumber</span></div>
+                    <div>تاريخ الاستحقاق: <span class="fw-bold">@(Model.DueDate.HasValue ? Model.DueDate.Value.ToString("yyyy/MM/dd") : "فوري / عند التسليم")</span></div>
+                    <div>الحالة: <span class="fw-bold">@Model.StatusName</span></div>
+                </div>
+            </div>
+
+            <!-- Items Table -->
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 5%;">#</th>
+                            <th style="width: 35%;">بيان الصنف والمنتج</th>
+                            <th style="width: 12%;">الكمية</th>
+                            <th style="width: 12%;">سعر الوحدة</th>
+                            <th style="width: 12%;">الخصم</th>
+                            <th style="width: 10%;">الضريبة</th>
+                            <th style="width: 14%;">الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items != null && Model.Items.Any())
+                        {
+                            int i = 1;
+                            foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>@(i++)</td>
+                                    <td>
+                                        <div class="fw-bold">@item.ProductName</div>
+                                        <small class="text-muted font-monospace">@item.ProductCode</small>
+                                    </td>
+                                    <td class="font-monospace">@item.Quantity.ToString("N2") @item.Unit</td>
+                                    <td class="font-monospace">@item.UnitPrice.ToString("N2")</td>
+                                    <td class="font-monospace">@item.DiscountAmount.ToString("N2")</td>
+                                    <td class="font-monospace">@item.TaxAmount.ToString("N2") (@item.TaxRate.ToString("0.##")%)</td>
+                                    <td class="fw-bold font-monospace">@item.LineTotal.ToString("N2") @Model.Currency</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Totals & Payment Summary -->
+            <div class="row g-4 mb-4">
+                <div class="col-7">
+                    <div class="border rounded p-3 h-100">
+                        <h6 class="fw-bold text-muted mb-2">ملاحظات وشروط الفاتورة:</h6>
+                        <p class="small text-muted mb-2">@(Model.Notes ?? "البضاعة المباعة تخضع لشروط التخزين القياسية وتعتبر هذه الفاتورة مستند استحقاق تجاري رسمي.")</p>
+                        <small class="text-muted d-block">حررت بواسطة: @(Model.CreatedByName ?? "المسؤول")</small>
+                    </div>
+                </div>
+                <div class="col-5">
+                    <table class="table table-sm table-bordered mb-0">
+                        <tbody>
+                            <tr>
+                                <td class="text-muted">المجموع الفرعي:</td>
+                                <td class="text-end fw-bold font-monospace">@Model.SubTotal.ToString("N2") @Model.Currency</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">إجمالي الخصم:</td>
+                                <td class="text-end font-monospace text-danger">-@Model.DiscountAmount.ToString("N2") @Model.Currency</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">ضريبة القيمة المضافة (@Model.TaxRate.ToString("0.##")%):</td>
+                                <td class="text-end font-monospace text-info">+@Model.TaxAmount.ToString("N2") @Model.Currency</td>
+                            </tr>
+                            <tr class="table-primary">
+                                <td class="fw-bold">إجمالي الفاتورة:</td>
+                                <td class="text-end fw-bold font-monospace fs-5">@Model.TotalAmount.ToString("N2") @Model.Currency</td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">المسدد فعلياً:</td>
+                                <td class="text-end font-monospace text-success">@Model.PaidAmount.ToString("N2") @Model.Currency</td>
+                            </tr>
+                            <tr class="@(Model.RemainingAmount == 0 ? "table-success" : "table-warning")">
+                                <td class="fw-bold">المتبقي للاستحقاق:</td>
+                                <td class="text-end fw-bold font-monospace">@Model.RemainingAmount.ToString("N2") @Model.Currency</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Official Signatures -->
+            <div class="row pt-4 border-top mt-5">
+                <div class="col-4 text-center">
+                    <p class="fw-bold mb-4">إعداد الحسابات / المبيعات</p>
+                    <p class="text-muted">................................</p>
+                </div>
+                <div class="col-4 text-center">
+                    <p class="fw-bold mb-4">المراجعة والاعتماد</p>
+                    <p class="text-muted">................................</p>
+                </div>
+                <div class="col-4 text-center">
+                    <p class="fw-bold mb-4">توقيع واستلام العميل</p>
+                    <p class="text-muted">................................</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

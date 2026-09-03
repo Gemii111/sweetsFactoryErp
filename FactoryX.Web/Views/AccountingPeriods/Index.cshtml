@@ -1,0 +1,117 @@
+@model IEnumerable<FactoryX.Application.DTOs.AccountingPeriodDto>
+@{
+    ViewData["Title"] = "الفترات المالية (Accounting Periods)";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-calendar3-range text-primary me-2"></i>الفترات المالية والسنوات المحاسبية</h2>
+        <p class="text-muted mb-0">إدارة الفترات المالية الشهرية والسنوية، وإغلاق الفترات لمنع التعديل أو الترحيل عليها</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>فتح فترة مالية جديدة
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">اسم الفترة</th>
+                        <th>تاريخ البداية</th>
+                        <th>تاريخ النهاية</th>
+                        <th>الحالة</th>
+                        <th>عدد القيود</th>
+                        <th>تاريخ الإغلاق</th>
+                        <th>أُغلقت بواسطة</th>
+                        <th class="text-end pe-3">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var period in Model)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">@period.PeriodName</td>
+                            <td>@period.StartDate.ToString("yyyy-MM-dd")</td>
+                            <td>@period.EndDate.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                @if (period.Status == FactoryX.Domain.Entities.AccountingPeriodStatus.Open)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle"><i class="bi bi-unlock-fill me-1"></i>مفتوحة (Open)</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border"><i class="bi bi-lock-fill me-1"></i>مغلقة (Closed)</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary">@period.JournalCount قيد</span>
+                            </td>
+                            <td>@(period.ClosedAt?.ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                            <td>@(period.ClosedByName ?? "-")</td>
+                            <td class="text-end pe-3">
+                                @if (period.Status == FactoryX.Domain.Entities.AccountingPeriodStatus.Open)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#closeModal-@period.Id">
+                                        <i class="bi bi-lock me-1"></i>إغلاق الفترة
+                                    </button>
+
+                                    <!-- Close Modal -->
+                                    <div class="modal fade" id="closeModal-@period.Id" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form asp-action="Close" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="PeriodId" value="@period.Id" />
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title fw-bold text-danger"><i class="bi bi-lock-fill me-2"></i>إغلاق الفترة المالية: @period.PeriodName</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body text-start">
+                                                        <p>هل أنت متأكد من رغبتك في إغلاق هذه الفترة المالية؟</p>
+                                                        <div class="alert alert-warning small">
+                                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                                            بعد إغلاق الفترة، لن يتم السماح بإنشاء أو ترحيل أي قيود يومية جديدة أو تسويات بتاريخ يقع ضمن هذه الفترة.
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold">سبب أو ملاحظات الإغلاق</label>
+                                                            <textarea name="Notes" class="form-control" rows="2" placeholder="ملاحظات تسوية وإقفال الفترة..."></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                                                        <button type="submit" class="btn btn-danger">تأكيد الإغلاق</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                <a asp-controller="JournalEntries" asp-action="Index" asp-route-periodId="@period.Id" class="btn btn-sm btn-outline-info ms-1">
+                                    <i class="bi bi-journal-text me-1"></i>عرض القيود
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,54 @@
+@model FactoryX.Application.DTOs.PackagingConsumptionReportDto
+@{
+    ViewData["Title"] = "تقرير استهلاك مواد التعبئة والتغليف";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-box2-heart text-info me-2"></i>تقرير استهلاك مواد التعبئة والتغليف (Packaging Consumption)</h2>
+        <p class="text-muted mb-0">تحليل انحراف استهلاك الكراتين، الأكياس، العلب، والأشرطة اللاصقة لكل صنف</p>
+    </div>
+    <a asp-action="Dashboard" class="btn btn-outline-secondary no-print">
+        <i class="bi bi-arrow-right me-1"></i>لوحة التقارير
+    </a>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">أمر التعبئة</th>
+                        <th>اسم المنتج</th>
+                        <th>خامة التعبئة</th>
+                        <th class="text-end">المطلوب بالمعيار</th>
+                        <th class="text-end">المستهلك الفعلي</th>
+                        <th class="text-end pe-3">مقدار الانحراف</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Items.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">لا توجد بيانات استهلاك تعبئة مسجلة</td>
+                        </tr>
+                    }
+                    @foreach (var i in Model.Items)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">@i.PackagingOrderNumber</td>
+                            <td class="fw-semibold">@i.ProductName</td>
+                            <td class="text-primary fw-semibold">@i.PackagingMaterialName</td>
+                            <td class="text-end font-monospace">@i.PlannedQuantity.ToString("N2") @i.Unit</td>
+                            <td class="text-end font-monospace text-success fw-bold">@i.ActualQuantity.ToString("N2") @i.Unit</td>
+                            <td class="text-end font-monospace pe-3 @(i.Variance > 0 ? "text-danger" : "text-success")">
+                                @(i.Variance > 0 ? "+" : "")@i.Variance.ToString("N2")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

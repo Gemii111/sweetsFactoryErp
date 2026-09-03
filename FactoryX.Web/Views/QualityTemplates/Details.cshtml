@@ -1,0 +1,129 @@
+@model FactoryX.Application.DTOs.QualityTemplateDto
+
+@{
+    ViewData["Title"] = "تفاصيل المواصفة القياسية - " + Model.Code;
+}
+
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="bi bi-arrow-right"></i>
+            </a>
+            <div>
+                <div class="d-flex align-items-center gap-2">
+                    <h2 class="fw-bold mb-0 text-primary">@Model.Name</h2>
+                    <span class="badge bg-light text-primary border font-monospace fs-6">@Model.Code</span>
+                    @if (Model.IsActive)
+                    {
+                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">نشط ومتاح للاستخدام</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1">معطل</span>
+                    }
+                </div>
+                <small class="text-muted">@Model.Description</small>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary">
+                <i class="bi bi-pencil me-1"></i> تعديل المواصفة
+            </a>
+            <a asp-controller="QualityInspections" asp-action="Index" class="btn btn-primary">
+                <i class="bi bi-shield-check me-1"></i> سجل الفحوصات المرتبطة
+            </a>
+        </div>
+    </div>
+
+    <!-- Metadata Card -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-body p-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="text-muted small d-block">نطاق التطبيق (Scope)</label>
+                    @if (!string.IsNullOrEmpty(Model.ProductName))
+                    {
+                        <span class="fw-bold text-success"><i class="bi bi-box me-1"></i> منتج محدد: @Model.ProductName</span>
+                    }
+                    else if (!string.IsNullOrEmpty(Model.ProductCategoryName))
+                    {
+                        <span class="fw-bold text-info"><i class="bi bi-tags me-1"></i> تصنيف منتجات: @Model.ProductCategoryName</span>
+                    }
+                    else
+                    {
+                        <span class="fw-bold text-secondary">عام لكافة منتجات المصنع</span>
+                    }
+                </div>
+                <div class="col-md-4">
+                    <label class="text-muted small d-block">إجمالي معايير الفحص</label>
+                    <span class="fw-bold text-dark fs-5">@Model.Items.Count معيار فحص</span>
+                </div>
+                <div class="col-md-4">
+                    <label class="text-muted small d-block">تاريخ الإنشاء والتحديث</label>
+                    <span class="text-muted small">@Model.CreatedAt.ToString("yyyy-MM-dd") (آخر تحديث: @Model.UpdatedAt.ToString("yyyy-MM-dd"))</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Specifications Table -->
+    <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-transparent py-3 border-0">
+            <h5 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-list-check me-2 text-primary"></i> معايير الفحص والتفاوتات المسموحة (Specifications & Tolerances)
+            </h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 50px;" class="ps-4">#</th>
+                        <th>اسم المعيار والمواصفة</th>
+                        <th>نوع القياس</th>
+                        <th>الحد الأدنى (Min)</th>
+                        <th>الحد الأقصى (Max)</th>
+                        <th>القيمة المستهدفة (Target)</th>
+                        <th>الوحدة</th>
+                        <th class="text-center">إلزامي</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items.OrderBy(i => i.Sequence))
+                    {
+                        <tr>
+                            <td class="ps-4 fw-bold">@item.Sequence</td>
+                            <td>
+                                <div class="fw-bold text-dark">@item.SpecificationName</div>
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <small class="text-muted">@item.Description</small>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    @item.DataTypeName
+                                </span>
+                            </td>
+                            <td>@(item.MinValue.HasValue ? item.MinValue.Value.ToString("N2") : "-")</td>
+                            <td>@(item.MaxValue.HasValue ? item.MaxValue.Value.ToString("N2") : "-")</td>
+                            <td class="fw-bold text-primary">@(item.TargetValue.HasValue ? item.TargetValue.Value.ToString("N2") : "-")</td>
+                            <td>@(string.IsNullOrEmpty(item.Unit) ? "-" : item.Unit)</td>
+                            <td class="text-center">
+                                @if (item.IsRequired)
+                                {
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1">إلزامي</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1">اختياري</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

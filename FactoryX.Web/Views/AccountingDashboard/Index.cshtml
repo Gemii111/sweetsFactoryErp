@@ -1,0 +1,218 @@
+@model FactoryX.Application.DTOs.AccountingDashboardDto
+@{
+    ViewData["Title"] = "لوحة المؤشرات المحاسبية والمالية";
+    var periods = ViewBag.Periods as IEnumerable<FactoryX.Application.DTOs.AccountingPeriodDto> ?? new List<FactoryX.Application.DTOs.AccountingPeriodDto>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-graph-up-arrow text-primary me-2"></i>لوحة المؤشرات المحاسبية والمالية</h2>
+        <p class="text-muted mb-0">نظرة عامة على الإيرادات، الأرباح، السيولة، الذمم المدينة والدائنة، وتقييم المخزون</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <form method="get" class="d-flex gap-2">
+            <select name="periodId" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">-- جميع الفترات --</option>
+                @foreach (var p in periods)
+                {
+                    <option value="@p.Id" selected="@(p.Id == (int?)ViewBag.SelectedPeriodId)">@p.PeriodName (@(p.Status == FactoryX.Domain.Entities.AccountingPeriodStatus.Open ? "مفتوحة" : "مغلقة"))</option>
+                }
+            </select>
+        </form>
+        <a asp-controller="JournalEntries" asp-action="Create" class="btn btn-sm btn-primary text-nowrap">
+            <i class="bi bi-plus-circle me-1"></i>قيد يدوي
+        </a>
+    </div>
+</div>
+
+<!-- Primary Financial KPIs (Profit & Loss summary) -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 border-start border-primary border-4 p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-bold">إجمالي الإيرادات (Revenue)</span>
+                <div class="rounded-circle bg-primary-subtle p-2 text-primary">
+                    <i class="bi bi-cash-coin fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold text-dark font-monospace mb-1">@Model.TotalRevenue.ToString("N2")</h3>
+            <small class="text-muted">EGP (مبيعات الحلويات)</small>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 border-start border-warning border-4 p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-bold">تكلفة البضاعة المباعة (COGS)</span>
+                <div class="rounded-circle bg-warning-subtle p-2 text-warning">
+                    <i class="bi bi-box-seam fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold text-dark font-monospace mb-1">@Model.TotalCostOfGoodsSold.ToString("N2")</h3>
+            <small class="text-muted">EGP (تكلفة الشحنات المسلمة)</small>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 border-start border-success border-4 p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-bold">مجمل الربح (Gross Profit)</span>
+                <div class="rounded-circle bg-success-subtle p-2 text-success">
+                    <i class="bi bi-trophy fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold @(Model.GrossProfit >= 0 ? "text-success" : "text-danger") font-monospace mb-1">@Model.GrossProfit.ToString("N2")</h3>
+            <small class="text-muted">EGP (الإيرادات - التكلفة)</small>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card shadow-sm border-0 border-start border-info border-4 p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-bold">صافي الربح التشغيلي</span>
+                <div class="rounded-circle bg-info-subtle p-2 text-info">
+                    <i class="bi bi-pie-chart fs-5"></i>
+                </div>
+            </div>
+            <h3 class="fw-bold @(Model.NetOperatingProfit >= 0 ? "text-info" : "text-danger") font-monospace mb-1">@Model.NetOperatingProfit.ToString("N2")</h3>
+            <small class="text-muted">EGP (بعد خصم خسائر الهالك)</small>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Financial KPIs (Liquidity, AR/AP, Taxes) -->
+<div class="row g-3 mb-4">
+    <!-- Liquidity & Cash -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-bank text-success me-2"></i>السيولة النقدية والبنكية</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <span class="text-muted"><i class="bi bi-safe me-1"></i>الخزينة الرئيسية (Cash on Hand)</span>
+                    <span class="font-monospace fw-bold fs-5">@Model.TotalCashBalance.ToString("N2") EGP</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <span class="text-muted"><i class="bi bi-building me-1"></i>الحساب البنكي الرئيسي (Bank Account)</span>
+                    <span class="font-monospace fw-bold fs-5">@Model.TotalBankBalance.ToString("N2") EGP</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center pt-2">
+                    <span class="fw-bold">إجمالي السيولة المتاحة:</span>
+                    <span class="font-monospace fw-bold text-success fs-5">@Model.TotalLiquidFunds.ToString("N2") EGP</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receivables & Payables -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-people text-primary me-2"></i>الذمم المدينة والدائنة</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <span class="text-muted"><i class="bi bi-arrow-down-left text-success me-1"></i>مديونية العملاء (AR)</span>
+                    <a asp-controller="CustomerLedger" asp-action="Index" class="font-monospace fw-bold fs-5 text-decoration-none text-primary">
+                        @Model.AccountsReceivableBalance.ToString("N2") EGP
+                    </a>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <span class="text-muted"><i class="bi bi-arrow-up-right text-danger me-1"></i>مستحقات الموردين (AP)</span>
+                    <a asp-controller="SupplierLedger" asp-action="Index" class="font-monospace fw-bold fs-5 text-decoration-none text-danger">
+                        @Model.AccountsPayableBalance.ToString("N2") EGP
+                    </a>
+                </div>
+                <div class="d-flex justify-content-between align-items-center pt-2">
+                    <span class="fw-bold">صافي المركز الائتماني:</span>
+                    <span class="font-monospace fw-bold @((Model.AccountsReceivableBalance - Model.AccountsPayableBalance) >= 0 ? "text-success" : "text-danger") fs-5">
+                        @((Model.AccountsReceivableBalance - Model.AccountsPayableBalance).ToString("N2")) EGP
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Value -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-box2 text-warning me-2"></i>تقييم المخزون المالي</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom small">
+                    <span class="text-muted">مخزون المواد الخام:</span>
+                    <span class="font-monospace fw-bold">@Model.RawMaterialInventoryValue.ToString("N2") EGP</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom small">
+                    <span class="text-muted">مخزون مواد التعبئة:</span>
+                    <span class="font-monospace fw-bold">@Model.PackagingInventoryValue.ToString("N2") EGP</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom small">
+                    <span class="text-muted">مخزون الإنتاج التام:</span>
+                    <span class="font-monospace fw-bold">@Model.FinishedGoodsInventoryValue.ToString("N2") EGP</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center pt-2">
+                    <span class="fw-bold">إجمالي قيمة المخزون:</span>
+                    <span class="font-monospace fw-bold text-dark fs-5">@Model.TotalInventoryValue.ToString("N2") EGP</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Journals Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>أحدث القيود اليومية المسجلة</h6>
+        <a asp-controller="JournalEntries" asp-action="Index" class="btn btn-sm btn-outline-primary">عرض كافة القيود</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">رقم القيد</th>
+                        <th>التاريخ</th>
+                        <th>البيان والشرح</th>
+                        <th>مصدر القيد</th>
+                        <th class="text-end">إجمالي المبلغ</th>
+                        <th class="text-center">الحالة</th>
+                        <th class="text-end pe-3">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.RecentJournals.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">لا توجد قيود يومية مسجلة بعد</td>
+                        </tr>
+                    }
+                    @foreach (var j in Model.RecentJournals)
+                    {
+                        <tr>
+                            <td class="ps-3 font-monospace fw-bold">
+                                <a asp-controller="JournalEntries" asp-action="Details" asp-route-id="@j.Id" class="text-decoration-none">
+                                    @j.JournalNumber
+                                </a>
+                            </td>
+                            <td>@j.EntryDate.ToString("yyyy-MM-dd")</td>
+                            <td class="text-truncate" style="max-width: 300px;">@j.Description</td>
+                            <td><span class="badge bg-secondary-subtle text-dark border">@j.ReferenceTypeName</span></td>
+                            <td class="text-end font-monospace fw-bold text-success">@j.TotalDebit.ToString("N2") EGP</td>
+                            <td class="text-center">
+                                <span class="badge bg-success-subtle text-success">مرحل</span>
+                            </td>
+                            <td class="text-end pe-3">
+                                <a asp-controller="JournalEntries" asp-action="Details" asp-route-id="@j.Id" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

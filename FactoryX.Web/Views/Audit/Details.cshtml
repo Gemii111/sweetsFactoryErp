@@ -1,0 +1,77 @@
+@model FactoryX.Application.DTOs.AuditLogItemDto
+@{
+    ViewData["Title"] = "تفاصيل سجل التدقيق #" + Model.Id;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-file-earmark-text text-primary me-2"></i>تفاصيل سجل التدقيق #@Model.Id</h2>
+        <p class="text-muted mb-0">بيانات العملية وحالة القيم قبل وبعد التغيير</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-right me-1"></i>العودة لسجل التدقيق
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-info-circle me-2"></i>معلومات العملية</h6>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">التوقيت (UTC):</dt>
+                    <dd class="col-sm-8 font-monospace fw-bold">@Model.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+
+                    <dt class="col-sm-4 text-muted">المستخدم:</dt>
+                    <dd class="col-sm-8 font-monospace text-primary fw-bold">@Model.Username</dd>
+
+                    <dt class="col-sm-4 text-muted">الوحدة / الإجراء:</dt>
+                    <dd class="col-sm-8"><span class="badge bg-light text-dark border">@Model.Module</span> / <span class="badge bg-primary">@Model.Action</span></dd>
+
+                    <dt class="col-sm-4 text-muted">الكيان / المرجع:</dt>
+                    <dd class="col-sm-8">@Model.EntityType <span class="font-monospace fw-bold ms-1">(@Model.EntityNumber)</span></dd>
+
+                    <dt class="col-sm-4 text-muted">البيان / الوصف:</dt>
+                    <dd class="col-sm-8">@Model.Description</dd>
+
+                    <dt class="col-sm-4 text-muted">عنوان IP:</dt>
+                    <dd class="col-sm-8 font-monospace">@(string.IsNullOrEmpty(Model.IpAddress) ? "-" : Model.IpAddress)</dd>
+
+                    <dt class="col-sm-4 text-muted">معرّف التتبع:</dt>
+                    <dd class="col-sm-8 font-monospace text-secondary small">@Model.CorrelationId</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold text-primary"><i class="bi bi-code-slash me-2"></i>البيانات والتغييرات (JSON Payload)</h6>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(Model.OldValues))
+                {
+                    <h6 class="fw-bold text-danger mb-1"><i class="bi bi-dash-circle me-1"></i>القيم السابقة (Old Values):</h6>
+                    <pre class="bg-light p-2 rounded border small mb-3"><code>@Model.OldValues</code></pre>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.NewValues))
+                {
+                    <h6 class="fw-bold text-success mb-1"><i class="bi bi-plus-circle me-1"></i>القيم الجديدة (New Values):</h6>
+                    <pre class="bg-light p-2 rounded border small mb-0"><code>@Model.NewValues</code></pre>
+                }
+
+                @if (string.IsNullOrEmpty(Model.OldValues) && string.IsNullOrEmpty(Model.NewValues))
+                {
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-check2-circle fs-2 d-block mb-2"></i>
+                        تم تسجيل العملية بنجاح بدون حمولة بيانات إضافية
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
